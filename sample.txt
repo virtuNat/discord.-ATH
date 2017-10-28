@@ -1,0 +1,23 @@
+# Commented code
+import math as m; # import python lib
+Import LOOPTOOLS.~ATH; # import ~ATH file
+import blah LOOP; # import blah from LOOP
+BIFURCATE LOOP[X, Y];
+~ATH (blah){
+    	print("Are you a BOY or a GIRL?");
+    	print("[B] BOY"); 
+    	print("[G] GIRL");
+    	print("[O] OTHER");
+    	print("[P] PREFER NOT TO ANSWER");
+    	input CHOICE;
+	CLONE CHOICE2 CHOICE;
+	WHEN (CHOICE2 == “B”){
+		print(“Hello {CHOICE}, I’m PROFESSOR OAK.”);
+}
+    UNLESS (CHOICE2 == “C”){
+		print(“Hello {CHOICE}, I’m PROFESSOR OAK.”);
+	}
+    	print("Cool.");
+blah.DIE();
+} EXECUTE(NULL);
+THIS.DIE();
