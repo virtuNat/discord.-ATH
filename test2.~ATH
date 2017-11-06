@@ -1,0 +1,28 @@
+# Commented code
+### Unsure how we'll go about imports, ignore for now
+import "math" m; # import python lib to m
+import LOOPTOOLS; # import ~ATH file
+import blah LOOP; # import blah to LOOP
+###
+
+BIRTH LOOP; # Variable Declaration w/o assignment
+BIRTH CTR 1; # Var Dec w/ assignment, to CTR's left
+BIRTH CTR (COUNT) { # Func Dec, assigns to CTR's right
+    COUNT += 1; # Operator exp
+}
+
+BIFURCATE CTR[cnt, ctr]; # Split CTR to int and fxn
+input MAX "Count to how many? :"; # Input
+~ATH (LOOP) { # ~ATH loop
+    print("Count: ~d\n", CTR); # Output
+    # User-defined Function Call
+    EXECUTE(CTR, CTR); # Fxn, Args
+    # EXECUTE(cnt, ctr); should also do the same thing
+    WHEN (CTR > MAX) { # Conditional
+        LOOP.DIE();
+    }
+    UNLESS {
+        print("Next...\n");
+    }
+}
+THIS.DIE();
