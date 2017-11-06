@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from lexer import Lexer
 
 ATH_EXPRS = [
-	(r'\s+', None), # Whitespace
+    (r'\s+', None), # Whitespace
     (r'#[^\n]*', None), # Single-line comment
     (r'(?s)###.*?###', None), # Multi-line comment
     # Code enclosures
@@ -85,4 +85,4 @@ if __name__ == '__main__':
         script = codefile.read()
         tokens = ath_lexer.lex(script)
         for token in tokens:
-        	print(token)
+            print(token)
