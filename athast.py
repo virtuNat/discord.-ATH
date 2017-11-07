@@ -219,7 +219,7 @@ class WhenStmt(Statement):
 class UnlessStmt(Statement):
     __slots__ = ('clause', 'this_suite', 'next_suite')
 
-    def __init__(self, clause, this_suite, unless_suite):
+    def __init__(self, clause, this_suite, next_suite):
         self.clause = clause
         self.this_suite = this_suite
         self.next_suite = next_suite
