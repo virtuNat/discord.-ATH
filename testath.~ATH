@@ -1,6 +1,10 @@
-#!/usr/bin/env ~ATH
-# Commented code test.
-import "math" m; # Python module import.
-input CHOICE "Input here: "; # Raw string input.
-print("Thank you for inputting."); # Raw string output.
-THIS.DIE(); # Placeholder.
+//!/usr/bin/env ~ATH
+/*
+ Commented
+ code
+ test.
+*/
+import "math" MATH; // Python module import.
+input CHOICE "Input here: "; // Raw string input.
+print("Thank you for inputting."); // Raw string output.
+THIS.DIE(); // Placeholder.
