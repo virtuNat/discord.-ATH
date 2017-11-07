@@ -15,7 +15,11 @@ class AthExpr(object):
 
     def __repr__(self):
         attr_list = tuple([getattr(self, slot) for slot in self.__slots__])
-        return '{}{!r}'.format(self.__class__.__name__, attr_list)
+        if len(attr_list) == 1:
+            attr_str = repr(attr_list)[:-2] + ')'
+        else:
+            attr_str = repr(attr_list)
+        return '{}{}'.format(self.__class__.__name__, attr_str)
 
 
 class ArithExpr(AthExpr):
@@ -26,9 +30,6 @@ class ArithExpr(AthExpr):
 class NumExpr(ArithExpr):
     """Superclass of both integers and floats."""
     __slots__ = ('num')
-
-    def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.num)
 
 
 class FloatExpr(NumExpr):
