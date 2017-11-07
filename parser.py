@@ -1,164 +1,98 @@
-import operator
+import athast
+from lexer import Lexer
 
-class AthExpr(object):
+from grafter import TokenGrafter, TagGrafter
+from grafter import EnsureGraft, Repeater
+from grafter import LazyGrafter, StrictGrafter
+
+
+ATH_EXPRS = [
+    (r'(?s)/\*.*?\*/', None), # Multi-line comment
+    (r'//[^\n]*', None), # Single-line comment
+    (r'\s+', None), # Whitespace
+    # Code enclosures
+    (r'\(', 'BUILTIN'), # Conditional/Call open
+    (r'\)', 'BUILTIN'), # Conditional/Call close
+    (r'{', 'BUILTIN'), # Suite open
+    (r'}', 'BUILTIN'), # Suite close
+    (r'\[', 'BUILTIN'), # Symbol slice open
+    (r'\]', 'BUILTIN'), # Symbol slice close
+    # Separators
+    (r';', 'BUILTIN'), # Statement separator
+    (r'\.', 'BUILTIN'), # Lookup operator
+    (r',', 'BUILTIN'), # Group operator
+    # Arithmetic in-place operators
+    (r'\+=', 'BUILTIN'), # Add
+    (r'-=', 'BUILTIN'), # Sub
+    (r'\*=', 'BUILTIN'), # Mul
+    (r'/_=', 'BUILTIN'), # FloorDiv
+    (r'/=', 'BUILTIN'), # TrueDiv
+    # Arithmetic operators
+    (r'\+', 'BUILTIN'), # Add
+    (r'-', 'BUILTIN'), # Sub
+    (r'\*\*', 'BUILTIN'), # Pow
+    (r'\*', 'BUILTIN'), # Mul
+    (r'/_', 'BUILTIN'), # FloorDiv
+    (r'/', 'BUILTIN'), # TrueDiv
+    # Symbol operators
+    (r'!=!', 'BUILTIN'), # Assert Both
+    (r'!=\?', 'BUILTIN'), # Assert Left
+    (r'\?=!', 'BUILTIN'), # Assert Right
+    (r'~=!', 'BUILTIN'), # Negate Left
+    (r'!=~', 'BUILTIN'), # Negate Right
+    (r'~=~', 'BUILTIN'), # Negate Both
+    # Value operators
+    (r'<=', 'BUILTIN'), # Less than or equal to
+    (r'<', 'BUILTIN'), # Less than
+    (r'>=', 'BUILTIN'), # Greater than or equal to
+    (r'>', 'BUILTIN'), # Greater than
+    (r'~=', 'BUILTIN'), # Not equal to
+    (r'==', 'BUILTIN'), # Equal to
+    # Boolean operators
+    (r'&&', 'BUILTIN'), # Boolean AND
+    (r'\|\|', 'BUILTIN'), # Boolean OR
+    (r'\^\^', 'BUILTIN'), # Boolean XOR
+    (r'~~', 'BUILTIN'), # Boolean NOT
+    # Statement keywords
+    (r'WHEN', 'BUILTIN'), # Conditional Consequent
+    (r'UNLESS', 'BUILTIN'), # Conditional Alternative
+    (r'~ATH', 'BUILTIN'), # Loop
+    (r'print', 'BUILTIN'), # Output
+    (r'input', 'BUILTIN'), # Input
+    (r'BIRTH', 'BUILTIN'), # Assignment/Declaration
+    (r'EXECUTE', 'BUILTIN'), # Subroutine Execution
+    (r'BIFURCATE', 'BUILTIN'), # Split a symbol
+    (r'AGGREGATE', 'BUILTIN'), # Merge a symbol
+    # Bitwise operators
+    (r'&', 'BUILTIN'), # Bitwise and
+    (r'\|', 'BUILTIN'), # Bitwise or
+    (r'\^', 'BUILTIN'), # Bitwise xor
+    (r'~', 'BUILTIN'), # Bitwise not
+    # Other identifiers
+    (r'([\'"])[^\1]*?\1', 'STR'),
+    (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?', 'FLOAT'),
+    (r'\d+', 'INT'),
+    (r'[a-zA-Z]\w*', 'NAME'),
+]
+
+
+class Parser(object):
     __slots__ = ()
 
-    def __eq__(self, othr):
-        if isinstance(othr, self.__class__):
-            try:
-                self_attrs = self.__dict__
-                othr_attrs = othr.__dict__
-            except AttributeError:
-                self_attrs = {slot: getattr(self, slot) for slot in self.__slots__}
-                othr_attrs = {slot: getattr(othr, slot) for slot in othr.__slots__}
-            return self_attrs == othr_attrs
-        return False
-
-    def __hash__(self):
-        return object.__hash__(self)
+    def __call__(self, *args):
+        raise NotImplementedError('')
 
 
-class ArithExpr(AthExpr):
-    """Superclass to all arithmetic-based syntax."""
+class KeywordParser(Parser):
+    pass
+
+
+class TildeAthInterp(object):
     __slots__ = ()
-
-
-class NumExpr(ArithExpr):
-    """Superclass of both integers and floats."""
-    __slots__ = ('num')
-
-    def __init__(self, num):
-        self.num = num
-
-    def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.num)
-
-
-class FloatExpr(NumExpr):
-    pass
-
-
-class IntExpr(NumExpr):
-    pass
-
-
-class UnaryArithExpr(ArithExpr):
-    pass
-
-
-class BinaryArithExpr(ArithExpr):
-    pass
-
-
-class StringExpr(AthExpr):
-    pass
-
-
-class AthFunction(AthExpr):
-    """Superclass of all ~ATH functions."""
-    __slots__ = ()
-
-
-class PrintFunc(AthFunction):
-    pass
-
-
-class KillFunc(AthFunction):
-    pass
-
-
-class AthSymbol(AthExpr):
-    """~ATH Variable data structure."""
-    __slots__ = ()
-
-
-class BoolExpr(AthExpr):
-    """Superclass to all boolean syntax."""
-    __slots__ = ()
-
-
-class ValueBoolExpr(BoolExpr):
-    """Superclass to all value-based boolean syntax."""
-    __slots__ = ()
-
-
-class NotExpr(ValueBoolExpr):
-    pass
-
-
-class AndExpr(ValueBoolExpr):
-    pass
-
-
-class OrExpr(ValueBoolExpr):
-    pass
-
-
-class XorExpr(ValueBoolExpr):
-    pass
-
-
-class SymBoolExpr(BoolExpr):
-    """Superclass to all symbol-based boolean syntax."""
-    __slots__ = ()
-
-
-class BothSymBool(SymBoolExpr):
-    pass
-
-
-class LeftSymBool(SymBoolExpr):
-    pass
-
-
-class RightSymBool(SymBoolExpr):
-    pass
-
-
-class NegLeftSymBool(SymBoolExpr):
-    pass
-
-
-class NegRightSymBool(SymBoolExpr):
-    pass
-
-
-class NegBothSymBool(SymBoolExpr):
-    pass
-
-
-class Statement(AthExpr):
-    """Superclass to all builtin statements."""
-    __slots__ = ()
-
-
-class BirthStmt(Statement):
-    pass
-
-
-class BifurcateStmt(Statement):
-    pass
-
-
-class AggregateStmt(Statement):
-    pass
-
-
-class WhenStmt(Statement):
-    pass
-
-
-class UnlessStmt(Statement):
-    pass
-
-
-class TernaryStmt(Statement):
-    pass
-
-
-class InputStmt(Statement):
-    pass
-
-
-class TilDeathLoop(Statement):
-    pass
+    lexer = Lexer(ATH_EXPRS)
+
+    @classmethod
+    def execute(cls, script):
+        tokens = cls.lexer.lex(script)
+        for token in tokens:
+            print(token)
