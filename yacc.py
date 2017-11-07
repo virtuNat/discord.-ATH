@@ -64,7 +64,7 @@ ATH_EXPRS = [
     (r'~', 'BUILTIN'),
     # Other identifiers
     (r'([\'"])[^\1]*?\1', 'STR'),
-    (r'(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?', 'FLOAT'),
+    (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?', 'FLOAT'),
     (r'\d+', 'INT'),
     (r'[a-zA-Z]\w*', 'NAME'),
 ]
