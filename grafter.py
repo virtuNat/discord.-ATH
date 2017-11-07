@@ -192,7 +192,7 @@ class Repeater(Grafter):
     """A grafter that will apply itself repeatedly until failure,
     returning the list of all grafts created from iteration.
 
-    Used to build a list of arguments, tokens, or items.
+    Used to build a list of arguments, tokens, grafts, or items.
     """
     __slots__ = ('graft', 'tokens', 'index')
 

@@ -20,6 +20,7 @@ class AthExpr(object):
 
 class ArithExpr(AthExpr):
     """Superclass to all arithmetic-based syntax."""
+    __slots__ = ()
 
 
 class NumExpr(ArithExpr):
@@ -33,11 +34,11 @@ class NumExpr(ArithExpr):
         return '{}({})'.format(self.__class__.__name__, self.num)
 
 
-class IntExpr(NumExpr):
+class FloatExpr(NumExpr):
     pass
 
 
-class FloatExpr(NumExpr):
+class IntExpr(NumExpr):
     pass
 
 
@@ -55,6 +56,7 @@ class StringExpr(AthExpr):
 
 class AthFunction(AthExpr):
     """Superclass of all ~ATH functions."""
+    __slots__ = ()
 
 
 class PrintFunc(AthFunction):
@@ -67,14 +69,17 @@ class KillFunc(AthFunction):
 
 class AthSymbol(AthExpr):
     """~ATH Variable data structure."""
+    __slots__ = ()
 
 
 class BoolExpr(AthExpr):
     """Superclass to all boolean syntax."""
+    __slots__ = ()
 
 
 class ValueBoolExpr(BoolExpr):
     """Superclass to all value-based boolean syntax."""
+    __slots__ = ()
 
 
 class NotExpr(ValueBoolExpr):
@@ -95,6 +100,7 @@ class XorExpr(ValueBoolExpr):
 
 class SymBoolExpr(BoolExpr):
     """Superclass to all symbol-based boolean syntax."""
+    __slots__ = ()
 
 
 class BothSymBool(SymBoolExpr):
@@ -123,6 +129,7 @@ class NegBothSymBool(SymBoolExpr):
 
 class Statement(AthExpr):
     """Superclass to all builtin statements."""
+    __slots__ = ()
 
 
 class BirthStmt(Statement):
@@ -142,6 +149,10 @@ class WhenStmt(Statement):
 
 
 class UnlessStmt(Statement):
+    pass
+
+
+class TernaryStmt(Statement):
     pass
 
 
