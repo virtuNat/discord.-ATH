@@ -4,9 +4,9 @@ from argparse import ArgumentParser
 from lexer import Lexer
 
 ATH_EXPRS = [
-    (r'\s+', None), # Whitespace
-    (r'#[^\n]*', None), # Single-line comment
     (r'(?s)###.*?###', None), # Multi-line comment
+    (r'#[^\n]*', None), # Single-line comment
+    (r'\s+', None), # Whitespace
     # Code enclosures
     (r'\(', 'BUILTIN'),
     (r'\)', 'BUILTIN'),
@@ -14,7 +14,7 @@ ATH_EXPRS = [
     (r'}', 'BUILTIN'),
     (r'\[', 'BUILTIN'),
     (r'\]', 'BUILTIN'),
-    # Code separator
+    # Separators
     (r';', 'BUILTIN'),
     (r'\.', 'BUILTIN'),
     (r',', 'BUILTIN'),
@@ -64,8 +64,8 @@ ATH_EXPRS = [
     (r'~', 'BUILTIN'),
     # Other identifiers
     (r'([\'"])[^\1]*?\1', 'STR'),
-    (r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?', 'FLOAT'),
-    (r'[0-9]+', 'INT'),
+    (r'(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?', 'FLOAT'),
+    (r'\d+', 'INT'),
     (r'[a-zA-Z]\w*', 'NAME'),
 ]
 
@@ -84,5 +84,6 @@ if __name__ == '__main__':
     with open(cmdargs.script, 'r') as codefile:
         script = codefile.read()
         tokens = ath_lexer.lex(script)
+        print(tokens)
         for token in tokens:
             print(token)
