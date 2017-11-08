@@ -1,0 +1,7 @@
+BIRTH LOOP;
+~ATH(LOOP) {
+	input NAME "What's your name? ";
+	print ("Hello, ~s\n!", NAME);
+	LOOP.DIE();
+}
+THIS.DIE();

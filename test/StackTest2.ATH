@@ -1,0 +1,31 @@
+BIRTH LOOP;
+BIRTH STACK NULL;
+
+~ATH(LOOP) {
+	print ("Select action:\n");
+	print ("[1] Add an item to stack\n");
+	print ("[2] View stack\n");
+	print ("[3] Exit\n");
+	input CHOICE;
+	
+	WHEN (CHOICE == 3) {
+		LOOP.DIE();
+	} UNLESS (CHOICE == 2) {
+		BIRTH BLAH;
+		CLONE TEMP STACK;
+		~ATH(BLAH) {
+			BIFURCATE TEMP[TEMP, TAIL];
+			WHEN (~TEMP) {
+				print ("~s\n", TAIL);
+			} UNLESS {
+				BLAH.DIE();
+			}
+		}
+	} UNLESS (CHOICE == 1){
+		input ITEM "Input string to add: ";
+		AGGREGATE [STACK, ITEM]STACK;
+	} UNLESS {
+		print ("Invalid input.");
+	}
+}
+THIS.DIE();
