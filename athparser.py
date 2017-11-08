@@ -6,7 +6,7 @@ from grafter import EnsureGraft, Repeater
 from grafter import LazyGrafter, StrictGrafter
 
 
-ATH_EXPRS = [
+ath_lexer = Lexer([
     (r'(?s)/\*.*?\*/', None), # Multi-line comment
     (r'//[^\n]*', None), # Single-line comment
     (r'\s+', None), # Whitespace
@@ -24,16 +24,19 @@ ATH_EXPRS = [
     # Arithmetic in-place operators
     (r'\+=', 'BUILTIN'), # Add
     (r'-=', 'BUILTIN'), # Sub
+    (r'\*\*=', 'BUILTIN'), # Pow
     (r'\*=', 'BUILTIN'), # Mul
     (r'/_=', 'BUILTIN'), # FloorDiv
     (r'/=', 'BUILTIN'), # TrueDiv
+    (r'%=', 'BUILTIN'), # Modulo
     # Arithmetic operators
-    (r'\+', 'BUILTIN'), # Add
-    (r'-', 'BUILTIN'), # Sub
+    (r'\+', 'BUILTIN'), # Add, UnaryAbs
+    (r'-', 'BUILTIN'), # Sub, UnaryInv
     (r'\*\*', 'BUILTIN'), # Pow
     (r'\*', 'BUILTIN'), # Mul
     (r'/_', 'BUILTIN'), # FloorDiv
     (r'/', 'BUILTIN'), # TrueDiv
+    (r'%', 'BUILTIN'), # Modulo
     # Symbol operators
     (r'!=!', 'BUILTIN'), # Assert Both
     (r'!=\?', 'BUILTIN'), # Assert Left
@@ -41,6 +44,12 @@ ATH_EXPRS = [
     (r'~=!', 'BUILTIN'), # Negate Left
     (r'!=~', 'BUILTIN'), # Negate Right
     (r'~=~', 'BUILTIN'), # Negate Both
+    # Bitwise shift in-place operators
+    (r'<<=', 'BUILTIN'), # Bitwise lshift
+    (r'>>=', 'BUILTIN'), # Bitwise rshift
+    # Bitwise shift operators
+    (r'<<', 'BUILTIN'), # Bitwise lshift
+    (r'>>', 'BUILTIN'), # Bitwise rshift
     # Value operators
     (r'<=', 'BUILTIN'), # Less than or equal to
     (r'<', 'BUILTIN'), # Less than
@@ -59,10 +68,15 @@ ATH_EXPRS = [
     (r'~ATH', 'BUILTIN'), # Loop
     (r'print', 'BUILTIN'), # Output
     (r'input', 'BUILTIN'), # Input
-    (r'BIRTH', 'BUILTIN'), # Assignment/Declaration
+    (r'BIRTH', 'BUILTIN'), # Declaration
+    (r'CLONE', 'BUILTIN'), # Two-level copy
     (r'EXECUTE', 'BUILTIN'), # Subroutine Execution
     (r'BIFURCATE', 'BUILTIN'), # Split a symbol
     (r'AGGREGATE', 'BUILTIN'), # Merge a symbol
+    # Bitwise in-place operators
+    (r'&=', 'BUILTIN'), # Bitwise and
+    (r'\|=', 'BUILTIN'), # Bitwise or
+    (r'\^=', 'BUILTIN'), # Bitwise xor
     # Bitwise operators
     (r'&', 'BUILTIN'), # Bitwise and
     (r'\|', 'BUILTIN'), # Bitwise or
@@ -73,23 +87,21 @@ ATH_EXPRS = [
     (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?', 'FLOAT'),
     (r'\d+', 'INT'),
     (r'[a-zA-Z]\w*', 'NAME'),
-]
+])
 
 
-class Parser(object):
-    __slots__ = ()
-
-    def __call__(self, *args):
-        raise NotImplementedError('')
-
-
-class KeywordParser(Parser):
-    pass
+def bltinparser(token):
+    return TokenGrafter(token, 'BUILTIN')
+strparser = TagGrafter('STR')
+fltparser = TagGrafter('FLOAT')
+intparser = TagGrafter('INT')
+nameparser = TagGrafter('NAME')
 
 
 class TildeAthInterp(object):
+    """This is supposed to be a Finite State Machine"""
     __slots__ = ()
-    lexer = Lexer(ATH_EXPRS)
+    lexer = ath_lexer
 
     @classmethod
     def execute(cls, script):

@@ -1,8 +1,40 @@
-import operator
+"""~ATH's Abstract Syntax Tree definition.
 
+This contains the data structure of ~ATH syntax and its variables,
+as well as their implementations. This does not, however, contain
+the literals used for lexing.
+"""
 
 class SymbolError(Exception):
     """Raised when a symbol-specific exception occurs."""
+
+
+class AthExpr(object):
+    """Base class of all ~ATH AST nodes."""
+    __slots__ = ()
+
+    def __eq__(self, othr):
+        if isinstance(othr, self.__class__):
+            self_attrs = {slot: getattr(self, slot) for slot in self.__slots__}
+            othr_attrs = {slot: getattr(othr, slot) for slot in othr.__slots__}
+            return self_attrs == othr_attrs
+        return False
+
+    def __hash__(self):
+        return object.__hash__(self)
+
+    def __repr__(self):
+        attr_list = tuple([getattr(self, slot) for slot in self.__slots__])
+        if len(attr_list) == 1:
+            attr_str = repr(attr_list)[:-2] + ')'
+        else:
+            attr_str = repr(attr_list)
+        return '{}{}'.format(self.__class__.__name__, attr_str)
+
+    def eval(self, fsm):
+        raise NotImplementedError(
+            '{} has not been implemented.'.format(self.__class__.__name__)
+            )
 
 
 class AthSymbol(AthExpr):
@@ -36,34 +68,6 @@ class AthSymbol(AthExpr):
 
     def kill(self):
         self.alive = False
-
-
-class AthExpr(object):
-    """Base class of all ~ATH AST nodes."""
-    __slots__ = ()
-
-    def __eq__(self, othr):
-        if isinstance(othr, self.__class__):
-            self_attrs = {slot: getattr(self, slot) for slot in self.__slots__}
-            othr_attrs = {slot: getattr(othr, slot) for slot in othr.__slots__}
-            return self_attrs == othr_attrs
-        return False
-
-    def __hash__(self):
-        return object.__hash__(self)
-
-    def __repr__(self):
-        attr_list = tuple([getattr(self, slot) for slot in self.__slots__])
-        if len(attr_list) == 1:
-            attr_str = repr(attr_list)[:-2] + ')'
-        else:
-            attr_str = repr(attr_list)
-        return '{}{}'.format(self.__class__.__name__, attr_str)
-
-    def eval(self, fsm):
-        raise NotImplementedError(
-            '{} has not been implemented.'.format(self.__class__.__name__)
-            )
 
 
 class ArithExpr(AthExpr):
@@ -117,7 +121,7 @@ class UnaryArithExpr(ArithExpr):
             return abs(value)
         elif self.op == '-':
             return -1 * value
-        elif self.op == '~'
+        elif self.op == '~':
             return ~value
         else:
             raise SyntaxError('Unknown operator: {}', self.op)
@@ -278,7 +282,7 @@ class AndExpr(ValueBoolExpr):
         lval = self.lexpr.eval(fsm)
         rval = self.rexpr.eval(fsm)
         if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-            return lval and rval
+            return lval if not lval.alive else rval
         else:
             msg = 'May only perform boolean operations on symbols, not {}'
             raise TypeError(msg.format(value.__class__.__name__))
@@ -295,7 +299,7 @@ class OrExpr(ValueBoolExpr):
         lval = self.lexpr.eval(fsm)
         rval = self.rexpr.eval(fsm)
         if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-            return lval or rval
+            return rval if not lval.alive else lval
         else:
             msg = 'May only perform boolean operations on symbols, not {}'
             raise TypeError(msg.format(value.__class__.__name__))
@@ -312,14 +316,19 @@ class XorExpr(ValueBoolExpr):
         lval = self.lexpr.eval(fsm)
         rval = self.rexpr.eval(fsm)
         if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-            return AthSymbol(lval.alive ^ rval.alive)
+            if lval.alive and not rval.alive:
+                return lval
+            elif not lval.alive and rval.alive:
+                return rval
+            else:
+                return AthSymbol(False)
         else:
             msg = 'May only perform boolean operations on symbols, not {}'
             raise TypeError(msg.format(value.__class__.__name__))
 
 
 class SymBoolExpr(BoolExpr):
-    """Superclass to all symbol-based boolean syntax."""
+    """Handles all symbol-based boolean syntax."""
     __slots__ = ('op', 'lexpr', 'rexpr')
 
     def __init__(self, op, lexpr, rexpr):
@@ -388,6 +397,20 @@ class BirthFuncStmt(Statement):
         raise NotImplementedError(
             '{} has not been implemented.'.format(self.__class__.__name__)
             )
+
+
+class BirthStmt(Statement):
+    __slots__ = ('name', 'expr')
+
+    def __init__(self, name, expr):
+        self.name = name
+        self.expr = expr
+
+    def eval(self, fsm):
+        result = AthSymbol()
+        result.assign_left(self.expr.eval(fsm))
+        fsm.assign_name(self.name, result)
+
 
 class BifurcateStmt(Statement):
     __slots__ = ('name', 'lexpr', 'rexpr')

@@ -8,6 +8,15 @@ class Graft(object):
         self.value = value
         self.index = index
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self.value, self.index) == (other.value, other.index)
+        else:
+            raise TypeError('May not comapre Grafts to non-Grafts.')
+
+    def __hash__(self):
+        return object.__hash__((self.value, self.index))
+
     def __repr__(self):
         return '{}({}, {})'.format(
             self.__class__.__name__,
@@ -26,12 +35,19 @@ class Grafter(object):
             )
 
     def __add__(self, other):
+        """Overload + operator to do concantenation"""
         return Concatenator(self, other)
 
     def __mul__(self, other):
+        """Overload * operator to do L-R evaluation"""
         return ExprParser(self, other)
 
+    def __or__(self, other):
+        """Overload | operator to do alt selection"""
+        return Selector(self, other)
+
     def __xor__(self, other):
+        """Overload ^ operator to do I-P evaluation"""
         return Evaluator(self, other)
 
 
@@ -39,8 +55,8 @@ class Concatenator(Grafter):
     """Takes two grafters, the left and the right.
 
     It will evaluate the left grafter first, then the right grafter.
-    If both succeed it will return a tuple of the results.
-    Otherwise it will return None.
+    If both succeed it will return a tuple of the results, otherwise
+    it will return None.
     """
     __slots__ = ('leval', 'reval')
 
@@ -55,6 +71,23 @@ class Concatenator(Grafter):
             if rvalue:
                 return Graft((lvalue.value, rvalue.value), rvalue.index)
         return None
+
+
+class Selector(Grafter):
+    """Takes two grafters, the left and the right.
+
+    It will evaluate the left grafter first. If the left grafter is
+    successful, it will return from that. Otherwise it will evaluate
+    and return from the right grafter.
+    """
+    __slots__ = ('leval', 'reval')
+
+    def __init__(self, left, right):
+        self.leval = left
+        self.reval = right
+
+    def __call__(self, tokens, index):
+        return self.leval(tokens, index) or self.reval(tokens, index)
 
 
 class Evaluator(Grafter):
@@ -85,7 +118,7 @@ class ExprParser(Grafter):
     the separators to reference the operations that need to
     be applied to the items. Returns a graft of the result.
     """
-    __slots__ = ('graft', 'graft_next', 'result')
+    __slots__ = ('graft', 'graft_next', 'tokens', 'result')
 
     def __init__(self, grafter, grouper):
         self.graft = grafter
@@ -105,7 +138,7 @@ class ExprParser(Grafter):
 
     def __call__(self, tokens, index):
         self.tokens = tokens
-        self.result = self.grafter(tokens, index)
+        self.result = self.graft(tokens, index)
         oldresult = self.result
         while True:
             self.result = self.graft_next(tokens, self.result.index)
@@ -194,28 +227,18 @@ class Repeater(Grafter):
 
     Used to build a list of arguments, tokens, grafts, or items.
     """
-    __slots__ = ('graft', 'tokens', 'index')
+    __slots__ = ('graft')
 
     def __init__(self, grafter):
         self.graft = grafter
 
-    def __iter__(self):
-        """Return an iterator to follow iterator protocol."""
-        return self
-
-    def __next__(self):
-        """Iterate the next graft."""
-        graft = self.graft(self.tokens, self.index)
-        if graft:
-            self.index = graft.index
-            yield graft
-        else:
-            raise StopIteration
-
     def __call__(self, tokens, index):
-        self.tokens = tokens
-        self.index = index
-        return [graft for graft in self]
+        grafts = []
+        graft = self.graft(tokens, index)
+        while graft:
+            grafts.append(graft.value)
+            graft = self.graft(tokens, graft.index)
+        return Graft(grafts, grafts[-1].index)
 
 
 class LazyGrafter(Grafter):
