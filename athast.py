@@ -4,6 +4,13 @@ This contains the data structure of ~ATH syntax and its variables,
 as well as their implementations. This does not, however, contain
 the literals used for lexing.
 """
+import operator
+
+def isAthValue(self, obj):
+    return (isinstance(obj, int)
+        or isinstance(obj, float)
+        or isinstance(obj, str))
+
 
 class SymbolError(Exception):
     """Raised when a symbol-specific exception occurs."""
@@ -24,12 +31,9 @@ class AthExpr(object):
         return object.__hash__(self)
 
     def __repr__(self):
-        attr_list = tuple([getattr(self, slot) for slot in self.__slots__])
-        if len(attr_list) == 1:
-            attr_str = repr(attr_list)[:-2] + ')'
-        else:
-            attr_str = repr(attr_list)
-        return '{}{}'.format(self.__class__.__name__, attr_str)
+        attr_list = tuple([repr(getattr(self, slot)) for slot in self.__slots__])
+        attr_str = ', '.join(attr_list)
+        return '{}({})'.format(self.__class__.__name__, attr_str)
 
     def eval(self, fsm):
         raise NotImplementedError(
@@ -41,15 +45,25 @@ class AthSymbol(AthExpr):
     """~ATH Variable data structure."""
     __slots__ = ('alive', 'left', 'right')
 
-    def __init__(self, alive=True):
+    def __init__(self, alive=True, left=None, right=None):
         self.alive = alive
-        self.left = None
-        self.right = None
+        self.left = left
+        self.right = right
+
+    def copy(self):
+        newsymbol = AthSymbol(self.alive)
+        if isinstance(self.left, AthSymbol):
+            newsymbol.left = self.left.copy()
+        else:
+            newsymbol.left = self.left
+        if isinstance(self.right, AthSymbol):
+            newsymbol.right = self.right.copy()
+        else:
+            newsymbol.right = self.right
+        return newsymbol
 
     def assign_left(self, value):
-        if (isinstance(value, int)
-            or isinstance(value, float)
-            or isinstance(value, str)
+        if (isAthValue(value)
             or isinstance(value, AthSymbol)):
             self.left = value
         else:
@@ -77,7 +91,10 @@ class ArithExpr(AthExpr):
 
 class NumExpr(ArithExpr):
     """Superclass of both integers and floats."""
-    __slots__ = ('num')
+    __slots__ = ('num',)
+
+    def __init__(self, num):
+        self.num = num
 
     def eval(self, fsm):
         return self.num
@@ -95,41 +112,49 @@ class FloatExpr(NumExpr):
     """
     __slots__ = ()
 
-    def __init__(self, num):
-        self.num = float(num)
-
 
 class IntExpr(NumExpr):
     """Holds integer number values."""
     __slots__ = ()
 
-    def __init__(self, num):
-        self.num = int(num)
-
 
 class UnaryArithExpr(ArithExpr):
     """Handles unary arithmetic expressions."""
     __slots__ = ('op', 'expr')
+    ops = {
+        '+': operator.pos,
+        '-': operator.neg,
+        '~': operator.inv,
+    }
 
     def __init__(self, op, expr):
         self.op = op
         self.expr = expr
 
     def eval(self, fsm):
-        value = self.expr.eval(fsm)
-        if self.op == '+':
-            return abs(value)
-        elif self.op == '-':
-            return -1 * value
-        elif self.op == '~':
-            return ~value
-        else:
+        try:
+            return self.ops[self.op](self.expr.eval(fsm))
+        except KeyError:
             raise SyntaxError('Unknown operator: {}', self.op)
 
 
 class BinaryArithExpr(ArithExpr):
     """Handles binary arithmetic expressions."""
     __slots__ = ('op', 'lexpr', 'rexpr')
+    ops = {
+        '**': operator.pow,
+        '*': operator.mul,
+        '/': operator.truediv,
+        '/_': operator.floordiv,
+        '%': operator.mod,
+        '+': operator.add,
+        '-': operator.sub,
+        '<<': operator.lshift,
+        '>>': operator.rshift,
+        '&': operator.and_,
+        '|': operator.or_,
+        '^': operator.xor,
+    }
 
     def __init__(self, op, lexpr, rexpr):
         self.op = op
@@ -139,27 +164,9 @@ class BinaryArithExpr(ArithExpr):
     def eval(self, fsm):
         lval = self.lexpr.eval(fsm)
         rval = self.rexpr.eval(fsm)
-        if self.op == '**':
-            return lval ** rval
-        elif self.op == '*':
-            return lval * rval
-        elif self.op == '/':
-            return lval / rval
-        elif self.op == '/_':
-            return lval // rval
-        elif self.op == '%':
-            return lval % rval
-        elif self.op == '+':
-            return lval + rval
-        elif self.op == '-':
-            return lval - rval
-        elif self.op == '&':
-            return lval & rval
-        elif self.op == '|':
-            return lval | rval
-        elif self.op == '^':
-            return lval ^ rval
-        else:
+        try:
+            return self.ops[self.op](lval, rval)
+        except KeyError:
             raise SyntaxError('Invalid arithmetic operator: {}', self.op)
 
 
@@ -180,10 +187,10 @@ class BinaryIPExpr(ArithExpr):
 
 class StringExpr(AthExpr):
     """Holds string values."""
-    __slots__ = ('string')
+    __slots__ = ('string',)
 
     def __init__(self, string):
-        self.string = string
+        self.string = string[1:-1]
 
     def eval(self, fsm):
         return self.string
@@ -196,20 +203,29 @@ class AthFunction(AthExpr):
 
 class PrintFunc(AthFunction):
     """Echoes a string to sys.stdout."""
-    __slots__ = ('args')
+    __slots__ = ('args',)
 
-    def __init__(self, *args):
+    def __init__(self, args):
         self.args = args
 
     def eval(self, fsm):
-        raise NotImplementedError(
-            '{} has not been implemented.'.format(self.__class__.__name__)
-            )
+        if len(self.args):
+            if isinstance(self.args[0], StringExpr):
+                frmtstr = self.args[0].string
+            elif isinstance(self.args[0], AthSymbol) and isinstance(self.args[0].left, StringExpr):
+                frmtstr = self.args[0].left.string
+            else:
+                raise TypeError(
+                    'print must take string or symbol with string as first argument'
+                    )
+            print(frmtstr)
+        else:
+            print('')
 
 
 class KillFunc(AthFunction):
     """Kills a ~ATH symbol."""
-    __slots__ = ('name')
+    __slots__ = ('name',)
 
     def __init__(self, name):
         self.name = name
@@ -231,6 +247,14 @@ class ValueBoolExpr(BoolExpr):
 class ValueCmpExpr(ValueBoolExpr):
     """Handles value comparison expressions."""
     __slots__ = ('op', 'lexpr', 'rexpr')
+    ops = {
+        '<': operator.lt,
+        '<=': operator.le,
+        '>': operator.gt,
+        '>=': operator.ge,
+        '==': operator.eq,
+        '~=': operator.ne,
+    }
 
     def __init__(self, op, lexpr, rexpr):
         self.op = op
@@ -240,24 +264,14 @@ class ValueCmpExpr(ValueBoolExpr):
     def eval(self, fsm):
         lval = self.lexpr.eval(fsm)
         rval = self.rexpr.eval(fsm)
-        if self.op == '<':
-            return AthSymbol(lval < rval)
-        elif self.op == '<=':
-            return AthSymbol(lval <= rval)
-        elif self.op == '>':
-            return AthSymbol(lval > rval)
-        elif self.op == '>=':
-            return AthSymbol(lval >= rval)
-        elif self.op == '==':
-            return AthSymbol(lval == rval)
-        elif self.op == '~=':
-            return AthSymbol(lval != rval)
-        else:
+        try:
+            return AthSymbol(self.ops[self.op](lval, rval))
+        except KeyError:
             raise SyntaxError('Invalid comparison operator: {}', self.op)
 
 
 class NotExpr(ValueBoolExpr):
-    __slots__ = ('expr')
+    __slots__ = ('expr',)
 
     def __init__(self, expr):
         self.expr = expr
@@ -367,12 +381,24 @@ class SymBoolExpr(BoolExpr):
             raise TypeError('May only perform living assertions on symbols')
 
 
+class Serialize(AthExpr):
+    __slots__ = ('lexpr', 'rexpr')
+
+    def __init__(self, lexpr, rexpr):
+        self.lexpr = lexpr
+        self.rexpr = rexpr
+
+    def eval(self, fsm):
+        self.lexpr.eval(fsm)
+        self.rexpr.eval(fsm)
+
+
 class Statement(AthExpr):
     """Superclass to all builtin statements."""
     __slots__ = ()
 
 
-class BirthStmt(Statement):
+class ProcreateStmt(Statement):
     __slots__ = ('name', 'expr')
 
     def __init__(self, name, expr):
@@ -380,12 +406,11 @@ class BirthStmt(Statement):
         self.expr = expr
 
     def eval(self, fsm):
-        result = AthSymbol()
-        result.assign_left(self.expr.eval(fsm))
+        result = AthSymbol(left=self.expr.eval(fsm))
         fsm.assign_name(self.name, result)
 
 
-class BirthFuncStmt(Statement):
+class FabricateStmt(Statement):
     __slots__ = ('name', 'argfmt', 'body')
 
     def __init__(self, name, argfmt, body):
@@ -399,7 +424,7 @@ class BirthFuncStmt(Statement):
             )
 
 
-class BirthStmt(Statement):
+class ReplicateStmt(Statement):
     __slots__ = ('name', 'expr')
 
     def __init__(self, name, expr):
@@ -407,9 +432,14 @@ class BirthStmt(Statement):
         self.expr = expr
 
     def eval(self, fsm):
-        result = AthSymbol()
-        result.assign_left(self.expr.eval(fsm))
-        fsm.assign_name(self.name, result)
+        result = self.expr.eval(fsm)
+        if isinstance(result, AthSymbol):
+            symbol = result.copy()
+        elif isinstance(result, AthFunction):
+            symbol = AthSymbol(result.alive, right=result.right)
+        elif isAthValue(result):
+            symbol = AthSymbol(result.alive, left=result.left)
+        fsm.assign_name(self.name, symbol)
 
 
 class BifurcateStmt(Statement):
@@ -423,11 +453,9 @@ class BifurcateStmt(Statement):
     def eval(self, fsm):
         symbol = fsm.lookup_name(self.name)
         if isinstance(symbol, AthSymbol):
-            lval = AthSymbol()
-            rval = AthSymbol()
+            lval = AthSymbol(left=symbol.left)
+            rval = AthSymbol(right=symbol.right)
 
-            lval.assign_left(symbol.left)
-            rval.assign_right(symbol.right)
             fsm.assign_name(self.lname, lval)
             fsm.assign_name(self.rname, rval)
         else:
@@ -505,9 +533,9 @@ class InputStmt(Statement):
         self.prompt = prompt
 
     def eval(self, fsm):
-        result = AthSymbol()
-        result.assign_left(input(self.prompt))
+        result = AthSymbol(left=input(self.prompt.string))
         fsm.assign_name(self.name, result)
+        print([frame.scope_vars for frame in fsm.stack])
 
 
 class TildeAthLoop(Statement):

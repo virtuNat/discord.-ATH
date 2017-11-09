@@ -25,7 +25,7 @@ class Token(object):
 
 class Lexer(object):
     """Lexer used to tokenize a script."""
-    __slots__ = ('expr_list')
+    __slots__ = ('expr_list',)
 
     def __init__(self, expr_list):
         self.expr_list = [

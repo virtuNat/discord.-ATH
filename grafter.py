@@ -28,6 +28,10 @@ class Graft(object):
 class Grafter(object):
     """Grafts tokens together. Primitive."""
     __slots__ = ()
+    def __repr__(self):
+        attr_list = tuple([repr(getattr(self, slot)) for slot in self.__slots__])
+        attr_str = ', '.join(attr_list)
+        return '{}({})'.format(self.__class__.__name__, attr_str)
 
     def __call__(self, *args):
         raise NotImplementedError(
@@ -106,7 +110,8 @@ class Evaluator(Grafter):
         graft = self.graft(tokens, index)
         if graft:
             graft.value = self.apply(graft.value)
-        return graft
+            return graft
+        return None
 
 
 class ExprParser(Grafter):
@@ -118,15 +123,27 @@ class ExprParser(Grafter):
     the separators to reference the operations that need to
     be applied to the items. Returns a graft of the result.
     """
-    __slots__ = ('graft', 'graft_next', 'tokens', 'result')
+    __slots__ = ('graft', 'group', 'tokens', 'result')
 
     def __init__(self, grafter, grouper):
         self.graft = grafter
+        self.group = grouper
+
+    def graft_next(self):
         """Concatenate the separator function and the next item
         and return the graft result of applying eval_next to
-        both is what graft_next does.
+        both. If the separator matches but the next item does not,
+        increment the index and return None.
         """
-        self.graft_next = grouper + grafter ^ self.eval_next
+        sepmatch = self.group(self.tokens, self.result.index)
+        if sepmatch:
+            item = self.graft(self.tokens, sepmatch.index)
+            if item:
+                item.value = self.eval_next((sepmatch.value, item.value))
+                return item
+            else:
+                self.result.index += 1
+        return None
 
     def eval_next(self, graft):
         """Using the function bound to the separator, and the
@@ -139,14 +156,12 @@ class ExprParser(Grafter):
     def __call__(self, tokens, index):
         self.tokens = tokens
         self.result = self.graft(tokens, index)
-        oldresult = self.result
-        while True:
-            self.result = self.graft_next(tokens, self.result.index)
-            if self.result:
-                oldresult = self.result
-            else:
-                return oldresult
-
+        newresult = self.result
+        while newresult:
+            newresult = self.graft_next()
+            if newresult:
+                self.result = newresult
+        return self.result
 
 class TokenGrafter(Token, Grafter):
     """A grafter wrapper around a representative token value.
@@ -172,6 +187,7 @@ class TokenGrafter(Token, Grafter):
     def __call__(self, tokens, index):
         try:
             if self == tokens[index]:
+                # print(tokens[index])
                 return Graft(self.token, index + 1)
         except IndexError:
             pass
@@ -180,7 +196,7 @@ class TokenGrafter(Token, Grafter):
 
 class TagGrafter(Grafter):
     """TokenGrafter, but only matches tags."""
-    __slots__ = ('tag')
+    __slots__ = ('tag',)
 
     def __init__(self, tag):
         self.tag = tag
@@ -200,6 +216,7 @@ class TagGrafter(Grafter):
     def __call__(self, tokens, index):
         try:
             if self == tokens[index]:
+                # print(tokens[index])
                 return Graft(tokens[index].token, index + 1)
         except IndexError:
             pass
@@ -212,7 +229,7 @@ class EnsureGraft(Grafter):
 
     Used when some syntax is optional in a statement or clause.
     """
-    __slots__ = ('graft')
+    __slots__ = ('graft',)
 
     def __init__(self, grafter):
         self.graft = grafter
@@ -227,7 +244,7 @@ class Repeater(Grafter):
 
     Used to build a list of arguments, tokens, grafts, or items.
     """
-    __slots__ = ('graft')
+    __slots__ = ('graft',)
 
     def __init__(self, grafter):
         self.graft = grafter
@@ -237,8 +254,9 @@ class Repeater(Grafter):
         graft = self.graft(tokens, index)
         while graft:
             grafts.append(graft.value)
-            graft = self.graft(tokens, graft.index)
-        return Graft(grafts, grafts[-1].index)
+            index = graft.index
+            graft = self.graft(tokens, index)
+        return Graft(grafts, index)
 
 
 class LazyGrafter(Grafter):
@@ -266,7 +284,7 @@ class StrictGrafter(Grafter):
 
     Used to prevent partially matching garbage code.
     """
-    __slots__ = ('grafter')
+    __slots__ = ('grafter',)
 
     def __init__(self, grafter):
         self.grafter = grafter

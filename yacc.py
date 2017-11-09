@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from parser import TildeAthInterp
+from athparser import TildeAthInterp
 
 
 if __name__ == '__main__':
@@ -14,4 +14,5 @@ if __name__ == '__main__':
     cmdargs = cmdparser.parse_args()
     with open(cmdargs.script, 'r') as codefile:
         script = codefile.read()
-        TildeAthInterp.execute(script)
+        ath_interp = TildeAthInterp()
+        ath_interp.execute(script)
