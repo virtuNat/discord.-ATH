@@ -1,4 +1,4 @@
-BIRTH LOOP;
+PROCREATE LOOP;
 ~ATH(LOOP) {
 	input NAME "What's your name? ";
 	print ("Hello, ~s\n!", NAME);
