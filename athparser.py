@@ -196,7 +196,7 @@ def stmtparser():
         | inputstmt()
         | printfunc()
         )
-    series_grouper = bltinparser(';') ^ (lambda _: Serialize)
+    series_grouper = bltinparser(',') ^ (lambda _: Serialize)
     return statements * series_grouper
 
 

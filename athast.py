@@ -535,7 +535,6 @@ class InputStmt(Statement):
     def eval(self, fsm):
         result = AthSymbol(left=input(self.prompt.string))
         fsm.assign_name(self.name, result)
-        print([frame.scope_vars for frame in fsm.stack])
 
 
 class TildeAthLoop(Statement):
