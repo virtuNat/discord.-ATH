@@ -1,0 +1,37 @@
+import "MergeImplementation.ATH";
+
+PROCREATE LOOP;
+PROCREATE LIST NULL;
+PROCREATE COUNT 0;
+~ATH(LOOP) {
+	print ("Select action:");
+	print ("[1] Add an integer to the list");
+	print ("[2] Sort and print list");
+	print ("[3] Exit");
+	input CHOICE;
+	
+	WHEN (CHOICE == 3) {
+		LOOP.DIE();
+	} UNLESS (CHOICE == 2) {
+		REPLICATE LIST EXECUTE(MERGE, LIST);
+		// MergeImplementation will be written so it sorts the values in
+		// decreasing order to make it easier to print
+		REPLICATE SORTED LIST;
+		
+		PROCREATE END;
+		~ATH(END) {
+			BIFURCATE SORTED[HEAD, TAIL];
+			BIFURCATE HEAD[INDEX, VALUE];
+			print ("~d\n", VALUE);
+			REPLICATE END TAIL;
+		}
+	} UNLESS (CHOICE == 1) {
+		input ITEM "Integer to add :";
+		AGGREGATE [COUNT, ITEM]HEAD;
+		AGGREGATE [HEAD, LIST]LIST;
+		COUNT += 1;
+	} UNLESS {
+		print ("Invalid input.");
+	}
+}
+THIS.DIE();
