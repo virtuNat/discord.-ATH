@@ -73,6 +73,8 @@ class Concatenator(Grafter):
         if lvalue:
             rvalue = self.reval(tokens, lvalue.index)
             if rvalue:
+                if isinstance(lvalue.value, tuple):
+                    return Graft(lvalue.value + (rvalue.value,), rvalue.index)
                 return Graft((lvalue.value, rvalue.value), rvalue.index)
         return None
 
@@ -129,6 +131,13 @@ class ExprParser(Grafter):
         self.graft = grafter
         self.group = grouper
 
+    def __repr__(self):
+        return '{}({}, {})'.format(
+            self.__class__.__name__,
+            self.graft,
+            self.group
+            )
+
     def graft_next(self):
         """Concatenate the separator function and the next item
         and return the graft result of applying eval_next to
@@ -139,7 +148,7 @@ class ExprParser(Grafter):
         if sepmatch:
             item = self.graft(self.tokens, sepmatch.index)
             if item:
-                item.value = self.eval_next((sepmatch.value, item.value))
+                item.value = sepmatch.value(self.result.value, item.value)
                 return item
             else:
                 self.result.index += 1
@@ -171,6 +180,10 @@ class TokenGrafter(Token, Grafter):
     return None.
     """
     __slots__ = ()
+
+    def __repr__(self):
+        attr_str = ', '.join([repr(self.token), repr(self.tag), '0'])
+        return '{}({})'.format(self.__class__.__name__, attr_str)
 
     def __eq__(self, other):
         try:
@@ -291,6 +304,7 @@ class StrictGrafter(Grafter):
 
     def __call__(self, tokens, index):
         graft = self.grafter(tokens, index)
+        print(graft)
         if graft.index == len(tokens):
             return graft
         return None
