@@ -1,5 +1,6 @@
 from lexer import Token
 
+
 class Graft(object):
     """As the name implies, a graft of the AST's leaves."""
     __slots__ = ('value', 'index')
@@ -154,14 +155,6 @@ class ExprParser(Grafter):
                 self.result.index += 1
         return None
 
-    def eval_next(self, graft):
-        """Using the function bound to the separator, and the
-        item currently being looked at, evaluate the function
-        on the current expression result and the item.
-        """
-        sep_func, next_item = graft
-        return sep_func(self.result.value, next_item)
-
     def __call__(self, tokens, index):
         self.tokens = tokens
         self.result = self.graft(tokens, index)
@@ -171,6 +164,34 @@ class ExprParser(Grafter):
             if newresult:
                 self.result = newresult
         return self.result
+
+
+class StrictExpr(Grafter):
+    """ExprParser, but strict and doesn't allow dangling separators."""
+    __slots__ = ('graft', 'group', 'result', 'graft_next')
+
+    def __init__(self, grafter, grouper):
+        self.graft = grafter
+        self.group = grouper
+        self.graft_next = self.group + self.graft ^ self.eval_next
+
+    def eval_next(self, graft):
+        """Using the function bound to the separator, and the
+        item currently being looked at, evaluate the function
+        on the current expression result and the item.
+        """
+        sep_func, next_item = graft
+        return sep_func(self.result.value, next_item)
+
+    def __call__(self, tokens, index):
+        self.result = self.graft(tokens, index)
+        newresult = self.result
+        while newresult:
+            newresult = self.graft_next(tokens, self.result.index)
+            if newresult:
+                self.result = newresult
+        return self.result
+
 
 class TokenGrafter(Token, Grafter):
     """A grafter wrapper around a representative token value.
@@ -266,9 +287,10 @@ class Repeater(Grafter):
         grafts = []
         graft = self.graft(tokens, index)
         while graft:
+            # print(graft)
             grafts.append(graft.value)
             index = graft.index
-            graft = self.graft(tokens, index)
+            graft = self.graft(tokens, index)     
         return Graft(grafts, index)
 
 

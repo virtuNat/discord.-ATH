@@ -6,88 +6,8 @@ the literals used for lexing.
 """
 import re
 import operator
-
-def isAthValue(obj):
-    return (isinstance(obj, int)
-        or isinstance(obj, float)
-        or isinstance(obj, str))
-
-
-class SymbolError(Exception):
-    """Raised when a symbol-specific exception occurs."""
-
-
-class AthExpr(object):
-    """Base class of all ~ATH AST nodes."""
-    __slots__ = ()
-
-    def __eq__(self, othr):
-        if isinstance(othr, self.__class__):
-            self_attrs = {slot: getattr(self, slot) for slot in self.__slots__}
-            othr_attrs = {slot: getattr(othr, slot) for slot in othr.__slots__}
-            return self_attrs == othr_attrs
-        return False
-
-    def __hash__(self):
-        return object.__hash__(self)
-
-    def __repr__(self):
-        attr_list = tuple([repr(getattr(self, slot)) for slot in self.__slots__])
-        attr_str = ', '.join(attr_list)
-        return '{}({})'.format(self.__class__.__name__, attr_str)
-
-    def eval(self, fsm):
-        raise NotImplementedError(
-            '{} has not been implemented.'.format(self.__class__.__name__)
-            )
-
-
-class AthSymbol(AthExpr):
-    """~ATH Variable data structure."""
-    __slots__ = ('alive', 'left', 'right')
-
-    def __init__(self, alive=True, left=None, right=None):
-        self.alive = alive
-        self.left = left
-        self.right = right
-
-    def copy(self):
-        newsymbol = AthSymbol()
-        if isinstance(self.left, AthSymbol):
-            newsymbol.left = self.left.copy()
-        else:
-            newsymbol.left = self.left
-        if isinstance(self.right, AthSymbol):
-            newsymbol.right = self.right.copy()
-        else:
-            newsymbol.right = self.right
-        return newsymbol
-
-    def assign_left(self, value):
-        if (isAthValue(value)
-            or isinstance(value, AthSymbol)):
-            self.left = value
-        else:
-            raise TypeError(
-                'May only assign constants or symbols to left'
-                )
-
-    def assign_right(self, value):
-        if (isinstance(value, AthFunction)
-            or isinstance(value, AthSymbol)):
-            self.right = value
-        else:
-            raise TypeError(
-                'May only assign functions or symbols to right'
-                )
-
-    def kill(self):
-        self.alive = False
-
-
-class AthFunction(AthExpr):
-    """Superclass of all ~ATH functions."""
-    __slots__ = ()
+from symbol import isAthValue, AthExpr, AthSymbol, AthFunction
+from symbol import SymbolError, SymbolDeath, EndTilDeath
 
 
 class VarExpr(AthExpr):
@@ -186,13 +106,9 @@ class BinaryArithExpr(ArithExpr):
 
     def eval(self, fsm):
         lval = self.lexpr.eval(fsm)
-        if isinstance(lval, AthSymbol):
-            lval = lval.left
         rval = self.rexpr.eval(fsm)
-        if isinstance(rval, AthSymbol):
-            rval = rval.left
         try:
-            return AthSymbol(left=self.ops[self.op](lval, rval))
+            return self.ops[self.op](lval, rval)
         except KeyError:
             raise SyntaxError('Invalid arithmetic operator: {}', self.op)
 
@@ -228,12 +144,7 @@ class BoolExpr(AthExpr):
     __slots__ = ()
 
 
-class ValueBoolExpr(BoolExpr):
-    """Superclass to all value-based boolean syntax."""
-    __slots__ = ()
-
-
-class ValueCmpExpr(ValueBoolExpr):
+class ValueCmpExpr(BoolExpr):
     """Handles value comparison expressions."""
     __slots__ = ('op', 'lexpr', 'rexpr')
     ops = {
@@ -254,12 +165,12 @@ class ValueCmpExpr(ValueBoolExpr):
         lval = self.lexpr.eval(fsm)
         rval = self.rexpr.eval(fsm)
         try:
-            return AthSymbol(self.ops[self.op](lval, rval))
+            return AthSymbol(self.ops[self.op](lval, rval).alive)
         except KeyError:
             raise SyntaxError('Invalid comparison operator: {}', self.op)
 
 
-class NotExpr(ValueBoolExpr):
+class NotExpr(BoolExpr):
     __slots__ = ('expr',)
 
     def __init__(self, expr):
@@ -274,7 +185,7 @@ class NotExpr(ValueBoolExpr):
             raise TypeError(msg.format(value.__class__.__name__))
 
 
-class AndExpr(ValueBoolExpr):
+class AndExpr(BoolExpr):
     __slots__ = ('lexpr', 'rexpr')
 
     def __init__(self, lexpr, rexpr):
@@ -285,13 +196,13 @@ class AndExpr(ValueBoolExpr):
         lval = self.lexpr.eval(fsm)
         rval = self.rexpr.eval(fsm)
         if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-            return lval if not lval.alive else rval
+            return lval and rval
         else:
             msg = 'May only perform boolean operations on symbols, not {}'
             raise TypeError(msg.format(value.__class__.__name__))
 
 
-class OrExpr(ValueBoolExpr):
+class OrExpr(BoolExpr):
     __slots__ = ('lexpr', 'rexpr')
 
     def __init__(self, lexpr, rexpr):
@@ -302,13 +213,13 @@ class OrExpr(ValueBoolExpr):
         lval = self.lexpr.eval(fsm)
         rval = self.rexpr.eval(fsm)
         if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-            return rval if not lval.alive else lval
+            return lval or rval
         else:
             msg = 'May only perform boolean operations on symbols, not {}'
             raise TypeError(msg.format(value.__class__.__name__))
 
 
-class XorExpr(ValueBoolExpr):
+class XorExpr(BoolExpr):
     __slots__ = ('lexpr', 'rexpr')
 
     def __init__(self, lexpr, rexpr):
@@ -319,9 +230,9 @@ class XorExpr(ValueBoolExpr):
         lval = self.lexpr.eval(fsm)
         rval = self.rexpr.eval(fsm)
         if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-            if lval.alive and not rval.alive:
+            if lval and not rval:
                 return lval
-            elif not lval.alive and rval.alive:
+            elif not lval and rval:
                 return rval
             else:
                 return AthSymbol(False)
@@ -370,16 +281,34 @@ class SymBoolExpr(BoolExpr):
             raise TypeError('May only perform living assertions on symbols')
 
 
-class Serialize(AthExpr):
-    __slots__ = ('lexpr', 'rexpr')
+class TernaryExpr(ArithExpr):
+    __slots__ = ('when_suite', 'clause', 'unless_suite')
 
-    def __init__(self, lexpr, rexpr):
-        self.lexpr = lexpr
-        self.rexpr = rexpr
+    def __init__(self, when_suite, clause, unless_suite):
+        self.when_suite = when_suite
+        self.clause = clause
+        self.unless_suite = unless_suite
 
     def eval(self, fsm):
-        self.lexpr.eval(fsm)
-        self.rexpr.eval(fsm)
+        if self.clause.eval(fsm):
+            return self.when_suite.eval(fsm)
+        else:
+            return self.unless_suite.eval(fsm)
+
+
+class Serialize(AthExpr):
+    __slots__ = ('stmt_list', 'ctrl_name')
+
+    def __init__(self, stmt_list):
+        self.stmt_list = stmt_list
+        self.ctrl_name = 'THIS'
+
+    def eval(self, fsm):
+        for stmt in self.stmt_list:
+            try:
+                stmt.eval(fsm)
+            except SymbolDeath:
+                raise
 
 
 class Statement(AthExpr):
@@ -397,8 +326,13 @@ class TildeAthLoop(Statement):
     def eval(self, fsm):
         dying = self.grave.eval(fsm)
         fsm.push_stack()
-        while dying.alive:
-            self.body.eval(fsm)
+        while True:
+            try:
+                self.body.eval(fsm)
+            except SymbolDeath:
+                dying = self.grave.eval(fsm)
+                if not dying:
+                    break
         fsm.pop_stack()
 
 
@@ -407,11 +341,21 @@ class InputStmt(Statement):
 
     def __init__(self, name, prompt):
         self.name = name
-        self.prompt = prompt
+        self.prompt = prompt if prompt is not None else StringExpr('')
 
     def eval(self, fsm):
-        result = AthSymbol(left=input(self.prompt.string))
-        fsm.assign_name(self.name.name, result)
+        prompt = self.prompt.eval(fsm)
+        if isinstance(prompt, AthSymbol):
+            prompt = promp.left
+        value = input(prompt)
+        try:
+            value = int(value)
+        except ValueError:
+            try:
+                value = float(value)
+            except ValueError:
+                pass
+        fsm.assign_name(self.name.name, AthSymbol(left=value))
 
 
 class ProcreateStmt(Statement):
@@ -423,10 +367,12 @@ class ProcreateStmt(Statement):
 
     def eval(self, fsm):
         result = self.expr.eval(fsm)
-        if isinstance(result, AthSymbol):
-            pass
-        elif isAthValue(result):
-            result = AthSymbol(left=result)
+        if not isinstance(result, AthSymbol):
+            symbol = AthSymbol()
+            symbol.assign_left(result)
+            result = symbol
+        elif self.expr.name == 'NULL':
+            result = AthSymbol()
         fsm.assign_name(self.name.name, result)
 
 
@@ -437,6 +383,18 @@ class FabricateStmt(Statement):
         self.name = name
         self.argfmt = argfmt
         self.body = body
+
+    def eval(self, fsm):
+        raise NotImplementedError(
+            '{} has not been implemented.'.format(self.__class__.__name__)
+            )
+
+
+class ExecuteStmt(Statement):
+    __slots__ = ('args',)
+
+    def __init__(self, args):
+        self.args = args
 
     def eval(self, fsm):
         raise NotImplementedError(
@@ -467,6 +425,9 @@ class PrintFunc(Statement):
         frmtstr = re.sub(r'(?<!\\)~d', '{:.0f}', frmtstr)
         frmtstr = re.sub(r'(?<!\\)~((?:\d)?\.\d)?f', '{:\1f}', frmtstr)
         frmtstr = re.sub(r'(?<=\\)~', '~', frmtstr)
+        frmtstr = re.sub(r'\\t', '\t', frmtstr)
+        frmtstr = re.sub(r'\\r', '\r', frmtstr)
+        frmtstr = re.sub(r'\\n', '\n', frmtstr)
         if len(self.args) > 1:
             frmtargs = []
             for arg in self.args[1:]:
@@ -474,6 +435,7 @@ class PrintFunc(Statement):
                 if isAthValue(result):
                     frmtargs.append(result)
                 elif isinstance(result, AthSymbol):
+                    # print(result)
                     if isAthValue(result.left):
                         frmtargs.append(result.left)
                     else:
@@ -488,7 +450,7 @@ class PrintFunc(Statement):
             frmtedstr = self.format(frmtstr, fsm)
         else:
             frmtedstr = ''
-        print(frmtedstr)
+        print(frmtedstr, end='')
 
 
 class KillFunc(Statement):
@@ -504,7 +466,10 @@ class KillFunc(Statement):
             raise TypeError(
                 'DIE() expects 0 arguments, got: {}'.format(len(self.args))
                 )
+        if self.name.name == 'THIS':
+            raise EndTilDeath
         self.name.eval(fsm).kill()
+        raise SymbolDeath
 
 
 class ReplicateStmt(Statement):
@@ -536,9 +501,18 @@ class BifurcateStmt(Statement):
     def eval(self, fsm):
         symbol = self.name.eval(fsm)
         if isinstance(symbol, AthSymbol):
-            if self.lexpr.name != 'NULL':
+            if isinstance(symbol.left, AthSymbol):
+                fsm.assign_name(self.lexpr.name, symbol.left)
+            elif symbol.left is None:
+                fsm.assign_name(self.lexpr.name, AthSymbol(False))
+            else:
                 fsm.assign_name(self.lexpr.name, AthSymbol(left=symbol.left))
-            if self.rexpr.name != 'NULL':
+
+            if isinstance(symbol.right, AthSymbol):
+                fsm.assign_name(self.rexpr.name, symbol.right)
+            elif symbol.right is None:
+                fsm.assign_name(self.rexpr.name, AthSymbol(False))
+            else:
                 fsm.assign_name(self.rexpr.name, AthSymbol(right=symbol.right))
         else:
             raise SymbolError('May not bifurcate non-symbol')
@@ -562,46 +536,37 @@ class AggregateStmt(Statement):
         fsm.assign_name(self.name.name, result)
 
 
-class WhenStmt(Statement):
-    __slots__ = ('clause', 'when_suite', 'unless_suite')
+class BreakUnless(Exception):
+    """Raised when an Unless clause successfuly executes."""
 
-    def __init__(self, clause, when_suite, unless_suite):
+
+class WhenStmt(Statement):
+    __slots__ = ('clause', 'suite', 'unlesses')
+
+    def __init__(self, clause, suite, unlesses):
         self.clause = clause
-        self.when_suite = when_suite
-        self.unless_suite = unless_suite
+        self.suite = suite
+        self.unlesses = unlesses
 
     def eval(self, fsm):
         if self.clause.eval(fsm):
-            self.when_suite.eval(fsm)
-        elif self.unless_suite:
-            self.unless_suite.eval(fsm)
+            self.suite.eval(fsm)
+        elif self.unlesses:
+            for unless in self.unlesses:
+                try:
+                    unless.eval(fsm)
+                except BreakUnless:
+                    break
 
 
 class UnlessStmt(Statement):
-    __slots__ = ('clause', 'this_suite', 'next_suite')
+    __slots__ = ('clause', 'body')
 
-    def __init__(self, clause, this_suite, next_suite):
+    def __init__(self, clause, body):
         self.clause = clause
-        self.this_suite = this_suite
-        self.next_suite = next_suite
+        self.body = body
 
     def eval(self, fsm):
         if self.clause is None or self.clause.eval(fsm):
-            self.this_suite.eval(fsm)
-        elif self.next_suite:
-            self.next_suite.eval(fsm)
-
-
-class TernaryStmt(Statement):
-    __slots__ = ('when_suite', 'clause', 'unless_suite')
-
-    def __init__(self, when_suite, clause, unless_suite):
-        self.when_suite = when_suite
-        self.clause = clause
-        self.unless_suite = unless_suite
-
-    def eval(self, fsm):
-        if self.clause.eval(fsm):
-            return self.when_suite.eval(fsm)
-        else:
-            return self.unless_suite.eval(fsm)
+            self.body.eval(fsm)
+            raise BreakUnless
