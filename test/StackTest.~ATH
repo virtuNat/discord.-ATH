@@ -15,7 +15,7 @@ PROCREATE STACK NULL;
 		REPLICATE TEMP STACK;
 		~ATH(BLAH) {
 			BIFURCATE TEMP[TEMP, TAIL];
-			WHEN (!TEMP) {
+			WHEN (TEMP) {
 				print ("~s\n", TAIL);
 			} UNLESS {
 				BLAH.DIE();
