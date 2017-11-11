@@ -1,4 +1,4 @@
-PROCREATE LOOP;
+PROCREATE LOOP 1;
 PROCREATE STACK NULL;
 
 ~ATH(LOOP) {
@@ -6,12 +6,12 @@ PROCREATE STACK NULL;
 	print ("[1] Add an item to stack\n");
 	print ("[2] View stack\n");
 	print ("[3] Exit\n");
-	input CHOICE;
+	input CHOICE 0;
 	
 	WHEN (CHOICE == 3) {
 		LOOP.DIE();
 	} UNLESS (CHOICE == 2) {
-		PROCREATE BLAH;
+		PROCREATE BLAH 0;
 		REPLICATE TEMP STACK;
 		~ATH(BLAH) {
 			BIFURCATE TEMP[TEMP, TAIL];
