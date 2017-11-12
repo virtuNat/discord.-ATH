@@ -1,1 +1,1 @@
-Graft(Serialize(ProcreateStmt(VarExpr('LOOP'), IntExpr(1)), ProcreateStmt(VarExpr('STACK'), VarExpr('NULL'))), 8)
+Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(1)), ProcreateStmt(VarExpr('STACK'), VarExpr('NULL'))], 'THIS'), 8)

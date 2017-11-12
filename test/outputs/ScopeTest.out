@@ -1,1 +1,1 @@
-Graft(ProcreateStmt(VarExpr('B'), IntExpr(5)), 4)
+Graft(Serialize([ProcreateStmt(VarExpr('B'), IntExpr(5))], 'THIS'), 4)

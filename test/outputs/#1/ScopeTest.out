@@ -1,0 +1,1 @@
+Graft(ProcreateStmt(VarExpr('B'), IntExpr(5)), 4)
