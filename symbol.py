@@ -134,7 +134,7 @@ class AthSymbol(AthExpr):
     __le__ = partialmethod(cmpop, op=operator.le)
 
     def copy(self):
-        newsymbol = AthSymbol()
+        newsymbol = AthSymbol(self.alive)
         if isinstance(self.left, AthSymbol):
             newsymbol.left = self.left.copy()
         else:

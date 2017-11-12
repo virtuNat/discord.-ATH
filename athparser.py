@@ -341,7 +341,12 @@ def inputstmt():
     return (
         bltinparser('input')
         + nameparser
-        + EnsureGraft(strparser | exprparser())
+        + EnsureGraft(
+            strparser
+            | fltparser
+            | intparser
+            | nameparser
+            )
         + bltinparser(';')
         ^ breakdown
         )
@@ -484,7 +489,7 @@ class AthStackFrame(object):
         except KeyError:
             pass
         else:
-            echo_error('SymbolError: Builtins cannot be assigned to!')
+            raise SymbolError('Builtins cannot be assigned to!')
 
         if value is None:
             value = AthSymbol(True)
@@ -507,7 +512,7 @@ class TildeAthInterp(object):
             if value is not None:
                 # print('{} found'.format(name))
                 return value
-        echo_error('NameError: Symbol {} not found'.format(name))
+        raise NameError('Symbol {} not found'.format(name))
 
     def assign_name(self, name, value):
         # print('{} assigned'.format(name))
@@ -520,7 +525,7 @@ class TildeAthInterp(object):
         if len(self.stack) > 1:
             return self.stack.pop()
         else:
-            echo_error('RuntimeError: Attempted to empty stack')
+            raise RuntimeError('Attempted to empty stack')
 
     def execute(self, script):
         try:

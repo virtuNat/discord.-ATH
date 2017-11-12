@@ -294,7 +294,7 @@ class Repeater(Grafter):
         grafts = []
         graft = self.graft(tokens, index)
         while graft:
-            print(graft)
+            print(graft.value)
             grafts.append(graft.value)
             index = graft.index
             graft = self.graft(tokens, index)     

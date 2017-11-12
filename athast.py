@@ -346,7 +346,12 @@ class InputStmt(Statement):
     def eval(self, fsm):
         prompt = self.prompt.eval(fsm)
         if isinstance(prompt, AthSymbol):
-            prompt = promp.left
+            if isAthValue(prompt.left):
+                prompt = prompt.left
+            elif prompt.left is None:
+                prompt = ''
+            else:
+                raise SymbolError('Invalid prompt!')
         value = input(prompt)
         try:
             value = int(value)
@@ -426,9 +431,11 @@ class PrintFunc(Statement):
         frmtstr = re.sub(r'(?<!\\)~((?:\d)?\.\d)?f', '{:\1f}', frmtstr)
         frmtstr = re.sub(r'(?<=\\)~', '~', frmtstr)
         # Replace whitespace character escapes
+        frmtstr = re.sub(r'\\a', '\a', frmtstr)
+        frmtstr = re.sub(r'\\b', '\b', frmtstr)
         frmtstr = re.sub(r'\\t', '\t', frmtstr)
-        frmtstr = re.sub(r'\\t', '\v', frmtstr)
-        frmtstr = re.sub(r'\\t', '\f', frmtstr)
+        frmtstr = re.sub(r'\\v', '\v', frmtstr)
+        frmtstr = re.sub(r'\\f', '\f', frmtstr)
         frmtstr = re.sub(r'\\r', '\r', frmtstr)
         frmtstr = re.sub(r'\\n', '\n', frmtstr)
         # Grab the format arguments
@@ -487,8 +494,9 @@ class ReplicateStmt(Statement):
         result = self.expr.eval(fsm)
         if isinstance(result, AthSymbol):
             symbol = result.copy()
+            symbol.alive = True
         elif isAthValue(result):
-            symbol = AthSymbol(result.alive, left=result.left)
+            symbol = AthSymbol(left=result.left)
         else:
             raise SymbolError('Bad copy: {}'.format(result))
         fsm.assign_name(self.name.name, symbol)
@@ -502,19 +510,22 @@ class BifurcateStmt(Statement):
         self.lexpr = lexpr
         self.rexpr = rexpr
 
-    def assign_half(self, fsm, name, value):
+    def assign_half(self, fsm, name, value, left):
         if isinstance(value, AthSymbol):
             fsm.assign_name(name, value)
         elif value is None:
             fsm.assign_name(name, AthSymbol(False))
         else:
-            fsm.assign_name(name, AthSymbol(left=value))
+            if left:
+                fsm.assign_name(name, AthSymbol(left=value))
+            else:
+                fsm.assign_name(name, AthSymbol(right=value))
 
     def eval(self, fsm):
         symbol = self.name.eval(fsm)
         if isinstance(symbol, AthSymbol):
-            self.assign_half(fsm, self.lexpr.name, symbol.left)
-            self.assign_half(fsm, self.rexpr.name, symbol.right)
+            self.assign_half(fsm, self.lexpr.name, symbol.left, True)
+            self.assign_half(fsm, self.rexpr.name, symbol.right, False)
         else:
             raise SymbolError('May not bifurcate non-symbol')
 
@@ -528,13 +539,17 @@ class AggregateStmt(Statement):
         self.name = name
 
     def eval(self, fsm):
-        result = AthSymbol()
-        lval = self.lexpr.eval(fsm)
-        rval = self.rexpr.eval(fsm)
+        newflag = False
+        try:
+            result = self.name.eval(fsm)
+        except NameError:
+            newflag = True
+            result = AthSymbol()
 
-        result.assign_left(lval)
-        result.assign_right(rval)
-        fsm.assign_name(self.name.name, result)
+        result.assign_left(self.lexpr.eval(fsm))
+        result.assign_right(self.rexpr.eval(fsm))
+        if newflag:
+            fsm.assign_name(self.name.name, result)
 
 
 class BreakUnless(Exception):
