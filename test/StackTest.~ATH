@@ -6,7 +6,7 @@ PROCREATE STACK NULL;
 	print ("[1] Add an item to stack\n");
 	print ("[2] View stack\n");
 	print ("[3] Exit\n");
-	input CHOICE 0;
+	input CHOICE;
 	
 	WHEN (CHOICE == 3) {
 		LOOP.DIE();

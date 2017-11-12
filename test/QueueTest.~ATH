@@ -1,6 +1,5 @@
 PROCREATE LOOP 1;
-AGGREGATE [NULL, NULL]FILLER;
-PROCREATE QUEUE FILLER;
+PROCREATE QUEUE NULL;
 
 ~ATH(LOOP) {
 	print ("Select action:\n");
@@ -12,16 +11,33 @@ PROCREATE QUEUE FILLER;
 	WHEN (CHOICE == 3) {
 		LOOP.DIE();
 	} UNLESS (CHOICE == 2) {
+		PROCREATE BLAH 0;
+		PROCREATE STACK NULL;
 		REPLICATE TEMP QUEUE;
-		~ATH(TEMP !=! NULL) {
+		~ATH(BLAH) {
 			BIFURCATE TEMP[HEAD, TEMP];
-			print ("~s\n", HEAD);
+			WHEN(TEMP) {
+				print ("~s\n", HEAD);
+				AGGREGATE [STACK, HEAD]STACK;
+			} UNLESS {
+				BLAH.DIE();
+			}
 		}
+		print ("Stack print done.\n");
+		PROCREATE OOF 0;
+		~ATH(OOF) {
+			BIFURCATE STACK[STACK, TAIL];
+			print ("I went oof.\n");
+			WHEN (STACK) {
+				print ("~s\n", TAIL);
+			} UNLESS {
+				OOF.DIE();
+			}
+		}
+		print ("Queue print done.\n");
 	} UNLESS (CHOICE == 1){
 		input ITEM "Input string to add: ";
-		BIFURCATE QUEUE[HEAD, TAIL];
-		AGGREGATE [NEWITEM,TAIL]NEWITEM;
-		AGGREGATE [HEAD, NEWITEM]QUEUE;
+		AGGREGATE [ITEM, QUEUE]QUEUE;
 	} UNLESS {
 		print ("Invalid input.");
 	}

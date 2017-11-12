@@ -1,1 +1,147 @@
-Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(1)), ProcreateStmt(VarExpr('STACK'), VarExpr('NULL'))], 'THIS'), 8)
+Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(1)), ProcreateStmt(VarExpr('STACK'), VarExpr('NULL')), TildeAthLoop(VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Select action:\\n')]), PrintFunc([StringExpr('[1] Add an item to stack\\n')]), PrintFunc([StringExpr('[2] View stack\\n')]), PrintFunc([StringExpr('[3] Exit\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), WhenStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(3)), Serialize([KillFunc(VarExpr('LOOP'), [])], 'THIS'), [UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ReplicateStmt(VarExpr('TEMP'), VarExpr('STACK')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL')), WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])], 'THIS'))], 'THIS')), UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('STACK'), VarExpr('ITEM'), VarExpr('STACK'))], 'THIS')), UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], 'THIS'))])], 'THIS')), KillFunc(VarExpr('THIS'), [])], 'THIS'), 137)
+Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Input string to add: Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Aradia
+Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Input string to add: Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Input string to add: Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Invalid input.Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Sollux
+Tavros
+Aradia
+Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+{'LOOP': AthSymbol(False, 1, None), 'STACK': AthSymbol(True, None, None)}
+ProcreateStmt(VarExpr('LOOP'), IntExpr(1))
+ProcreateStmt(VarExpr('STACK'), VarExpr('NULL'))
+StringExpr('Select action:\\n')
+PrintFunc([StringExpr('Select action:\\n')])
+StringExpr('[1] Add an item to stack\\n')
+PrintFunc([StringExpr('[1] Add an item to stack\\n')])
+StringExpr('[2] View stack\\n')
+PrintFunc([StringExpr('[2] View stack\\n')])
+StringExpr('[3] Exit\\n')
+PrintFunc([StringExpr('[3] Exit\\n')])
+InputStmt(VarExpr('CHOICE'), StringExpr(''))
+KillFunc(VarExpr('LOOP'), [])
+ProcreateStmt(VarExpr('BLAH'), IntExpr(0))
+ReplicateStmt(VarExpr('TEMP'), VarExpr('STACK'))
+BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL'))
+StringExpr('~s\\n')
+VarExpr('TAIL')
+PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])
+KillFunc(VarExpr('BLAH'), [])
+UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))
+WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])
+TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL')), WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])], 'THIS'))
+UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ReplicateStmt(VarExpr('TEMP'), VarExpr('STACK')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL')), WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])], 'THIS'))], 'THIS'))
+InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: '))
+AggregateStmt(VarExpr('STACK'), VarExpr('ITEM'), VarExpr('STACK'))
+UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('STACK'), VarExpr('ITEM'), VarExpr('STACK'))], 'THIS'))
+StringExpr('Invalid input.')
+PrintFunc([StringExpr('Invalid input.')])
+UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], 'THIS'))
+WhenStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(3)), Serialize([KillFunc(VarExpr('LOOP'), [])], 'THIS'), [UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ReplicateStmt(VarExpr('TEMP'), VarExpr('STACK')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL')), WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])], 'THIS'))], 'THIS')), UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('STACK'), VarExpr('ITEM'), VarExpr('STACK'))], 'THIS')), UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], 'THIS'))])
+TildeAthLoop(VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Select action:\\n')]), PrintFunc([StringExpr('[1] Add an item to stack\\n')]), PrintFunc([StringExpr('[2] View stack\\n')]), PrintFunc([StringExpr('[3] Exit\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), WhenStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(3)), Serialize([KillFunc(VarExpr('LOOP'), [])], 'THIS'), [UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ReplicateStmt(VarExpr('TEMP'), VarExpr('STACK')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL')), WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])], 'THIS'))], 'THIS')), UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('STACK'), VarExpr('ITEM'), VarExpr('STACK'))], 'THIS')), UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], 'THIS'))])], 'THIS'))
+KillFunc(VarExpr('THIS'), [])
+Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Input string to add: Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Input string to add: Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Input string to add: Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+ProcreateStmt(VarExpr('LOOP'), IntExpr(1))
+ProcreateStmt(VarExpr('STACK'), VarExpr('NULL'))
+StringExpr('Select action:\\n')
+PrintFunc([StringExpr('Select action:\\n')])
+StringExpr('[1] Add an item to stack\\n')
+PrintFunc([StringExpr('[1] Add an item to stack\\n')])
+StringExpr('[2] View stack\\n')
+PrintFunc([StringExpr('[2] View stack\\n')])
+StringExpr('[3] Exit\\n')
+PrintFunc([StringExpr('[3] Exit\\n')])
+InputStmt(VarExpr('CHOICE'), StringExpr(''))
+KillFunc(VarExpr('LOOP'), [])
+ProcreateStmt(VarExpr('BLAH'), IntExpr(0))
+ReplicateStmt(VarExpr('TEMP'), VarExpr('STACK'))
+BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL'))
+StringExpr('~s\\n')
+VarExpr('TAIL')
+PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])
+KillFunc(VarExpr('BLAH'), [])
+UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))
+WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])
+TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL')), WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])], 'THIS'))
+UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ReplicateStmt(VarExpr('TEMP'), VarExpr('STACK')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL')), WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])], 'THIS'))], 'THIS'))
+InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: '))
+AggregateStmt(VarExpr('STACK'), VarExpr('ITEM'), VarExpr('STACK'))
+UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('STACK'), VarExpr('ITEM'), VarExpr('STACK'))], 'THIS'))
+StringExpr('Invalid input.')
+PrintFunc([StringExpr('Invalid input.')])
+UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], 'THIS'))
+WhenStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(3)), Serialize([KillFunc(VarExpr('LOOP'), [])], 'THIS'), [UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ReplicateStmt(VarExpr('TEMP'), VarExpr('STACK')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL')), WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])], 'THIS'))], 'THIS')), UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('STACK'), VarExpr('ITEM'), VarExpr('STACK'))], 'THIS')), UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], 'THIS'))])
+TildeAthLoop(VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Select action:\\n')]), PrintFunc([StringExpr('[1] Add an item to stack\\n')]), PrintFunc([StringExpr('[2] View stack\\n')]), PrintFunc([StringExpr('[3] Exit\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), WhenStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(3)), Serialize([KillFunc(VarExpr('LOOP'), [])], 'THIS'), [UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ReplicateStmt(VarExpr('TEMP'), VarExpr('STACK')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('TEMP'), VarExpr('TAIL')), WhenStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], 'THIS'), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], 'THIS'))])], 'THIS'))], 'THIS')), UnlessStmt(ValueCmpExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('STACK'), VarExpr('ITEM'), VarExpr('STACK'))], 'THIS')), UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], 'THIS'))])], 'THIS'))
+KillFunc(VarExpr('THIS'), [])
+Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Input string to add: Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Aradia
+Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Invalid input.Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Input string to add: Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Input string to add: Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+Sollux
+Tavros
+Aradia
+Select action:
+[1] Add an item to stack
+[2] View stack
+[3] Exit
+{'LOOP': AthSymbol(False, 1, None), 'STACK': AthSymbol(True, None, None)}

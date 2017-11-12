@@ -1,0 +1,6 @@
+PROCREATE LOOP NULL;
+~ATH(LOOP) {
+	print ("Hi.");
+	LOOP.DIE();
+}
+THIS.DIE();

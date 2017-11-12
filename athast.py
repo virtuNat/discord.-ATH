@@ -539,17 +539,10 @@ class AggregateStmt(Statement):
         self.name = name
 
     def eval(self, fsm):
-        newflag = False
-        try:
-            result = self.name.eval(fsm)
-        except NameError:
-            newflag = True
-            result = AthSymbol()
-
+        result = AthSymbol()
         result.assign_left(self.lexpr.eval(fsm))
         result.assign_right(self.rexpr.eval(fsm))
-        if newflag:
-            fsm.assign_name(self.name.name, result)
+        fsm.assign_name(self.name.name, result)
 
 
 class BreakUnless(Exception):
