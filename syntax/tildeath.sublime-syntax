@@ -1,0 +1,176 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+name: ~ATH
+file_extensions:
+  - ~ATH
+scope: source.ath
+
+variables:
+  name: '\b[a-zA-Z]\w*\b'
+
+contexts:
+  prototype:
+    - include: comments
+
+  main:
+    - include: keywords
+    - include: operators
+    - include: functions
+    - include: parens
+    - include: brackets
+    - include: braces
+    - include: numbers
+    - include: strings
+
+  comments:
+    # Single line c-style comments
+    - match: '//'
+      scope: punctuation.definition.comment.ath
+      push:
+        - meta_scope: comment.line.double-slash.ath
+        - match: $\n?
+          pop: true
+    # Block c-style comments
+    - match: '/\*'
+      scope: punctuation.definition.comment.ath
+      push:
+        - meta_scope: comment.block.ath
+        - match: '\*/'
+          pop: true
+
+  keywords:
+    # Basic keywords
+    - match: '\b(input|print|import|WHEN|UNLESS|REPLICATE|DIVULGATE|REPLICATE)\b'
+      scope: keyword.control.ath
+    # Declaration keywords
+    - match: '\b(PROCREATE)\b'
+      scope: storage.type.ath
+    - match: '\b(BIFURCATE|AGGREGATE)\b'
+      scope: support.function.ath
+    # THIS keyword
+    - match: '\b(THIS)\b'
+      scope: variable.language.ath
+    # NULL pre-defined value
+    - match: '\b(NULL)\b'
+      scope: constant.language.ath
+    # ~ATH loop
+    - match: '\s*(~ATH)\b'
+      scope: entity.name.function.ath
+      push:
+        - match: \(
+          push:
+            - match: '(!?({{name}}))?'
+              captures:
+                2: variable.parameter.ath
+              pop: true
+        - match: \)
+          pop: true
+
+  operators:
+    - match: '(\+|-|\*\*|\*|/_|/|%)=?'
+      scope: keyword.operator.arithmetic.ath
+    - match: '(!=!|!=\?|\?=!|~=!|!=~|~=~)'
+      scope: keyword.operator.assignment.ath
+    - match: '(&&|\|\||\^\^|!)'
+      scope: keyword.operator.logical.ath
+    - match: '(==|~=)'
+      scope: keyword.operator.arithmetic.ath
+    - match: '(&|\||\^|~|<<|>>)'
+      scope: keyword.operator.bitwise.ath
+    - match: '(<|<=|>|>=)'
+      scope: keyword.operator.arithmetic.ath
+
+  functions:
+    # Fabricate function declaration.
+    - match: '\b(FABRICATE)\b'
+      scope: storage.type.ath
+      push:
+        - match: '{{name}}'
+          scope: entity.name.function.ath
+        - match: \(
+          push:
+            - match: '({{name}}\s*(,\s*{{name}})?)?'
+              scope: variable.parameter.ath
+              pop: true
+        - match: \)
+          pop: true
+    # Execute function. The only way to run a user function.
+    - match: '\b(EXECUTE)\b'
+      scope: entity.name.function.ath
+      push:
+        - match: \(
+          push:
+            - match: '({{name}})?'
+              scope: variable.parameter.ath
+              pop: true
+        - match: '[^\)]*\)'
+          pop: true
+        - match: \)
+          pop: true
+    # DIE "function". Takes no arguments.
+    - match: '\b(DIE)\b'
+      scope: entity.other.inherited-class.ath
+      push:
+        - match: \(
+          push:
+            - match: '[\w\+\-\*\/\%\<\>\=\~\&\|\^\!\?]*'
+              scope: invalid.illegal.args.ath
+              pop: true
+        - match: \)
+          pop: true
+
+  parens:
+    - match: \(
+      push: 
+        - match: \)
+          pop: true
+        - include: main
+    - match: \)
+      scope: invalid.illegal.stray-paren-end.ath
+
+  brackets:
+    - match: \[
+      push: 
+        - match: \]
+          pop: true
+        - include: main
+    - match: \]
+      scope: invalid.illegal.stray-bracket-end.ath
+
+  braces:
+    - match: \{
+      push: 
+        - match: \}
+          pop: true
+        - include: main
+    - match: \}
+      scope: invalid.illegal.stray-brace-end.ath
+
+  numbers:
+    - match: '\b(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?\b'
+      scope: constant.numeric.ath
+
+  strings:
+    # Single-quoted strings
+    - match: ''''
+      scope: punctuation.definition.string.begin.ath
+      push: 
+        - meta_include_prototype: false
+        - meta_scope: string.quoted.ath
+        - match: '\\[abftvrn]'
+          scope: constant.character.escape.ath
+        - match: ''''
+          scope: punctuation.definition.string.end.ath
+          pop: true
+    # Double-quoted strings
+    - match: '"'
+      scope: punctuation.definition.string.begin.ath
+      push: 
+        - meta_include_prototype: false
+        - meta_scope: string.quoted.ath
+        - match: '\\[abftvrn]'
+          scope: constant.character.escape.ath
+        - match: '"'
+          scope: punctuation.definition.string.end.ath
+          pop: true
