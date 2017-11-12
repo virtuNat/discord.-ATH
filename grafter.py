@@ -175,6 +175,13 @@ class StrictExpr(Grafter):
         self.group = grouper
         self.graft_next = self.group + self.graft ^ self.eval_next
 
+    def __repr__(self):
+        return '{}({}, {})'.format(
+            self.__class__.__name__,
+            self.graft,
+            self.group
+            )
+
     def eval_next(self, graft):
         """Using the function bound to the separator, and the
         item currently being looked at, evaluate the function
@@ -287,7 +294,7 @@ class Repeater(Grafter):
         grafts = []
         graft = self.graft(tokens, index)
         while graft:
-            # print(graft)
+            print(graft)
             grafts.append(graft.value)
             index = graft.index
             graft = self.graft(tokens, index)     
@@ -306,6 +313,9 @@ class LazyGrafter(Grafter):
     def __init__(self, grafter_func):
         self.grafter_func = grafter_func
         self.grafter = None
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.grafter_func)
 
     def __call__(self, tokens, index):
         if not self.grafter:
@@ -326,7 +336,7 @@ class StrictGrafter(Grafter):
 
     def __call__(self, tokens, index):
         graft = self.grafter(tokens, index)
-        print(graft)
+        # print(graft)
         if graft.index == len(tokens):
             return graft
         return None

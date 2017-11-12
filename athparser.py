@@ -1,3 +1,4 @@
+import sys
 from functools import partial, reduce
 
 from lexer import Lexer, Token
@@ -108,7 +109,7 @@ ath_lexer = Lexer([
 ])
 
 
-strparser = TagGrafter('STRING') ^ StringExpr
+strparser = TagGrafter('STRING') ^ (lambda s: StringExpr(s[1:-1]))
 fltparser = TagGrafter('FLOAT') ^ FloatExpr
 intparser = TagGrafter('INT') ^ IntExpr
 nameparser = TagGrafter('SYMBOL') ^ VarExpr
@@ -116,11 +117,6 @@ nameparser = TagGrafter('SYMBOL') ^ VarExpr
 
 def bltinparser(token):
     return TokenGrafter(token, 'BUILTIN')
-
-
-def break_group(tokens):
-    _, expr, _ = tokens
-    return expr
 
 
 def operatorparser(op_list, grafter, evaluator):
@@ -181,29 +177,37 @@ def binexprparser(term):
     return operatorparser(op_order, term, lambda op: lambda l, r: BinaryArithExpr(op, l, r))
 
 
-def unaryexprparser(term):
+def exprgrpparser():
+    """Parses expression groups."""
+    def breakdown(tokens):
+        return tokens[1]
+    return (
+        bltinparser('(')
+        + LazyGrafter(exprparser)
+        + bltinparser(')')
+        ^ breakdown
+        )
+
+
+def exprvalparser():
+    """Parses expression primitives."""
+    return (
+        fltparser
+        | intparser
+        | LazyGrafter(unaryexprparser)
+        | nameparser
+        )
+
+
+def unaryexprparser():
+    term = exprvalparser() | exprgrpparser()
     ops = bltinparser('+') | bltinparser('-') | bltinparser('~')
     return ops + term ^ (lambda _: UnaryArithExpr)
 
 
 def exprparser():
-    def break_group(tokens):
-        _, expr, _ = tokens
-        return expr
-    group = (
-        bltinparser('(')
-        + LazyGrafter(exprparser)
-        + bltinparser(')')
-        ^ break_group
-        )
-    value = (
-        fltparser
-        | intparser
-        | nameparser
-        )
-    term = value | group
+    term = exprvalparser() | exprgrpparser()
     return (
-        # unaryexprparser(term)
         # binexprparser(term)
         cmpexprparser(term)
         # | boolexprparser(term)
@@ -238,7 +242,7 @@ def condistmt():
     def brkunless(tokens):
         _, condexpr, _, body, _ = tokens
         if condexpr:
-            _, condexpr, _ = condexpr
+            condexpr = condexpr[1]
         return UnlessStmt(condexpr, body)
     def breakdown(tokens):
         _, _, condexpr, _, _, truebody, _, unlesses = tokens
@@ -337,7 +341,7 @@ def inputstmt():
     return (
         bltinparser('input')
         + nameparser
-        + EnsureGraft(strparser | nameparser)
+        + EnsureGraft(strparser | exprparser())
         + bltinparser(';')
         ^ breakdown
         )
@@ -423,17 +427,22 @@ def stmtparser():
     return Repeater(stmts) ^ Serialize
 
 
+def echo_error(msg):
+    sys.stderr.write(msg)
+    sys.exit(1)
+
+
 class BuiltinSymbol(AthSymbol):
     __slots__ = ()
 
     def assign_left(self, value):
-        raise SymbolError('Builtins cannot be assigned to!')
+        echo_error('SymbolError: Builtins cannot be assigned to!')
 
     def assign_right(self, value):
-        raise SymbolError('Builtins cannot be assigned to!')
+        echo_error('SymbolError: Builtins cannot be assigned to!')
 
     def inop(self, other, op):
-        raise SymbolError('Builtins cannot be assigned to!')
+        echo_error('SymbolError: Builtins cannot be assigned to!')
 
 
 class AthStackFrame(object):
@@ -475,7 +484,7 @@ class AthStackFrame(object):
         except KeyError:
             pass
         else:
-            raise SymbolError('Builtins cannot be assigned to!')
+            echo_error('SymbolError: Builtins cannot be assigned to!')
 
         if value is None:
             value = AthSymbol(True)
@@ -498,7 +507,7 @@ class TildeAthInterp(object):
             if value is not None:
                 # print('{} found'.format(name))
                 return value
-        raise NameError('Symbol {} does not exist.'.format(name))
+        echo_error('NameError: Symbol {} not found'.format(name))
 
     def assign_name(self, name, value):
         # print('{} assigned'.format(name))
@@ -511,18 +520,31 @@ class TildeAthInterp(object):
         if len(self.stack) > 1:
             return self.stack.pop()
         else:
-            raise RuntimeError('May not pop global stack')
+            echo_error('RuntimeError: Attempted to empty stack')
 
     def execute(self, script):
+        try:
+            script.eval(self)
+        except EndTilDeath:
+            sys.exit(0)
+        finally:
+            for frame in self.stack:
+                print(frame.scope_vars)
+
+    def interpret(self, fname):
+        if not fname.endswith('~ATH'):
+            echo_error('IOError: script must be a ~ATH file')
+        with open(fname, 'r') as script_file:
+            script = script_file.read()
         tokens = ath_lexer.lex(script)
         result = self.script_parser(tokens, 0)
         if result:
-            try:
-                result.value.eval(self)
-            except EndTilDeath:
-                raise SystemExit
-            finally:
-                for frame in self.stack:
-                    print(frame.scope_vars)
+            with open(fname[:-4]+'py', 'w') as py_file:
+                py_file.write('from athast import *\n')
+                py_file.write('from athparser import TildeAthInterp\n\n')
+                py_file.write('ath_script = ')
+                py_file.write(repr(result.value))
+                py_file.write('\nTildeAthInterp().execute(ath_script)\n')
+            self.execute(result.value)
         else:
-            raise RuntimeError('Something messed up!')
+            echo_error('RuntimeError: the parser could not understand the script')

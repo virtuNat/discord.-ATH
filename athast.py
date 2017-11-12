@@ -133,7 +133,7 @@ class StringExpr(AthExpr):
     __slots__ = ('string',)
 
     def __init__(self, string):
-        self.string = string[1:-1]
+        self.string = string
 
     def eval(self, fsm):
         return self.string
@@ -299,7 +299,7 @@ class TernaryExpr(ArithExpr):
 class Serialize(AthExpr):
     __slots__ = ('stmt_list', 'ctrl_name')
 
-    def __init__(self, stmt_list):
+    def __init__(self, stmt_list, ctrl_name='THIS'):
         self.stmt_list = stmt_list
         self.ctrl_name = 'THIS'
 
@@ -425,9 +425,13 @@ class PrintFunc(Statement):
         frmtstr = re.sub(r'(?<!\\)~d', '{:.0f}', frmtstr)
         frmtstr = re.sub(r'(?<!\\)~((?:\d)?\.\d)?f', '{:\1f}', frmtstr)
         frmtstr = re.sub(r'(?<=\\)~', '~', frmtstr)
+        # Replace whitespace character escapes
         frmtstr = re.sub(r'\\t', '\t', frmtstr)
+        frmtstr = re.sub(r'\\t', '\v', frmtstr)
+        frmtstr = re.sub(r'\\t', '\f', frmtstr)
         frmtstr = re.sub(r'\\r', '\r', frmtstr)
         frmtstr = re.sub(r'\\n', '\n', frmtstr)
+        # Grab the format arguments
         if len(self.args) > 1:
             frmtargs = []
             for arg in self.args[1:]:
@@ -498,22 +502,19 @@ class BifurcateStmt(Statement):
         self.lexpr = lexpr
         self.rexpr = rexpr
 
+    def assign_half(self, fsm, name, value):
+        if isinstance(value, AthSymbol):
+            fsm.assign_name(name, value)
+        elif value is None:
+            fsm.assign_name(name, AthSymbol(False))
+        else:
+            fsm.assign_name(name, AthSymbol(left=value))
+
     def eval(self, fsm):
         symbol = self.name.eval(fsm)
         if isinstance(symbol, AthSymbol):
-            if isinstance(symbol.left, AthSymbol):
-                fsm.assign_name(self.lexpr.name, symbol.left)
-            elif symbol.left is None:
-                fsm.assign_name(self.lexpr.name, AthSymbol(False))
-            else:
-                fsm.assign_name(self.lexpr.name, AthSymbol(left=symbol.left))
-
-            if isinstance(symbol.right, AthSymbol):
-                fsm.assign_name(self.rexpr.name, symbol.right)
-            elif symbol.right is None:
-                fsm.assign_name(self.rexpr.name, AthSymbol(False))
-            else:
-                fsm.assign_name(self.rexpr.name, AthSymbol(right=symbol.right))
+            self.assign_half(fsm, self.lexpr.name, symbol.left)
+            self.assign_half(fsm, self.rexpr.name, symbol.right)
         else:
             raise SymbolError('May not bifurcate non-symbol')
 
