@@ -1,5 +1,7 @@
 %YAML 1.2
 ---
+# For anyone who has Sublime Text 3. 
+# Please install Package Control and then Package Dev, and ~ATH files will spring to life in colour!
 # See http://www.sublimetext.com/docs/3/syntax.html
 name: ~ATH
 file_extensions:
