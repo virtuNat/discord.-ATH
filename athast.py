@@ -6,8 +6,11 @@ the literals used for lexing.
 """
 import re
 import operator
-from symbol import isAthValue, AthExpr, AthSymbol, AthFunction
-from symbol import SymbolError, SymbolDeath, EndTilDeath
+from functools import partial
+from symbol import (
+    isAthValue, AthExpr, AthSymbol, AthFunction,
+    SymbolError, SymbolDeath, EndTilDeath,
+    )
 
 
 class VarExpr(AthExpr):
@@ -81,8 +84,56 @@ class UnaryArithExpr(ArithExpr):
             raise SyntaxError('Unknown operator: {}', self.op)
 
 
-class BinaryArithExpr(ArithExpr):
-    """Handles binary arithmetic expressions."""
+def bool_opr(lval, rval, op):
+    if isAthValue(lval):
+        lval = AthSymbol(bool(lval), left=lval)
+    if isAthValue(rval):
+        rval = AthSymbol(bool(rval), left=rval)
+    if op == '&&':
+        return lval and rval
+    elif op == '||':
+        return lval or rval
+    elif op == '^^':
+        return (
+            lval if lval and not rval else
+            rval if rval and not lval else
+            AthSymbol(False)
+            )
+    else:
+        raise SyntaxError('Invalid comparison operator: {}', op)
+
+
+def symbol_opr(lval, rval, op):
+    if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
+        try:
+            if op == '!=!':
+                value = (lval.left.alive == rval.left.alive
+                    and lval.right.alive == rval.right.alive)
+            elif op == '!=?':
+                value = lval.left.alive == rval.left.alive
+            elif op == '?=!':
+                value = lval.right.alive == rval.right.alive
+            elif op == '~=!':
+                value = (lval.left.alive != rval.left.alive
+                    and lval.right.alive == rval.right.alive)
+            elif op == '!=~':
+                value = (lval.left.alive == rval.left.alive
+                    and lval.right.alive != rval.right.alive)
+            elif op == '~=~':
+                value = (lval.left.alive != rval.left.alive
+                    and lval.right.alive != rval.right.alive)
+            else:
+                raise SyntaxError('Invalid comparison operator: {}', op)
+        except AttributeError:
+            raise SymbolError('The relevant side(s) must be symbols')
+        else:
+            return AthSymbol(value)
+    else:
+        raise TypeError('May only perform living assertions on symbols')
+
+
+class BinaryExpr(ArithExpr):
+    """Handles binary expressions."""
     __slots__ = ('op', 'lexpr', 'rexpr')
     ops = {
         '**': operator.pow,
@@ -97,6 +148,21 @@ class BinaryArithExpr(ArithExpr):
         '&': operator.and_,
         '|': operator.or_,
         '^': operator.xor,
+        '<': operator.lt,
+        '<=': operator.le,
+        '>': operator.gt,
+        '>=': operator.ge,
+        '==': operator.eq,
+        '~=': operator.ne,
+        '&&': partial(bool_opr, op='&&'),
+        '||': partial(bool_opr, op='||'),
+        '^^': partial(bool_opr, op='^^'),
+        '!=!': partial(symbol_opr, op='!=!'),
+        '!=?': partial(symbol_opr, op='!=?'),
+        '?=!': partial(symbol_opr, op='?=!'),
+        '~=!': partial(symbol_opr, op='~=!'),
+        '!=~': partial(symbol_opr, op='!=~'),
+        '~=~': partial(symbol_opr, op='~=~'),
     }
 
     def __init__(self, op, lexpr, rexpr):
@@ -106,11 +172,15 @@ class BinaryArithExpr(ArithExpr):
 
     def eval(self, fsm):
         lval = self.lexpr.eval(fsm)
+        if isAthValue(lval):
+            lval = AthSymbol(left=lval)
         rval = self.rexpr.eval(fsm)
+        if isAthValue(rval):
+            rval = AthSymbol(left=rval)
         try:
             return self.ops[self.op](lval, rval)
         except KeyError:
-            raise SyntaxError('Invalid arithmetic operator: {}', self.op)
+            raise SyntaxError('Invalid operator: {}', self.op)
 
 
 class BinaryIPExpr(ArithExpr):
@@ -144,32 +214,6 @@ class BoolExpr(AthExpr):
     __slots__ = ()
 
 
-class ValueCmpExpr(BoolExpr):
-    """Handles value comparison expressions."""
-    __slots__ = ('op', 'lexpr', 'rexpr')
-    ops = {
-        '<': operator.lt,
-        '<=': operator.le,
-        '>': operator.gt,
-        '>=': operator.ge,
-        '==': operator.eq,
-        '~=': operator.ne,
-    }
-
-    def __init__(self, op, lexpr, rexpr):
-        self.op = op
-        self.lexpr = lexpr
-        self.rexpr = rexpr
-
-    def eval(self, fsm):
-        lval = self.lexpr.eval(fsm)
-        rval = self.rexpr.eval(fsm)
-        try:
-            return AthSymbol(self.ops[self.op](lval, rval).alive)
-        except KeyError:
-            raise SyntaxError('Invalid comparison operator: {}', self.op)
-
-
 class NotExpr(BoolExpr):
     __slots__ = ('expr',)
 
@@ -185,103 +229,7 @@ class NotExpr(BoolExpr):
             raise TypeError(msg.format(value.__class__.__name__))
 
 
-class AndExpr(BoolExpr):
-    __slots__ = ('lexpr', 'rexpr')
-
-    def __init__(self, lexpr, rexpr):
-        self.lexpr = lexpr
-        self.rexpr = rexpr
-
-    def eval(self, fsm):
-        lval = self.lexpr.eval(fsm)
-        rval = self.rexpr.eval(fsm)
-        if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-            return lval and rval
-        else:
-            msg = 'May only perform boolean operations on symbols, not {}'
-            raise TypeError(msg.format(value.__class__.__name__))
-
-
-class OrExpr(BoolExpr):
-    __slots__ = ('lexpr', 'rexpr')
-
-    def __init__(self, lexpr, rexpr):
-        self.lexpr = lexpr
-        self.rexpr = rexpr
-
-    def eval(self, fsm):
-        lval = self.lexpr.eval(fsm)
-        rval = self.rexpr.eval(fsm)
-        if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-            return lval or rval
-        else:
-            msg = 'May only perform boolean operations on symbols, not {}'
-            raise TypeError(msg.format(value.__class__.__name__))
-
-
-class XorExpr(BoolExpr):
-    __slots__ = ('lexpr', 'rexpr')
-
-    def __init__(self, lexpr, rexpr):
-        self.lexpr = lexpr
-        self.rexpr = rexpr
-
-    def eval(self, fsm):
-        lval = self.lexpr.eval(fsm)
-        rval = self.rexpr.eval(fsm)
-        if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-            if lval and not rval:
-                return lval
-            elif not lval and rval:
-                return rval
-            else:
-                return AthSymbol(False)
-        else:
-            msg = 'May only perform boolean operations on symbols, not {}'
-            raise TypeError(msg.format(value.__class__.__name__))
-
-
-class SymBoolExpr(BoolExpr):
-    """Handles all symbol-based boolean syntax."""
-    __slots__ = ('op', 'lexpr', 'rexpr')
-
-    def __init__(self, op, lexpr, rexpr):
-        self.op = op
-        self.lexpr = lexpr
-        self.rexpr = rexpr
-
-    def eval(self):
-        lval = self.lexpr.eval(fsm)
-        rval = self.rexpr.eval(fsm)
-        if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-            try:
-                if self.op == '!=!':
-                    value = (lval.left.alive == rval.left.alive
-                        and lval.right.alive == rval.right.alive)
-                elif self.op == '!=?':
-                    value = lval.left.alive == rval.left.alive
-                elif self.op == '?=!':
-                    value = lval.right.alive == rval.right.alive
-                elif self.op == '~=!':
-                    value = (lval.left.alive != rval.left.alive
-                        and lval.right.alive == rval.right.alive)
-                elif self.op == '!=~':
-                    value = (lval.left.alive == rval.left.alive
-                        and lval.right.alive != rval.right.alive)
-                elif self.op == '~=~':
-                    value = (lval.left.alive != rval.left.alive
-                        and lval.right.alive != rval.right.alive)
-                else:
-                    raise SyntaxError('Invalid comparison operator: {}', self.op)
-            except AttributeError:
-                raise SymbolError('The relevant side(s) must be symbols')
-            else:
-                return AthSymbol(value)
-        else:
-            raise TypeError('May only perform living assertions on symbols')
-
-
-class TernaryExpr(ArithExpr):
+class TernaryExpr(BoolExpr):
     __slots__ = ('when_suite', 'clause', 'unless_suite')
 
     def __init__(self, when_suite, clause, unless_suite):
@@ -539,10 +487,17 @@ class AggregateStmt(Statement):
         self.name = name
 
     def eval(self, fsm):
-        result = AthSymbol()
+        newflag = False
+        try:
+            result = self.name.eval(fsm)
+        except NameError:
+            newflag = True
+            result = AthSymbol()
+
         result.assign_left(self.lexpr.eval(fsm))
         result.assign_right(self.rexpr.eval(fsm))
-        fsm.assign_name(self.name.name, result)
+        if newflag:
+            fsm.assign_name(self.name.name, result)
 
 
 class BreakUnless(Exception):

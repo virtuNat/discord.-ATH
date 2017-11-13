@@ -47,6 +47,9 @@ class Grafter(object):
         """Overload * operator to do L-R evaluation"""
         return ExprParser(self, other)
 
+    def __pow__(self, other):
+        return StrictExpr(self, other)
+
     def __or__(self, other):
         """Overload | operator to do alt selection"""
         return Selector(self, other)
@@ -68,6 +71,12 @@ class Concatenator(Grafter):
     def __init__(self, left, right):
         self.leval = left
         self.reval = right
+
+    def __repr__(self):
+        return '({!r}) + ({!r})'.format(
+            self.leval,
+            self.reval
+            )
 
     def __call__(self, tokens, index):
         lvalue = self.leval(tokens, index)
@@ -93,6 +102,12 @@ class Selector(Grafter):
         self.leval = left
         self.reval = right
 
+    def __repr__(self):
+        return '({!r}) | ({!r})'.format(
+            self.leval,
+            self.reval
+            )
+
     def __call__(self, tokens, index):
         return self.leval(tokens, index) or self.reval(tokens, index)
 
@@ -108,6 +123,12 @@ class Evaluator(Grafter):
     def __init__(self, grafter, func):
         self.graft = grafter
         self.apply = func
+
+    def __repr__(self):
+        return '({!r}) ^ ({!r})'.format(
+            self.graft,
+            self.apply
+            )
 
     def __call__(self, tokens, index):
         graft = self.graft(tokens, index)
@@ -133,8 +154,7 @@ class ExprParser(Grafter):
         self.group = grouper
 
     def __repr__(self):
-        return '{}({}, {})'.format(
-            self.__class__.__name__,
+        return '({!r}) * ({!r})'.format(
             self.graft,
             self.group
             )
@@ -176,8 +196,7 @@ class StrictExpr(Grafter):
         self.graft_next = self.group + self.graft ^ self.eval_next
 
     def __repr__(self):
-        return '{}({}, {})'.format(
-            self.__class__.__name__,
+        return '({!r}) ** ({!r})'.format(
             self.graft,
             self.group
             )
@@ -188,12 +207,15 @@ class StrictExpr(Grafter):
         on the current expression result and the item.
         """
         sep_func, next_item = graft
+        if sep_func is None:
+            print(self.graft_next)
         return sep_func(self.result.value, next_item)
 
     def __call__(self, tokens, index):
         self.result = self.graft(tokens, index)
         newresult = self.result
         while newresult:
+            # print(newresult, repr(tokens[newresult.index]), self.group)
             newresult = self.graft_next(tokens, self.result.index)
             if newresult:
                 self.result = newresult

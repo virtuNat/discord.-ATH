@@ -49,25 +49,45 @@ class AthSymbol(AthExpr):
         self.left = left
         self.right = right
 
+    """
+    def __repr__(self):
+        attr_list = tuple([repr(getattr(self, slot)) if not isinstance(getattr(self, slot), AthSymbol) else  for slot in self.__slots__])
+        if isinstance(self.left, AthSymbol):
+            lstr = self.left.__class__.__name__
+        else:
+            lstr = 
+        return '{}({}, {}, {})'
+    """
+
     def cmpop(self, other, op):
+        if not isAthValue(self.left):
+            raise SymbolError('symbol left is not a value')
         if isinstance(other, AthSymbol):
             return AthSymbol(op(self.left, other.left))
         else:
             return AthSymbol(op(self.left, other))
 
     def unoop(self, op):
+        if not isAthValue(self.left):
+            raise SymbolError('symbol left is not a value')
         return AthSymbol(left=op(self.left))
 
     def binop(self, other, op):
+        if not isAthValue(self.left):
+            raise SymbolError('symbol left is not a value')
         if isinstance(other, AthSymbol):
             return AthSymbol(left=op(self.left, other.left))
         else:
             return AthSymbol(left=op(self.left, other))
     
     def reop(self, other, op):
+        if not isAthValue(self.left):
+            raise SymbolError('symbol left is not a value')
         return AthSymbol(left=op(other, self.left))
 
     def inop(self, other, op):
+        if not isAthValue(self.left):
+            raise SymbolError('symbol left is not a value')
         self.left = op(self.left, other)
         return self
 

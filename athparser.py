@@ -2,23 +2,24 @@ import sys
 from functools import partial, reduce
 
 from lexer import Lexer, Token
+from grafter import (
+    Selector, ExprParser, StrictExpr,
+    TokenGrafter, TagGrafter,
+    EnsureGraft, Repeater,
+    LazyGrafter, StrictGrafter,
+    )
+from athast import (
+    AthSymbol, SymbolError, EndTilDeath,
+    IntExpr, FloatExpr, StringExpr, VarExpr,
+    NotExpr, UnaryArithExpr, BinaryExpr,
+    TernaryExpr, Serialize,
 
-from grafter import Selector, ExprParser, StrictExpr
-from grafter import TokenGrafter, TagGrafter
-from grafter import EnsureGraft, Repeater
-from grafter import LazyGrafter, StrictGrafter
-
-from athast import AthSymbol, SymbolError, EndTilDeath
-from athast import IntExpr, FloatExpr, StringExpr, VarExpr
-from athast import NotExpr, AndExpr, OrExpr, XorExpr
-from athast import UnaryArithExpr, BinaryArithExpr, ValueCmpExpr
-from athast import SymBoolExpr, TernaryExpr, Serialize
-
-from athast import InputStmt, PrintFunc, KillFunc
-from athast import BifurcateStmt, AggregateStmt
-from athast import ProcreateStmt, ReplicateStmt
-from athast import FabricateStmt, ExecuteStmt
-from athast import WhenStmt, UnlessStmt, TildeAthLoop
+    InputStmt, PrintFunc, KillFunc,
+    BifurcateStmt, AggregateStmt,
+    ProcreateStmt, ReplicateStmt,
+    FabricateStmt, ExecuteStmt,
+    WhenStmt, UnlessStmt, TildeAthLoop,
+    )
 
 
 ath_lexer = Lexer([
@@ -140,43 +141,6 @@ def ternaryexprparser(term):
         )
 
 
-def symbolexprparser(term):
-    ops = [('!=!', '!=?', '?=!', '~=!', '!=~', '~=~')]
-    return operatorparser(ops, term, lambda op: lambda l, r: SymBoolExpr(op, l, r))
-
-
-def boolexprparser(term):
-    def eval_not(tokens):
-        return NotExpr(tokens[1])
-    notparser = bltinparser('!') + term ^ eval_not
-
-    def eval_bool(tokens, op):
-        lval, _, rval = tokens
-        return op(lval, rval)
-    andparser = term + bltinparser('&&') + term ^ partial(eval_bool, op=AndExpr)
-    orparser = term + bltinparser('||') + term ^ partial(eval_bool, op=OrExpr)
-    xorparser = term + bltinparser('^^') + term ^ partial(eval_bool, op=XorExpr)
-    return notparser | andparser | orparser | xorparser
-
-
-def cmpexprparser(term):
-    ops = [('<', '<=', '>', '>=', '==', '~=')]
-    return operatorparser(ops, term, lambda op: lambda l, r: ValueCmpExpr(op, l, r))
-
-
-def binexprparser(term):
-    op_order = [
-        ('**',),
-        ('*', '/', '/_', '%'),
-        ('+', '-'),
-        ('<<', '>>'),
-        ('&',),
-        ('|',),
-        ('^',),
-        ]
-    return operatorparser(op_order, term, lambda op: lambda l, r: BinaryArithExpr(op, l, r))
-
-
 def exprgrpparser():
     """Parses expression groups."""
     def breakdown(tokens):
@@ -194,7 +158,7 @@ def exprvalparser():
     return (
         fltparser
         | intparser
-        | LazyGrafter(unaryexprparser)
+        # | LazyGrafter(unaryexprparser)
         | nameparser
         )
 
@@ -206,14 +170,22 @@ def unaryexprparser():
 
 
 def exprparser():
+    def parse_ops(op_level):
+        ops = reduce(Selector, map(bltinparser, op_level))
+        return ops ^ (lambda op: lambda l, r: BinaryExpr(op, l, r))
+    op_order = [
+        ('**',),
+        ('*', '/', '/_', '%'),
+        ('+', '-'),
+        ('<<', '>>'),
+        ('&',), ('|',), ('^',),
+        ('<', '<=', '>', '>=', '==', '~='),
+        ('&&',), ('||',), ('^^',),
+        ('!=!', '!=?', '?=!', '~=!', '!=~', '~=~')
+        ]
     term = exprvalparser() | exprgrpparser()
-    return (
-        # binexprparser(term)
-        cmpexprparser(term)
-        # | boolexprparser(term)
-        # | symbolexprparser(term)
-        )
-
+    return reduce(StrictExpr, [term] + [parse_ops(lvl) for lvl in op_order])
+# print(exprparser())
 
 def groupparser():
     def cull_seps(graft):
@@ -329,7 +301,7 @@ def replistmt():
     return (
         bltinparser('REPLICATE')
         + nameparser
-        + exprparser()
+        + exprgrpparser()
         + bltinparser(';')
         ^ breakdown)
 
