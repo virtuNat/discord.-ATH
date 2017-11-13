@@ -92,8 +92,10 @@ contexts:
           scope: entity.name.function.ath
         - match: \(
           push:
-            - match: '({{name}}\s*(,\s*{{name}})?)?'
-              scope: variable.parameter.ath
+            - match: '(({{name}})\s*(,\s*({{name}}))*)?'
+              captures:
+                2: variable.parameter.ath
+                4: variable.parameter.ath
               pop: true
         - match: \)
           pop: true
@@ -116,7 +118,11 @@ contexts:
       push:
         - match: \(
           push:
-            - match: '[\w\+\-\*\/\%\<\>\=\~\&\|\^\!\?]*'
+            - match: '(?=\))'
+              pop: true
+            - match: '\s+(?=\))'
+              pop: true
+            - match: '\.*'
               scope: invalid.illegal.args.ath
               pop: true
         - match: \)
