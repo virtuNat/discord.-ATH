@@ -1,0 +1,12 @@
+FABRICATE FACTORIAL(NUM){
+	DEBATE(NUM > 1){
+		DIVULGATE NUM * EXECUTE(FACTORIAL, NUM - 1);
+	}
+	DIVULGATE 1
+}
+
+~ATH(THIS){
+	input NUM "Get the factorial of: ";
+	print("~d! is ~d\n", NUM, EXECUTE(FACTORIAL, NUM));
+	THIS.DIE();
+} EXECUTE(NULL);
