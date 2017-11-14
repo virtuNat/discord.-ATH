@@ -207,8 +207,10 @@ class StrictExpr(Grafter):
         on the current expression result and the item.
         """
         sep_func, next_item = graft
+        """
         if sep_func is None:
             print(self.graft_next)
+        """
         return sep_func(self.result.value, next_item)
 
     def __call__(self, tokens, index):
@@ -341,6 +343,7 @@ class LazyGrafter(Grafter):
 
     def __call__(self, tokens, index):
         if not self.grafter:
+            # print(self.grafter_func)
             self.grafter = self.grafter_func()
         return self.grafter(tokens, index)
 

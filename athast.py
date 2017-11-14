@@ -8,7 +8,7 @@ import re
 import operator
 from functools import partial
 from symbol import (
-    isAthValue, AthExpr, AthSymbol, AthFunction,
+    isAthValue, AthExpr, AthSymbol,
     SymbolError, SymbolDeath, EndTilDeath,
     )
 
@@ -104,32 +104,31 @@ def bool_opr(lval, rval, op):
 
 
 def symbol_opr(lval, rval, op):
-    if isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol):
-        try:
-            if op == '!=!':
-                value = (lval.left.alive == rval.left.alive
-                    and lval.right.alive == rval.right.alive)
-            elif op == '!=?':
-                value = lval.left.alive == rval.left.alive
-            elif op == '?=!':
-                value = lval.right.alive == rval.right.alive
-            elif op == '~=!':
-                value = (lval.left.alive != rval.left.alive
-                    and lval.right.alive == rval.right.alive)
-            elif op == '!=~':
-                value = (lval.left.alive == rval.left.alive
-                    and lval.right.alive != rval.right.alive)
-            elif op == '~=~':
-                value = (lval.left.alive != rval.left.alive
-                    and lval.right.alive != rval.right.alive)
-            else:
-                raise SyntaxError('Invalid comparison operator: {}', op)
-        except AttributeError:
-            raise SymbolError('The relevant side(s) must be symbols')
-        else:
-            return AthSymbol(value)
-    else:
+    if not (isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol)):
         raise TypeError('May only perform living assertions on symbols')
+    try:
+        if op == '!=!':
+            value = (lval.left.alive == rval.left.alive
+                and lval.right.alive == rval.right.alive)
+        elif op == '!=?':
+            value = lval.left.alive == rval.left.alive
+        elif op == '?=!':
+            value = lval.right.alive == rval.right.alive
+        elif op == '~=!':
+            value = (lval.left.alive != rval.left.alive
+                and lval.right.alive == rval.right.alive)
+        elif op == '!=~':
+            value = (lval.left.alive == rval.left.alive
+                and lval.right.alive != rval.right.alive)
+        elif op == '~=~':
+            value = (lval.left.alive != rval.left.alive
+                and lval.right.alive != rval.right.alive)
+        else:
+            raise SyntaxError('Invalid comparison operator: {}', op)
+    except AttributeError:
+        raise SymbolError('The relevant side(s) must be symbols')
+    else:
+        return AthSymbol(value)    
 
 
 class BinaryExpr(ArithExpr):
@@ -326,7 +325,55 @@ class ProcreateStmt(Statement):
             result = symbol
         elif self.expr.name == 'NULL':
             result = AthSymbol()
-        fsm.assign_name(self.name.name, result)
+        
+        if len(fsm.stack):
+            fsm.create_name(self.name.name, result)
+        else:
+            fsm.assign_name(self.name.name, result)
+
+
+class ReplicateStmt(Statement):
+    __slots__ = ('name', 'expr')
+
+    def __init__(self, name, expr):
+        self.name = name
+        self.expr = expr
+
+    def eval(self, fsm):
+        result = self.expr.eval(fsm)
+        if isinstance(result, AthSymbol):
+            symbol = result.copy()
+            symbol.alive = True
+        elif isAthValue(result):
+            symbol = AthSymbol(left=result.left)
+        else:
+            raise SymbolError('Bad copy: {}'.format(result))
+        fsm.assign_name(self.name.name, symbol)
+
+
+class DivulgateBack(Exception):
+    """Raised when Divulgate is called."""
+
+
+class AthFunction(AthExpr):
+    """Function objects in ~ATH."""
+    __slots__ = ('argfmt', 'body')
+
+    def __init__(self, argfmt, body):
+        self.argfmt = argfmt
+        self.body = body
+
+    def execute(self, fsm, args):
+        value = AthSymbol(False)
+        fsm.push_stack(args)
+        for stmt in self.body.stmt_list:
+            try:
+                stmt.eval(fsm)
+            except DivulgateBack:
+                value = stmt.value
+                break
+        fsm.pop_stack()
+        return value
 
 
 class FabricateStmt(Statement):
@@ -338,9 +385,27 @@ class FabricateStmt(Statement):
         self.body = body
 
     def eval(self, fsm):
-        raise NotImplementedError(
-            '{} has not been implemented.'.format(self.__class__.__name__)
-            )
+        newflag = False
+        try:
+            symbol = self.name.eval(fsm)
+        except NameError:
+            newflag = True
+            symbol = AthSymbol()
+        symbol.right = AthFunction(self.argfmt, self.body)
+        if newflag:
+            fsm.assign_name(self.name.name, symbol)
+
+
+class DivulgateStmt(Statement):
+    __slots__ = ('expr', 'value')
+
+    def __init__(self, expr):
+        self.expr = expr
+        self.value = None
+
+    def eval(self, fsm):
+        self.value = self.expr.eval(fsm)
+        raise DivulgateBack
 
 
 class ExecuteStmt(Statement):
@@ -350,9 +415,34 @@ class ExecuteStmt(Statement):
         self.args = args
 
     def eval(self, fsm):
-        raise NotImplementedError(
-            '{} has not been implemented.'.format(self.__class__.__name__)
-            )
+        if not self.args:
+            raise TypeError('execute statement missing symbol argument')
+
+        name = self.args[0]
+        args = self.args[1:]
+        if not isinstance(name, VarExpr):
+            raise TypeError('execute must have symbol as first argument')
+
+        if name.name == 'NULL':
+            return AthSymbol(False)
+
+        func = name.eval(fsm).right
+        if not isinstance(func, AthFunction):
+            raise TypeError('symbol executed must have been fabricated')
+
+        argnames = [arg.name for arg in func.argfmt]
+        if len(args) != len(argnames):
+            raise TypeError(
+                'expected {} arguments, got {}'.format(
+                    len(argnames) + 1, len(args) + 1
+                    )
+                )
+
+        if len(args):
+            arg_dict = {name: arg.eval(fsm) for name, arg in zip(argnames, args)}
+        else:
+            arg_dict = {}
+        return func.execute(fsm, arg_dict)
 
 
 class PrintFunc(Statement):
@@ -431,25 +521,6 @@ class KillFunc(Statement):
         raise SymbolDeath
 
 
-class ReplicateStmt(Statement):
-    __slots__ = ('name', 'expr')
-
-    def __init__(self, name, expr):
-        self.name = name
-        self.expr = expr
-
-    def eval(self, fsm):
-        result = self.expr.eval(fsm)
-        if isinstance(result, AthSymbol):
-            symbol = result.copy()
-            symbol.alive = True
-        elif isAthValue(result):
-            symbol = AthSymbol(left=result.left)
-        else:
-            raise SymbolError('Bad copy: {}'.format(result))
-        fsm.assign_name(self.name.name, symbol)
-
-
 class BifurcateStmt(Statement):
     __slots__ = ('name', 'lexpr', 'rexpr')
 
@@ -487,10 +558,17 @@ class AggregateStmt(Statement):
         self.name = name
 
     def eval(self, fsm):
-        result = AthSymbol()
+        newflag = False
+        try:
+            result = self.name.eval(fsm)
+        except NameError:
+            newflag = True
+            result = AthSymbol()
+
         result.assign_left(self.lexpr.eval(fsm))
         result.assign_right(self.rexpr.eval(fsm))
-        fsm.assign_name(self.name.name, result)
+        if newflag:
+            fsm.assign_name(self.name.name, result)
 
 
 class BreakUnless(Exception):

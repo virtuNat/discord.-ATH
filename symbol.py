@@ -185,8 +185,3 @@ class AthSymbol(AthExpr):
 
     def kill(self):
         self.alive = False
-
-
-class AthFunction(AthExpr):
-    """Function objects in ~ATH."""
-    __slots__ = ()

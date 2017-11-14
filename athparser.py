@@ -17,7 +17,7 @@ from athast import (
     InputStmt, PrintFunc, KillFunc,
     BifurcateStmt, AggregateStmt,
     ProcreateStmt, ReplicateStmt,
-    FabricateStmt, ExecuteStmt,
+    FabricateStmt, ExecuteStmt, DivulgateStmt,
     WhenStmt, UnlessStmt, TildeAthLoop,
     )
 
@@ -120,11 +120,23 @@ def bltinparser(token):
     return TokenGrafter(token, 'BUILTIN')
 
 
-def operatorparser(op_list, grafter, evaluator):
-    def parse_ops(op_level):
-        ops = reduce(Selector, map(bltinparser, op_level))
-        return ops ^ evaluator
-    return reduce(StrictExpr, [grafter] + [parse_ops(lvl) for lvl in op_list])
+def callparser():
+    def cull_seps(graft):
+        return graft[0] or graft[1]
+    term = (strparser | exprparser())
+    return Repeater(term + EnsureGraft(bltinparser(',')) ^ cull_seps)
+
+
+def execexpr():
+    def breakdown(tokens):
+        return ExecuteStmt(tokens[2])
+    return (
+        bltinparser('EXECUTE')
+        + bltinparser('(')
+        + callparser()
+        + bltinparser(')')
+        ^ breakdown
+        )
 
 
 def ternaryexprparser(term):
@@ -160,6 +172,7 @@ def exprvalparser():
         | intparser
         # | LazyGrafter(unaryexprparser)
         | nameparser
+        | LazyGrafter(execexpr)
         )
 
 
@@ -187,12 +200,6 @@ def exprparser():
     return reduce(StrictExpr, [term] + [parse_ops(lvl) for lvl in op_order])
 # print(exprparser())
 
-def groupparser():
-    def cull_seps(graft):
-        return graft[0] or graft[1]
-    term = (strparser | exprparser())
-    return Repeater(term + EnsureGraft(bltinparser(',')) ^ cull_seps)
-
 
 def tildeath():
     def breakdown(tokens):
@@ -217,8 +224,8 @@ def condistmt():
             condexpr = condexpr[1]
         return UnlessStmt(condexpr, body)
     def breakdown(tokens):
-        _, _, condexpr, _, _, truebody, _, unlesses = tokens
-        return WhenStmt(condexpr, truebody, unlesses)
+        _, _, condexpr, _, _, body, _, unlesses = tokens
+        return WhenStmt(condexpr, body, unlesses)
     return (
         bltinparser('WHEN')
         + bltinparser('(')
@@ -245,6 +252,17 @@ def condistmt():
         )
 
 
+def divlgstmt():
+    def breakdown(tokens):
+        return DivulgateStmt(tokens[1])
+    return (
+        bltinparser('DIVULGATE')
+        + exprparser()
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
 def fabristmt():
     def cull_seps(graft):
         return graft[0] or graft[1]
@@ -254,28 +272,45 @@ def fabristmt():
         _, name, _, args, _, _, body, _ = tokens
         return FabricateStmt(name, args, body)
 
+    def stmts():
+        return Repeater(
+            replistmt()
+            | procrstmt()
+            | bfctstmt()
+            | aggrstmt()
+            | killfunc()
+            | execfunc()
+            | printfunc()
+            | inputstmt()
+            | tildeath()
+            | LazyGrafter(fabristmt)
+            | condistmt()
+            | divlgstmt()
+            ) ^ Serialize
+
     return (
         bltinparser('FABRICATE')
         + nameparser
         + bltinparser('(')
-        + argparser
+        + EnsureGraft(argparser)
         + bltinparser(')')
         + bltinparser('{')
-        + LazyGrafter(stmtparser)
+        + LazyGrafter(stmts)
         + bltinparser('}')
         ^ breakdown
         )
 
 
-def execstmt():
+def execfunc():
     def breakdown(tokens):
         return ExecuteStmt(tokens[2])
     return (
         bltinparser('EXECUTE')
         + bltinparser('(')
-        + groupparser()
+        + callparser()
         + bltinparser(')')
         + bltinparser(';')
+        ^ breakdown
         )
 
 
@@ -301,7 +336,7 @@ def replistmt():
     return (
         bltinparser('REPLICATE')
         + nameparser
-        + exprgrpparser()
+        + (exprgrpparser() | exprvalparser())
         + bltinparser(';')
         ^ breakdown)
 
@@ -330,7 +365,7 @@ def printfunc():
     return (
         bltinparser('print')
         + bltinparser('(')
-        + groupparser()
+        + callparser()
         + bltinparser(')')
         + bltinparser(';')
         ^ breakdown
@@ -346,7 +381,7 @@ def killfunc():
         + bltinparser('.')
         + bltinparser('DIE')
         + bltinparser('(')
-        + groupparser()
+        + LazyGrafter(callparser)
         + bltinparser(')')
         + bltinparser(';')
         ^ breakdown
@@ -394,15 +429,15 @@ def stmtparser():
         | bfctstmt()
         | aggrstmt()
         | killfunc()
-        # | execstmt()
+        | execfunc()
         | printfunc()
         | inputstmt()
         | tildeath()
-        # | fabristmt()
+        | fabristmt()
         | condistmt()
         )
     return Repeater(stmts) ^ Serialize
-
+# print(stmtparser())
 
 def echo_error(msg):
     sys.stderr.write(msg)
@@ -427,6 +462,25 @@ class AthStackFrame(object):
     ~ATH implements dynamic scope, so be wary when coding in it!
     """
     __slots__ = ('scope_vars',)
+
+    def __init__(self):
+        self.scope_vars = {}
+
+    def __getitem__(self, name):
+        try:
+            return self.scope_vars[name]
+        except KeyError:
+            return None
+
+    def __setitem__(self, name, value=None):
+        if value is None:
+            value = AthSymbol(True)
+        self.scope_vars[name] = value
+
+
+class TildeAthInterp(object):
+    """This is supposed to be a Finite State Machine"""
+    __slots__ = ()
     global_vars = {
         'DIE': BuiltinSymbol(),
         'WHEN': BuiltinSymbol(),
@@ -445,59 +499,48 @@ class AthStackFrame(object):
         'THIS': BuiltinSymbol(),
         'NULL': BuiltinSymbol(False),
         }
-
-    def __init__(self):
-        self.scope_vars = {}
-
-    def __getitem__(self, name):
-        try:
-            return self.scope_vars[name]
-        except KeyError:
-            return None
-
-    def __setitem__(self, name, value=None):
-        try:
-            self.global_vars[name]
-        except KeyError:
-            pass
-        else:
-            raise SymbolError('Builtins cannot be assigned to!')
-
-        if value is None:
-            value = AthSymbol(True)
-        self.scope_vars[name] = value
-
-
-class TildeAthInterp(object):
-    """This is supposed to be a Finite State Machine"""
-    __slots__ = ()
-    stack = [AthStackFrame()]
+    stack = []
     script_parser = StrictGrafter(stmtparser())
 
     def lookup_name(self, name):
-        try:
-            return self.stack[0].global_vars[name]
-        except KeyError:
-            pass
         for frame in reversed(self.stack):
             value = frame[name]
             if value is not None:
                 # print('{} found'.format(name))
                 return value
-        raise NameError('Symbol {} not found'.format(name))
+        try:
+            return self.global_vars[name]
+        except KeyError:
+            raise NameError('Symbol {} not found'.format(name))
 
     def assign_name(self, name, value):
         # print('{} assigned'.format(name))
+        try:
+            symbol = self.lookup_name(name)
+        except NameError:
+            if not len(self.stack):
+                self.global_vars[name] = value
+            else:
+                self.stack[-1][name] = value
+        else:
+            if not isinstance(symbol, BuiltinSymbol):
+                self.global_vars[name] = value
+            else:
+                raise SymbolError('builtins can\'t be assigned to!')
+
+    def create_name(self, name, value):
         self.stack[-1][name] = value
 
-    def push_stack(self):
-        self.stack.append(AthStackFrame())
+    def push_stack(self, init_dict={}):
+        newframe = AthStackFrame()
+        newframe.scope_vars.update(init_dict)
+        self.stack.append(newframe)
 
     def pop_stack(self):
-        if len(self.stack) > 1:
+        if len(self.stack):
             return self.stack.pop()
         else:
-            raise RuntimeError('Attempted to empty stack')
+            raise RuntimeError('Stack is already empty, dingus!')
 
     def execute(self, script):
         try:
@@ -505,6 +548,7 @@ class TildeAthInterp(object):
         except EndTilDeath:
             sys.exit(0)
         finally:
+            print(self.global_vars)
             for frame in self.stack:
                 print(frame.scope_vars)
 
@@ -517,10 +561,9 @@ class TildeAthInterp(object):
         result = self.script_parser(tokens, 0)
         if result:
             with open(fname[:-4]+'py', 'w') as py_file:
-                py_file.write('from athast import *\n')
+                py_file.write('#!/usr/bin/env python\nfrom athast import *\n')
                 py_file.write('from athparser import TildeAthInterp\n\n')
-                py_file.write('ath_script = ')
-                py_file.write(repr(result.value))
+                py_file.write('ath_script = ' + repr(result.value))
                 py_file.write('\nTildeAthInterp().execute(ath_script)\n')
             self.execute(result.value)
         else:
