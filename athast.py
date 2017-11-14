@@ -258,6 +258,11 @@ class Serialize(Statement):
         self.value = None
         super().__setattr__('ctrl_name', ctrl_name)
 
+    def __repr__(self):
+        return '{}({}, {})'.format(
+            self.__class__.__name__, self.stmt_list, self.ctrl_name
+            )
+
     def __setattr__(self, name, value):
         if name == 'ctrl_name':
             super().__setattr__(name, value)
@@ -427,6 +432,9 @@ class DivulgateStmt(Statement):
     def __init__(self, expr):
         self.expr = expr
         self.value = None
+
+    def __repr__(self):
+        return '{}({})'.format(self.__class__.__name__, self.expr)
 
     def eval(self, fsm):
         self.value = self.expr.eval(fsm)
