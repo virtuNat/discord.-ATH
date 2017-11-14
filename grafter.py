@@ -207,17 +207,12 @@ class StrictExpr(Grafter):
         on the current expression result and the item.
         """
         sep_func, next_item = graft
-        """
-        if sep_func is None:
-            print(self.graft_next)
-        """
         return sep_func(self.result.value, next_item)
 
     def __call__(self, tokens, index):
         self.result = self.graft(tokens, index)
         newresult = self.result
         while newresult:
-            # print(newresult, repr(tokens[newresult.index]), self.group)
             newresult = self.graft_next(tokens, self.result.index)
             if newresult:
                 self.result = newresult
@@ -234,7 +229,7 @@ class TokenGrafter(Token, Grafter):
     __slots__ = ()
 
     def __repr__(self):
-        attr_str = ', '.join([repr(self.token), repr(self.tag), '0'])
+        attr_str = ', '.join([repr(self.token), repr(self.tag)])
         return '{}({})'.format(self.__class__.__name__, attr_str)
 
     def __eq__(self, other):
@@ -307,7 +302,7 @@ class Repeater(Grafter):
     """A grafter that will apply itself repeatedly until failure,
     returning the list of all grafts created from iteration.
 
-    Used to build a list of arguments, tokens, grafts, or items.
+    Used to build a list of arguments, tokens, and the like.
     """
     __slots__ = ('graft',)
 
@@ -343,7 +338,6 @@ class LazyGrafter(Grafter):
 
     def __call__(self, tokens, index):
         if not self.grafter:
-            # print(self.grafter_func)
             self.grafter = self.grafter_func()
         return self.grafter(tokens, index)
 
@@ -361,7 +355,7 @@ class StrictGrafter(Grafter):
 
     def __call__(self, tokens, index):
         graft = self.grafter(tokens, index)
-        # print(graft)
+        print(graft)
         if graft.index == len(tokens):
             return graft
         return None

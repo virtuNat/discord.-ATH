@@ -171,15 +171,17 @@ class BinaryExpr(ArithExpr):
 
     def eval(self, fsm):
         lval = self.lexpr.eval(fsm)
-        if isAthValue(lval):
-            lval = AthSymbol(left=lval)
         rval = self.rexpr.eval(fsm)
-        if isAthValue(rval):
-            rval = AthSymbol(left=rval)
         try:
-            return self.ops[self.op](lval, rval)
+            result = self.ops[self.op](lval, rval)
+            if isinstance(result, AthSymbol):
+                return result
+            elif isAthValue(result):
+                return AthSymbol(left=result)
+            else:
+                raise ValueError('Invalid result: {}'.format(result))
         except KeyError:
-            raise SyntaxError('Invalid operator: {}', self.op)
+            raise SyntaxError('Invalid operator: {}'.format(self.op))
 
 
 class BinaryIPExpr(ArithExpr):
@@ -229,33 +231,18 @@ class NotExpr(BoolExpr):
 
 
 class TernaryExpr(BoolExpr):
-    __slots__ = ('when_suite', 'clause', 'unless_suite')
+    __slots__ = ('when_body', 'clause', 'unless_body')
 
-    def __init__(self, when_suite, clause, unless_suite):
-        self.when_suite = when_suite
+    def __init__(self, when_body, clause, unless_body):
+        self.when_body = when_body
         self.clause = clause
-        self.unless_suite = unless_suite
+        self.unless_body = unless_body
 
     def eval(self, fsm):
         if self.clause.eval(fsm):
-            return self.when_suite.eval(fsm)
+            return self.when_body.eval(fsm)
         else:
-            return self.unless_suite.eval(fsm)
-
-
-class Serialize(AthExpr):
-    __slots__ = ('stmt_list', 'ctrl_name')
-
-    def __init__(self, stmt_list, ctrl_name='THIS'):
-        self.stmt_list = stmt_list
-        self.ctrl_name = 'THIS'
-
-    def eval(self, fsm):
-        for stmt in self.stmt_list:
-            try:
-                stmt.eval(fsm)
-            except SymbolDeath:
-                raise
+            return self.unless_body.eval(fsm)
 
 
 class Statement(AthExpr):
@@ -263,23 +250,53 @@ class Statement(AthExpr):
     __slots__ = ()
 
 
+class Serialize(Statement):
+    __slots__ = ('stmt_list', 'ctrl_name', 'value')
+
+    def __init__(self, stmt_list, ctrl_name='THIS'):
+        self.stmt_list = stmt_list
+        self.value = None
+        super().__setattr__('ctrl_name', ctrl_name)
+
+    def __setattr__(self, name, value):
+        if name == 'ctrl_name':
+            super().__setattr__(name, value)
+            for stmt in self.stmt_list:
+                if isinstance(stmt, DebateStmt):
+                    stmt.body.ctrl_name = value
+                    for alt in stmt.unlesses:
+                        alt.body.ctrl_name = value
+        else:
+            super().__setattr__(name, value)
+
+    def eval(self, fsm):
+        for stmt in self.stmt_list:
+            try:
+                stmt.eval(fsm)
+            except SymbolDeath:
+                if not fsm.lookup_name('THIS').alive:
+                    raise EndTilDeath
+                elif not fsm.lookup_name(self.ctrl_name).alive:
+                    break
+            except DivulgateBack:
+                self.value = stmt.value
+                raise
+
+
 class TildeAthLoop(Statement):
     __slots__ = ('grave', 'body')
 
     def __init__(self, grave, body):
+        body.ctrl_name = grave.name
         self.grave = grave
         self.body = body
 
     def eval(self, fsm):
         dying = self.grave.eval(fsm)
         fsm.push_stack()
-        while True:
-            try:
-                self.body.eval(fsm)
-            except SymbolDeath:
-                dying = self.grave.eval(fsm)
-                if not dying:
-                    break
+        while dying.alive:
+            self.body.eval(fsm)
+            dying = self.grave.eval(fsm)   
         fsm.pop_stack()
 
 
@@ -357,9 +374,11 @@ class DivulgateBack(Exception):
 
 class AthFunction(AthExpr):
     """Function objects in ~ATH."""
-    __slots__ = ('argfmt', 'body')
+    __slots__ = ('name', 'argfmt', 'body')
 
-    def __init__(self, argfmt, body):
+    def __init__(self, name, argfmt, body):
+        body.ctrl_name = name
+        self.name = name
         self.argfmt = argfmt
         self.body = body
 
@@ -370,8 +389,14 @@ class AthFunction(AthExpr):
             try:
                 stmt.eval(fsm)
             except DivulgateBack:
-                value = stmt.value
+                try:
+                    value = stmt.value
+                except AttributeError:
+                    value = stmt.body.value
                 break
+            except SymbolDeath:
+                if not fsm.lookup_name(self.name).alive:
+                    break
         fsm.pop_stack()
         return value
 
@@ -391,7 +416,7 @@ class FabricateStmt(Statement):
         except NameError:
             newflag = True
             symbol = AthSymbol()
-        symbol.right = AthFunction(self.argfmt, self.body)
+        symbol.right = AthFunction(self.name.name, self.argfmt, self.body)
         if newflag:
             fsm.assign_name(self.name.name, symbol)
 
@@ -484,7 +509,6 @@ class PrintFunc(Statement):
                 if isAthValue(result):
                     frmtargs.append(result)
                 elif isinstance(result, AthSymbol):
-                    # print(result)
                     if isAthValue(result.left):
                         frmtargs.append(result.left)
                     else:
@@ -575,23 +599,27 @@ class BreakUnless(Exception):
     """Raised when an Unless clause successfuly executes."""
 
 
-class WhenStmt(Statement):
-    __slots__ = ('clause', 'suite', 'unlesses')
+class DebateStmt(Statement):
+    __slots__ = ('clause', 'body', 'unlesses')
 
-    def __init__(self, clause, suite, unlesses):
+    def __init__(self, clause, body, unlesses):
         self.clause = clause
-        self.suite = suite
+        self.body = body
         self.unlesses = unlesses
 
     def eval(self, fsm):
         if self.clause.eval(fsm):
-            self.suite.eval(fsm)
+            for stmt in self.body.stmt_list:
+                self.body.eval(fsm)
         elif self.unlesses:
             for unless in self.unlesses:
                 try:
                     unless.eval(fsm)
                 except BreakUnless:
                     break
+                except DivulgateBack:
+                    self.body.value = unless.body.value
+                    raise DivulgateBack
 
 
 class UnlessStmt(Statement):
