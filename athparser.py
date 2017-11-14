@@ -167,7 +167,7 @@ def exprvalparser():
         | intparser
         | nameparser
         | LazyGrafter(execexpr)
-        # | LazyGrafter(unaryexprparser)
+        | LazyGrafter(unaryexprparser)
         )
 
 
@@ -581,12 +581,18 @@ class TildeAthInterp(object):
             script = script_file.read()
         tokens = ath_lexer.lex(script)
         result = self.script_parser(tokens, 0)
-        if result:
-            with open(fname[:-4]+'py', 'w') as py_file:
-                py_file.write('#!/usr/bin/env python\nfrom athast import *\n')
-                py_file.write('from athparser import TildeAthInterp\n\n')
-                py_file.write('ath_script = ' + repr(result.value))
-                py_file.write('\nTildeAthInterp().execute(ath_script)\n')
-            self.execute(result.value)
-        else:
+        if not result:
             echo_error('RuntimeError: the parser could not understand the script')
+
+        for stmt in result.value.stmt_list:
+            if isinstance(stmt, TildeAthLoop):
+                break
+        else:
+            echo_error('RuntimeError: no ~ATH loop found in top-level script')
+
+        with open(fname[:-4]+'py', 'w') as py_file:
+            py_file.write('#!/usr/bin/env python\nfrom athast import *\n')
+            py_file.write('from athparser import TildeAthInterp\n\n')
+            py_file.write('ath_script = ' + repr(result.value))
+            py_file.write('\nTildeAthInterp().execute(ath_script)\n')
+        self.execute(result.value)
