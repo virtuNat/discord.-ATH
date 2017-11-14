@@ -609,8 +609,7 @@ class DebateStmt(Statement):
 
     def eval(self, fsm):
         if self.clause.eval(fsm):
-            for stmt in self.body.stmt_list:
-                self.body.eval(fsm)
+            self.body.eval(fsm)
         elif self.unlesses:
             for unless in self.unlesses:
                 try:
