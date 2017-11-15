@@ -1,0 +1,81 @@
+ProcreateStmt(VarExpr('LOOP'), IntExpr(1))
+ProcreateStmt(VarExpr('QUEUE'), VarExpr('NULL'))
+StringExpr('Select action:\\n')
+PrintFunc([StringExpr('Select action:\\n')])
+StringExpr('[1] Add an item to queue\\n')
+PrintFunc([StringExpr('[1] Add an item to queue\\n')])
+StringExpr('[2] View queue\\n')
+PrintFunc([StringExpr('[2] View queue\\n')])
+StringExpr('[3] Exit\\n')
+PrintFunc([StringExpr('[3] Exit\\n')])
+InputStmt(VarExpr('CHOICE'), StringExpr(''))
+KillFunc(VarExpr('LOOP'), [])
+ProcreateStmt(VarExpr('BLAH'), IntExpr(0))
+ProcreateStmt(VarExpr('STACK'), VarExpr('NULL'))
+ReplicateStmt(VarExpr('TEMP'), VarExpr('QUEUE'))
+BifurcateStmt(VarExpr('TEMP'), VarExpr('HEAD'), VarExpr('TEMP'))
+StringExpr('~s\\n')
+VarExpr('HEAD')
+PrintFunc([StringExpr('~s\\n'), VarExpr('HEAD')])
+AggregateStmt(VarExpr('STACK'), VarExpr('HEAD'), VarExpr('STACK'))
+KillFunc(VarExpr('BLAH'), [])
+UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], THIS))
+DebateStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('HEAD')]), AggregateStmt(VarExpr('STACK'), VarExpr('HEAD'), VarExpr('STACK'))], THIS), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], THIS))])
+TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('HEAD'), VarExpr('TEMP')), DebateStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('HEAD')]), AggregateStmt(VarExpr('STACK'), VarExpr('HEAD'), VarExpr('STACK'))], BLAH), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], BLAH))])], BLAH))
+StringExpr('Stack print done.\\n')
+PrintFunc([StringExpr('Stack print done.\\n')])
+ProcreateStmt(VarExpr('OOF'), IntExpr(0))
+BifurcateStmt(VarExpr('STACK'), VarExpr('STACK'), VarExpr('TAIL'))
+StringExpr('I went oof.\\n')
+PrintFunc([StringExpr('I went oof.\\n')])
+StringExpr('~s\\n')
+VarExpr('TAIL')
+PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])
+KillFunc(VarExpr('OOF'), [])
+UnlessStmt(None, Serialize([KillFunc(VarExpr('OOF'), [])], THIS))
+DebateStmt(VarExpr('STACK'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], THIS), [UnlessStmt(None, Serialize([KillFunc(VarExpr('OOF'), [])], THIS))])
+TildeAthLoop(VarExpr('OOF'), Serialize([BifurcateStmt(VarExpr('STACK'), VarExpr('STACK'), VarExpr('TAIL')), PrintFunc([StringExpr('I went oof.\\n')]), DebateStmt(VarExpr('STACK'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], OOF), [UnlessStmt(None, Serialize([KillFunc(VarExpr('OOF'), [])], OOF))])], OOF))
+StringExpr('Queue print done.\\n')
+PrintFunc([StringExpr('Queue print done.\\n')])
+UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ProcreateStmt(VarExpr('STACK'), VarExpr('NULL')), ReplicateStmt(VarExpr('TEMP'), VarExpr('QUEUE')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('HEAD'), VarExpr('TEMP')), DebateStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('HEAD')]), AggregateStmt(VarExpr('STACK'), VarExpr('HEAD'), VarExpr('STACK'))], BLAH), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], BLAH))])], BLAH)), PrintFunc([StringExpr('Stack print done.\\n')]), ProcreateStmt(VarExpr('OOF'), IntExpr(0)), TildeAthLoop(VarExpr('OOF'), Serialize([BifurcateStmt(VarExpr('STACK'), VarExpr('STACK'), VarExpr('TAIL')), PrintFunc([StringExpr('I went oof.\\n')]), DebateStmt(VarExpr('STACK'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], OOF), [UnlessStmt(None, Serialize([KillFunc(VarExpr('OOF'), [])], OOF))])], OOF)), PrintFunc([StringExpr('Queue print done.\\n')])], THIS))
+InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: '))
+AggregateStmt(VarExpr('ITEM'), VarExpr('QUEUE'), VarExpr('QUEUE'))
+UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('ITEM'), VarExpr('QUEUE'), VarExpr('QUEUE'))], THIS))
+StringExpr('Invalid input.')
+PrintFunc([StringExpr('Invalid input.')])
+UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], THIS))
+DebateStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(3)), Serialize([KillFunc(VarExpr('LOOP'), [])], THIS), [UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ProcreateStmt(VarExpr('STACK'), VarExpr('NULL')), ReplicateStmt(VarExpr('TEMP'), VarExpr('QUEUE')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('HEAD'), VarExpr('TEMP')), DebateStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('HEAD')]), AggregateStmt(VarExpr('STACK'), VarExpr('HEAD'), VarExpr('STACK'))], BLAH), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], BLAH))])], BLAH)), PrintFunc([StringExpr('Stack print done.\\n')]), ProcreateStmt(VarExpr('OOF'), IntExpr(0)), TildeAthLoop(VarExpr('OOF'), Serialize([BifurcateStmt(VarExpr('STACK'), VarExpr('STACK'), VarExpr('TAIL')), PrintFunc([StringExpr('I went oof.\\n')]), DebateStmt(VarExpr('STACK'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], OOF), [UnlessStmt(None, Serialize([KillFunc(VarExpr('OOF'), [])], OOF))])], OOF)), PrintFunc([StringExpr('Queue print done.\\n')])], THIS)), UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('ITEM'), VarExpr('QUEUE'), VarExpr('QUEUE'))], THIS)), UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], THIS))])
+TildeAthLoop(VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Select action:\\n')]), PrintFunc([StringExpr('[1] Add an item to queue\\n')]), PrintFunc([StringExpr('[2] View queue\\n')]), PrintFunc([StringExpr('[3] Exit\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), DebateStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(3)), Serialize([KillFunc(VarExpr('LOOP'), [])], LOOP), [UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ProcreateStmt(VarExpr('STACK'), VarExpr('NULL')), ReplicateStmt(VarExpr('TEMP'), VarExpr('QUEUE')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('HEAD'), VarExpr('TEMP')), DebateStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('HEAD')]), AggregateStmt(VarExpr('STACK'), VarExpr('HEAD'), VarExpr('STACK'))], BLAH), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], BLAH))])], BLAH)), PrintFunc([StringExpr('Stack print done.\\n')]), ProcreateStmt(VarExpr('OOF'), IntExpr(0)), TildeAthLoop(VarExpr('OOF'), Serialize([BifurcateStmt(VarExpr('STACK'), VarExpr('STACK'), VarExpr('TAIL')), PrintFunc([StringExpr('I went oof.\\n')]), DebateStmt(VarExpr('STACK'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], OOF), [UnlessStmt(None, Serialize([KillFunc(VarExpr('OOF'), [])], OOF))])], OOF)), PrintFunc([StringExpr('Queue print done.\\n')])], LOOP)), UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('ITEM'), VarExpr('QUEUE'), VarExpr('QUEUE'))], LOOP)), UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], LOOP))])], LOOP))
+KillFunc(VarExpr('THIS'), [])
+Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(1)), ProcreateStmt(VarExpr('QUEUE'), VarExpr('NULL')), TildeAthLoop(VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Select action:\\n')]), PrintFunc([StringExpr('[1] Add an item to queue\\n')]), PrintFunc([StringExpr('[2] View queue\\n')]), PrintFunc([StringExpr('[3] Exit\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), DebateStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(3)), Serialize([KillFunc(VarExpr('LOOP'), [])], LOOP), [UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), Serialize([ProcreateStmt(VarExpr('BLAH'), IntExpr(0)), ProcreateStmt(VarExpr('STACK'), VarExpr('NULL')), ReplicateStmt(VarExpr('TEMP'), VarExpr('QUEUE')), TildeAthLoop(VarExpr('BLAH'), Serialize([BifurcateStmt(VarExpr('TEMP'), VarExpr('HEAD'), VarExpr('TEMP')), DebateStmt(VarExpr('TEMP'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('HEAD')]), AggregateStmt(VarExpr('STACK'), VarExpr('HEAD'), VarExpr('STACK'))], BLAH), [UnlessStmt(None, Serialize([KillFunc(VarExpr('BLAH'), [])], BLAH))])], BLAH)), PrintFunc([StringExpr('Stack print done.\\n')]), ProcreateStmt(VarExpr('OOF'), IntExpr(0)), TildeAthLoop(VarExpr('OOF'), Serialize([BifurcateStmt(VarExpr('STACK'), VarExpr('STACK'), VarExpr('TAIL')), PrintFunc([StringExpr('I went oof.\\n')]), DebateStmt(VarExpr('STACK'), Serialize([PrintFunc([StringExpr('~s\\n'), VarExpr('TAIL')])], OOF), [UnlessStmt(None, Serialize([KillFunc(VarExpr('OOF'), [])], OOF))])], OOF)), PrintFunc([StringExpr('Queue print done.\\n')])], LOOP)), UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(1)), Serialize([InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), AggregateStmt(VarExpr('ITEM'), VarExpr('QUEUE'), VarExpr('QUEUE'))], LOOP)), UnlessStmt(None, Serialize([PrintFunc([StringExpr('Invalid input.')])], LOOP))])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS), 205)
+Select action:
+[1] Add an item to queue
+[2] View queue
+[3] Exit
+Input string to add: {'THIS': BuiltinSymbol(), 'NULL': BuiltinSymbol(), 'DIE': BuiltinSymbol(), 'ATH': BuiltinSymbol(), 'print': BuiltinSymbol(), 'input': BuiltinSymbol(), 'import': BuiltinSymbol(), 'DEBATE': BuiltinSymbol(), 'UNLESS': BuiltinSymbol(), 'EXECUTE': BuiltinSymbol(), 'DIVULGATE': BuiltinSymbol(), 'FABRICATE': BuiltinSymbol(), 'REPLICATE': BuiltinSymbol(), 'PROCREATE': BuiltinSymbol(), 'BIFURCATE': BuiltinSymbol(), 'AGGREGATE': BuiltinSymbol(), 'LOOP': AthSymbol(True, 1, None), 'QUEUE': AthSymbol(True, AthSymbol(True, 'Aradia', None), None)}
+{'CHOICE': AthSymbol(True, 1, None), 'ITEM': AthSymbol(True, 'Aradia', None)}
+
+Traceback (most recent call last):
+  File "tildeath.py", line 17, in <module>
+    ath_interp.interpret(cmdargs.script)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athparser.py", line 598, in interpret
+    self.execute(result.value)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athparser.py", line 569, in execute
+    script.eval(self)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
+    stmt.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 303, in eval
+    self.body.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
+    stmt.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 624, in eval
+    unless.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 641, in eval
+    self.body.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
+    stmt.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 601, in eval
+    result.assign_right(self.rexpr.eval(fsm))
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\symbol.py", line 171, in assign_right
+    if (isinstance(value, AthFunction)
+NameError: name 'AthFunction' is not defined

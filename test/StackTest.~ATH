@@ -8,14 +8,14 @@ PROCREATE STACK NULL;
 	print ("[3] Exit\n");
 	input CHOICE;
 	
-	WHEN (CHOICE == 3) {
+	DEBATE (CHOICE == 3) {
 		LOOP.DIE();
 	} UNLESS (CHOICE == 2) {
 		PROCREATE BLAH 0;
 		REPLICATE TEMP STACK;
 		~ATH(BLAH) {
 			BIFURCATE TEMP[TEMP, TAIL];
-			WHEN (TEMP) {
+			DEBATE (TEMP) {
 				print ("~s\n", TAIL);
 			} UNLESS {
 				BLAH.DIE();

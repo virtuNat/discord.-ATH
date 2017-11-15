@@ -6,9 +6,9 @@ PROCREATE QUEUE NULL;
 	print ("[1] Add an item to queue\n");
 	print ("[2] View queue\n");
 	print ("[3] Exit\n");
-	input CHOICE;
+	input CHOICE "";
 	
-	WHEN (CHOICE == 3) {
+	DEBATE (CHOICE == 3) {
 		LOOP.DIE();
 	} UNLESS (CHOICE == 2) {
 		PROCREATE BLAH 0;
@@ -16,7 +16,7 @@ PROCREATE QUEUE NULL;
 		REPLICATE TEMP QUEUE;
 		~ATH(BLAH) {
 			BIFURCATE TEMP[HEAD, TEMP];
-			WHEN(TEMP) {
+			DEBATE (TEMP) {
 				print ("~s\n", HEAD);
 				AGGREGATE [STACK, HEAD]STACK;
 			} UNLESS {
@@ -28,7 +28,7 @@ PROCREATE QUEUE NULL;
 		~ATH(OOF) {
 			BIFURCATE STACK[STACK, TAIL];
 			print ("I went oof.\n");
-			WHEN (STACK) {
+			DEBATE (STACK) {
 				print ("~s\n", TAIL);
 			} UNLESS {
 				OOF.DIE();

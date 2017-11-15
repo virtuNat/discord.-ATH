@@ -1,0 +1,36 @@
+ProcreateStmt(VarExpr('LOOP'), IntExpr(1))
+ProcreateStmt(VarExpr('X'), IntExpr(1))
+ProcreateStmt(VarExpr('Y'), IntExpr(2))
+AggregateStmt(VarExpr('X'), VarExpr('Y'), VarExpr('Z'))
+ProcreateStmt(VarExpr('A'), IntExpr(3))
+ReplicateStmt(VarExpr('Y'), VarExpr('A'))
+BifurcateStmt(VarExpr('Z'), VarExpr('B'), VarExpr('C'))
+StringExpr('~s, ~s')
+VarExpr('B')
+VarExpr('C')
+PrintFunc([StringExpr('~s, ~s'), VarExpr('B'), VarExpr('C')])
+KillFunc(VarExpr('LOOP'), [])
+TildeAthLoop(VarExpr('LOOP'), Serialize([ProcreateStmt(VarExpr('X'), IntExpr(1)), ProcreateStmt(VarExpr('Y'), IntExpr(2)), AggregateStmt(VarExpr('X'), VarExpr('Y'), VarExpr('Z')), ProcreateStmt(VarExpr('A'), IntExpr(3)), ReplicateStmt(VarExpr('Y'), VarExpr('A')), BifurcateStmt(VarExpr('Z'), VarExpr('B'), VarExpr('C')), PrintFunc([StringExpr('~s, ~s'), VarExpr('B'), VarExpr('C')]), KillFunc(VarExpr('LOOP'), [])], LOOP))
+KillFunc(VarExpr('THIS'), [])
+Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(1)), TildeAthLoop(VarExpr('LOOP'), Serialize([ProcreateStmt(VarExpr('X'), IntExpr(1)), ProcreateStmt(VarExpr('Y'), IntExpr(2)), AggregateStmt(VarExpr('X'), VarExpr('Y'), VarExpr('Z')), ProcreateStmt(VarExpr('A'), IntExpr(3)), ReplicateStmt(VarExpr('Y'), VarExpr('A')), BifurcateStmt(VarExpr('Z'), VarExpr('B'), VarExpr('C')), PrintFunc([StringExpr('~s, ~s'), VarExpr('B'), VarExpr('C')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS), 63)
+{'THIS': BuiltinSymbol(), 'NULL': BuiltinSymbol(), 'DIE': BuiltinSymbol(), 'ATH': BuiltinSymbol(), 'print': BuiltinSymbol(), 'input': BuiltinSymbol(), 'import': BuiltinSymbol(), 'DEBATE': BuiltinSymbol(), 'UNLESS': BuiltinSymbol(), 'EXECUTE': BuiltinSymbol(), 'DIVULGATE': BuiltinSymbol(), 'FABRICATE': BuiltinSymbol(), 'REPLICATE': BuiltinSymbol(), 'PROCREATE': BuiltinSymbol(), 'BIFURCATE': BuiltinSymbol(), 'AGGREGATE': BuiltinSymbol(), 'LOOP': AthSymbol(True, 1, None)}
+{'X': AthSymbol(True, 1, None), 'Y': AthSymbol(True, 2, None)}
+
+Traceback (most recent call last):
+  File "tildeath.py", line 17, in <module>
+    ath_interp.interpret(cmdargs.script)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athparser.py", line 598, in interpret
+    self.execute(result.value)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athparser.py", line 569, in execute
+    script.eval(self)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
+    stmt.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 303, in eval
+    self.body.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
+    stmt.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 601, in eval
+    result.assign_right(self.rexpr.eval(fsm))
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\symbol.py", line 171, in assign_right
+    if (isinstance(value, AthFunction)
+NameError: name 'AthFunction' is not defined
