@@ -3,4 +3,3 @@ PROCREATE LOOP NULL;
 	print ("Hi.");
 	LOOP.DIE();
 }
-THIS.DIE();
