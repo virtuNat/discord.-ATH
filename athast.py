@@ -64,6 +64,12 @@ class IntExpr(NumExpr):
         self.num = int(num)
 
 
+def bool_not(val):
+    if isAthValue(val):
+        val = AthSymbol(bool(val), left=val)
+    return AthSymbol(not val, val.left, val.right)
+
+
 class UnaryArithExpr(ArithExpr):
     """Handles unary arithmetic expressions."""
     __slots__ = ('op', 'expr')
@@ -71,6 +77,7 @@ class UnaryArithExpr(ArithExpr):
         '+': operator.pos,
         '-': operator.neg,
         '~': operator.inv,
+        '!': bool_not,
     }
 
     def __init__(self, op, expr):
@@ -79,7 +86,13 @@ class UnaryArithExpr(ArithExpr):
 
     def eval(self, fsm):
         try:
-            return self.ops[self.op](self.expr.eval(fsm))
+            result = self.ops[self.op](self.expr.eval(fsm))
+            if isinstance(result, AthSymbol):
+                return result
+            elif isAthValue(result):
+                return AthSymbol(left=result)
+            else:
+                raise ValueError('Invalid result: {}'.format(result))
         except KeyError:
             raise SyntaxError('Unknown operator: {}', self.op)
 
@@ -499,7 +512,7 @@ class PrintFunc(Statement):
     def format(self, frmtstr, fsm):
         frmtstr = re.sub(r'(?<!\\)~s', '{!s}', frmtstr)
         frmtstr = re.sub(r'(?<!\\)~d', '{:.0f}', frmtstr)
-        frmtstr = re.sub(r'(?<!\\)~((?:\d)?\.\d)?f', '{:\1f}', frmtstr)
+        frmtstr = re.sub(r'(?<!\\)~((?:\d)?\.\d)?f', '{:\\1f}', frmtstr)
         frmtstr = re.sub(r'(?<=\\)~', '~', frmtstr)
         # Replace whitespace character escapes
         frmtstr = re.sub(r'\\a', '\a', frmtstr)
@@ -640,3 +653,29 @@ class UnlessStmt(Statement):
         if self.clause is None or self.clause.eval(fsm):
             self.body.eval(fsm)
             raise BreakUnless
+
+
+class InspectStack(Statement):
+    __slots__ = ('args',)
+
+    def __init__(self, args):
+        self.args = args
+
+    def eval(self, fsm):
+        if len(self.args) > 1 and not isinstance(self.args[0], IntExpr):
+            raise ValueError('may only call stack frame index')
+
+        if not self.args:
+            print(fsm.global_vars)
+            for frame in fsm.stack:
+                print(frame.scope_vars)
+        else:
+            index = self.args[0].eval(fsm)
+            if not index:
+                print(fsm.global_vars)
+            elif abs(index) > len(fsm.stack):
+                print(fsm.stack[-1].scope_vars)
+            elif index > 0:
+                print(fsm.stack[index - 1].scope_vars)
+            elif index < 0:
+                print(fsm.stack[index].scope_vars)

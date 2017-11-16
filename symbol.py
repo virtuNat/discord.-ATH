@@ -5,6 +5,7 @@ def isAthValue(obj):
     """True if an object is a number or string."""
     return (isinstance(obj, int)
         or isinstance(obj, float)
+        or isinstance(obj, complex)
         or isinstance(obj, str))
 
 

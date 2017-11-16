@@ -12,7 +12,7 @@ from athast import (
     AthSymbol, SymbolError, EndTilDeath,
     IntExpr, FloatExpr, StringExpr, VarExpr,
     NotExpr, UnaryArithExpr, BinaryExpr,
-    TernaryExpr, Serialize,
+    TernaryExpr, Serialize, InspectStack,
 
     InputStmt, PrintFunc, KillFunc,
     BifurcateStmt, AggregateStmt,
@@ -84,6 +84,7 @@ ath_lexer = Lexer([
     (r'print', 'BUILTIN'), # Output
     (r'input', 'BUILTIN'), # Input
     (r'import', 'BUILTIN'), # Import another file
+    (r'INSPECT', 'BUILTIN'), # Debug
     (r'DEBATE', 'BUILTIN'), # Conditional Consequent
     (r'UNLESS', 'BUILTIN'), # Conditional Alternative
     (r'EXECUTE', 'BUILTIN'), # Subroutine execution
@@ -163,19 +164,20 @@ def exprgrpparser():
 def exprvalparser():
     """Parses expression primitives."""
     return (
-        fltparser
-        | intparser
-        | nameparser
-		| strparser
-        | LazyGrafter(execexpr)
+        LazyGrafter(execexpr)
         | LazyGrafter(unaryexprparser)
+        | nameparser
+        | fltparser
+        | intparser
+        | strparser
         )
 
 
 def unaryexprparser():
-    term = exprgrpparser() | exprvalparser()
-    ops = bltinparser('+') | bltinparser('-') | bltinparser('~')
-    return ops + term ^ (lambda _: UnaryArithExpr)
+    """Parses unary expressions."""
+    term = exprvalparser() | exprgrpparser()
+    ops = bltinparser('+') | bltinparser('-') | bltinparser('~') | bltinparser('!')
+    return ops + term ^ (lambda e: UnaryArithExpr(*e))
 
 
 def exprparser():
@@ -201,8 +203,7 @@ def callparser():
     """Parses a group of expressions."""
     def cull_seps(graft):
         return graft[0] or graft[1]
-    term = (strparser | exprparser())
-    return Repeater(term + EnsureGraft(bltinparser(',')) ^ cull_seps)
+    return Repeater(exprparser() + EnsureGraft(bltinparser(',')) ^ cull_seps)
 
 
 def tildeath():
@@ -294,13 +295,7 @@ def inputstmt():
     return (
         bltinparser('input')
         + nameparser
-        + EnsureGraft(
-            strparser
-            | fltparser
-            | intparser
-            | nameparser
-            | exprgrpparser()
-            )
+        + EnsureGraft(exprvalparser() | exprgrpparser())
         + bltinparser(';')
         ^ breakdown
         )
@@ -425,6 +420,18 @@ def aggrstmt():
         )
 
 
+def inspstmt():
+    def breakdown(tokens):
+        return InspectStack(tokens[2])
+    return(
+        bltinparser('INSPECT')
+        + bltinparser('(')
+        + LazyGrafter(callparser)
+        + bltinparser(')')
+        + bltinparser(';')
+        )
+
+
 def funcstmts():
     """Parses the set of statements used in functions."""
     return Repeater(
@@ -440,6 +447,7 @@ def funcstmts():
         | LazyGrafter(fabristmt)
         | condistmt(True)
         | divlgstmt()
+        | inspstmt() # Debug, remove
         ) ^ Serialize
 
 
@@ -457,6 +465,7 @@ def stmtparser():
         | tildeath()
         | fabristmt()
         | condistmt()
+        | inspstmt() # Debug, remove
         )
     return Repeater(stmts) ^ Serialize
 # print(stmtparser())
@@ -548,10 +557,10 @@ class TildeAthInterp(object):
                 raise SymbolError('builtins can\'t be assigned to!')
 
     def create_name(self, name, value):
-        if not len(self.stack):
-            self.global_vars[name] = value
-        else:
+        try:
             self.stack[-1][name] = value
+        except IndexError:
+            self.global_vars[name] = value
 
     def push_stack(self, init_dict={}):
         newframe = AthStackFrame()
@@ -565,15 +574,19 @@ class TildeAthInterp(object):
             raise RuntimeError('Stack is already empty, dingus!')
 
     def execute(self, script):
-        while True:
-            try:
+        count = 0
+        try:
+            while True:
                 script.eval(self)
-            except EndTilDeath:
-                sys.exit(0)
-            finally:
-                print(self.global_vars)
-                for frame in self.stack:
-                    print(frame.scope_vars)
+                count += 1
+                if count >= 1025:
+                    echo_error('UnboundATHLoopError: THIS.DIE() not called')
+        except EndTilDeath:
+            sys.exit(0)
+        finally:
+            print(self.global_vars)
+            for frame in self.stack:
+                print(frame.scope_vars)
 
     def interpret(self, fname):
         if not fname.endswith('~ATH'):
