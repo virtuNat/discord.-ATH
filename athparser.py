@@ -166,6 +166,7 @@ def exprvalparser():
         fltparser
         | intparser
         | nameparser
+		| strparser
         | LazyGrafter(execexpr)
         | LazyGrafter(unaryexprparser)
         )
