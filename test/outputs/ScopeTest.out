@@ -23,3 +23,9 @@ KillFunc(VarExpr('THIS'), [])
 Graft(Serialize([ProcreateStmt(VarExpr('B'), IntExpr(5)), FabricateStmt(VarExpr('FOO'), [], Serialize([ReplicateStmt(VarExpr('A'), BinaryExpr('+', VarExpr('B'), IntExpr(5))), DivulgateStmt(VarExpr('A'))], THIS)), FabricateStmt(VarExpr('BAR'), [], Serialize([ProcreateStmt(VarExpr('B'), IntExpr(2)), ExecuteStmt([VarExpr('FOO')])], THIS)), ProcreateStmt(VarExpr('LOOP'), IntExpr(1)), TildeAthLoop(VarExpr('LOOP'), Serialize([ReplicateStmt(VarExpr('ANS'), ExecuteStmt([VarExpr('FOO')])), PrintFunc([StringExpr('Foo: ~d'), VarExpr('ANS')]), ReplicateStmt(VarExpr('ANS'), ExecuteStmt([VarExpr('BAR')])), PrintFunc([StringExpr('Bar: ~d\\n'), VarExpr('ANS')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS), 86)
 Foo: 10Bar: 10
 {'THIS': BuiltinSymbol(), 'NULL': BuiltinSymbol(), 'DIE': BuiltinSymbol(), 'ATH': BuiltinSymbol(), 'print': BuiltinSymbol(), 'input': BuiltinSymbol(), 'import': BuiltinSymbol(), 'DEBATE': BuiltinSymbol(), 'UNLESS': BuiltinSymbol(), 'EXECUTE': BuiltinSymbol(), 'DIVULGATE': BuiltinSymbol(), 'FABRICATE': BuiltinSymbol(), 'REPLICATE': BuiltinSymbol(), 'PROCREATE': BuiltinSymbol(), 'BIFURCATE': BuiltinSymbol(), 'AGGREGATE': BuiltinSymbol(), 'B': AthSymbol(True, 5, None), 'FOO': AthSymbol(True, None, AthFunction('FOO', [], Serialize([ReplicateStmt(VarExpr('A'), BinaryExpr('+', VarExpr('B'), IntExpr(5))), DivulgateStmt(VarExpr('A'))], FOO))), 'BAR': AthSymbol(True, None, AthFunction('BAR', [], Serialize([ProcreateStmt(VarExpr('B'), IntExpr(2)), ExecuteStmt([VarExpr('FOO')])], BAR))), 'LOOP': AthSymbol(False, 1, None), 'ANS': AthSymbol(True, None, None)}
+
+<!--
+	--
+	Code check: dynamic scoping
+	Status: Failed
+-->

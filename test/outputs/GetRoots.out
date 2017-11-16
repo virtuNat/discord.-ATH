@@ -1,0 +1,49 @@
+ProcreateStmt(VarExpr('LOOP'), IntExpr(0))
+InputStmt(VarExpr('A'), StringExpr('A: '))
+InputStmt(VarExpr('B'), StringExpr('B: '))
+InputStmt(VarExpr('C'), StringExpr('C: '))
+ReplicateStmt(VarExpr('R'), BinaryExpr('/', BinaryExpr('+', <class 'athast.UnaryArithExpr'>, BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A'))))
+ReplicateStmt(VarExpr('S'), BinaryExpr('/', BinaryExpr('-', <class 'athast.UnaryArithExpr'>, BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A'))))
+StringExpr('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~d and ~d.')
+VarExpr('A')
+VarExpr('B')
+VarExpr('C')
+VarExpr('R')
+VarExpr('S')
+PrintFunc([StringExpr('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~d and ~d.'), VarExpr('A'), VarExpr('B'), VarExpr('C'), VarExpr('R'), VarExpr('S')])
+KillFunc(VarExpr('LOOP'), [])
+TildeAthLoop(VarExpr('LOOP'), Serialize([InputStmt(VarExpr('A'), StringExpr('A: ')), InputStmt(VarExpr('B'), StringExpr('B: ')), InputStmt(VarExpr('C'), StringExpr('C: ')), ReplicateStmt(VarExpr('R'), BinaryExpr('/', BinaryExpr('+', <class 'athast.UnaryArithExpr'>, BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))), ReplicateStmt(VarExpr('S'), BinaryExpr('/', BinaryExpr('-', <class 'athast.UnaryArithExpr'>, BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))), PrintFunc([StringExpr('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~d and ~d.'), VarExpr('A'), VarExpr('B'), VarExpr('C'), VarExpr('R'), VarExpr('S')]), KillFunc(VarExpr('LOOP'), [])], LOOP))
+KillFunc(VarExpr('THIS'), [])
+Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(0)), TildeAthLoop(VarExpr('LOOP'), Serialize([InputStmt(VarExpr('A'), StringExpr('A: ')), InputStmt(VarExpr('B'), StringExpr('B: ')), InputStmt(VarExpr('C'), StringExpr('C: ')), ReplicateStmt(VarExpr('R'), BinaryExpr('/', BinaryExpr('+', <class 'athast.UnaryArithExpr'>, BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))), ReplicateStmt(VarExpr('S'), BinaryExpr('/', BinaryExpr('-', <class 'athast.UnaryArithExpr'>, BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))), PrintFunc([StringExpr('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~d and ~d.'), VarExpr('A'), VarExpr('B'), VarExpr('C'), VarExpr('R'), VarExpr('S')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS), 119)
+A: B: C: {'THIS': BuiltinSymbol(), 'NULL': BuiltinSymbol(), 'DIE': BuiltinSymbol(), 'ATH': BuiltinSymbol(), 'print': BuiltinSymbol(), 'input': BuiltinSymbol(), 'import': BuiltinSymbol(), 'DEBATE': BuiltinSymbol(), 'UNLESS': BuiltinSymbol(), 'EXECUTE': BuiltinSymbol(), 'DIVULGATE': BuiltinSymbol(), 'FABRICATE': BuiltinSymbol(), 'REPLICATE': BuiltinSymbol(), 'PROCREATE': BuiltinSymbol(), 'BIFURCATE': BuiltinSymbol(), 'AGGREGATE': BuiltinSymbol(), 'LOOP': AthSymbol(True, 0, None)}
+{'A': AthSymbol(True, 1, None), 'B': AthSymbol(True, 2, None), 'C': AthSymbol(True, 1, None)}
+
+<!--
+	Input + Traceback
+	Code check: arithmetic expressions
+				unaries
+	Status: Failed
+-->
+1
+2
+1
+Traceback (most recent call last):
+  File "tildeath.py", line 17, in <module>
+    ath_interp.interpret(cmdargs.script)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athparser.py", line 599, in interpret
+    self.execute(result.value)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athparser.py", line 570, in execute
+    script.eval(self)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
+    stmt.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 303, in eval
+    self.body.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
+    stmt.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 365, in eval
+    result = self.expr.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 173, in eval
+    lval = self.lexpr.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 173, in eval
+    lval = self.lexpr.eval(fsm)
+TypeError: eval() missing 1 required positional argument: 'fsm'

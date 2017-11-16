@@ -1,0 +1,27 @@
+ProcreateStmt(VarExpr('LOOP'), IntExpr(0))
+InputStmt(VarExpr('A'), StringExpr('A: '))
+InputStmt(VarExpr('B'), StringExpr('B: '))
+InputStmt(VarExpr('C'), StringExpr('C: '))
+ReplicateStmt(VarExpr('R'), BinaryExpr('/', BinaryExpr('+', BinaryExpr('-', IntExpr(0), VarExpr('B')), BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A'))))
+ReplicateStmt(VarExpr('S'), BinaryExpr('/', BinaryExpr('-', BinaryExpr('-', IntExpr(0), VarExpr('B')), BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A'))))
+StringExpr('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~d and ~d.')
+VarExpr('A')
+VarExpr('B')
+VarExpr('C')
+VarExpr('R')
+VarExpr('S')
+PrintFunc([StringExpr('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~d and ~d.'), VarExpr('A'), VarExpr('B'), VarExpr('C'), VarExpr('R'), VarExpr('S')])
+KillFunc(VarExpr('LOOP'), [])
+TildeAthLoop(VarExpr('LOOP'), Serialize([InputStmt(VarExpr('A'), StringExpr('A: ')), InputStmt(VarExpr('B'), StringExpr('B: ')), InputStmt(VarExpr('C'), StringExpr('C: ')), ReplicateStmt(VarExpr('R'), BinaryExpr('/', BinaryExpr('+', BinaryExpr('-', IntExpr(0), VarExpr('B')), BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))), ReplicateStmt(VarExpr('S'), BinaryExpr('/', BinaryExpr('-', BinaryExpr('-', IntExpr(0), VarExpr('B')), BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))), PrintFunc([StringExpr('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~d and ~d.'), VarExpr('A'), VarExpr('B'), VarExpr('C'), VarExpr('R'), VarExpr('S')]), KillFunc(VarExpr('LOOP'), [])], LOOP))
+KillFunc(VarExpr('THIS'), [])
+Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(0)), TildeAthLoop(VarExpr('LOOP'), Serialize([InputStmt(VarExpr('A'), StringExpr('A: ')), InputStmt(VarExpr('B'), StringExpr('B: ')), InputStmt(VarExpr('C'), StringExpr('C: ')), ReplicateStmt(VarExpr('R'), BinaryExpr('/', BinaryExpr('+', BinaryExpr('-', IntExpr(0), VarExpr('B')), BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))), ReplicateStmt(VarExpr('S'), BinaryExpr('/', BinaryExpr('-', BinaryExpr('-', IntExpr(0), VarExpr('B')), BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))), PrintFunc([StringExpr('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~d and ~d.'), VarExpr('A'), VarExpr('B'), VarExpr('C'), VarExpr('R'), VarExpr('S')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS), 121)
+A: B: C: The roots of the quadratic equation 1x^2 + 2x + 1 are -1 and -1.{'THIS': BuiltinSymbol(), 'NULL': BuiltinSymbol(), 'DIE': BuiltinSymbol(), 'ATH': BuiltinSymbol(), 'print': BuiltinSymbol(), 'input': BuiltinSymbol(), 'import': BuiltinSymbol(), 'DEBATE': BuiltinSymbol(), 'UNLESS': BuiltinSymbol(), 'EXECUTE': BuiltinSymbol(), 'DIVULGATE': BuiltinSymbol(), 'FABRICATE': BuiltinSymbol(), 'REPLICATE': BuiltinSymbol(), 'PROCREATE': BuiltinSymbol(), 'BIFURCATE': BuiltinSymbol(), 'AGGREGATE': BuiltinSymbol(), 'LOOP': AthSymbol(False, 0, None)}
+
+<!--
+	Input
+	Code check: arithmetic expressions
+	Status: Passed
+-->
+1
+2
+1

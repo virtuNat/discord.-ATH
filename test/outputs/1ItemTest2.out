@@ -1,0 +1,168 @@
+ProcreateStmt(VarExpr('LOOP'), IntExpr(0))
+StringExpr('Which of the following is not a French word?\\n')
+PrintFunc([StringExpr('Which of the following is not a French word?\\n')])
+StringExpr('[A] sale\\n')
+PrintFunc([StringExpr('[A] sale\\n')])
+StringExpr('[B] mode\\n')
+PrintFunc([StringExpr('[B] mode\\n')])
+StringExpr('[C] grand\\n')
+PrintFunc([StringExpr('[C] grand\\n')])
+StringExpr('[D] chat\\n')
+PrintFunc([StringExpr('[D] chat\\n')])
+StringExpr('[E] A, B, C, and D are all French words\\n')
+PrintFunc([StringExpr('[E] A, B, C, and D are all French words\\n')])
+StringExpr('[F] A, B, C, and D are all not French words\\n')
+PrintFunc([StringExpr('[F] A, B, C, and D are all not French words\\n')])
+InputStmt(VarExpr('CHOICE'), StringExpr(''))
+ProcreateStmt(VarExpr('F'), StringExpr('F'))
+ProcreateStmt(VarExpr('CHEAT'), StringExpr('THE CHEAT CODE'))
+ProcreateStmt(VarExpr('DEATH'), StringExpr('DIE'))
+StringExpr('Wrong! Try again, idiot.\\n')
+PrintFunc([StringExpr('Wrong! Try again, idiot.\\n')])
+StringExpr("Damn, you caught me. It's a trick question.\\n")
+PrintFunc([StringExpr("Damn, you caught me. It's a trick question.\\n")])
+UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), VarExpr('CHEAT')), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.\\n")])], THIS))
+StringExpr('Hmph. Ninny.\\n')
+PrintFunc([StringExpr('Hmph. Ninny.\\n')])
+KillFunc(VarExpr('LOOP'), [])
+UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), VarExpr('DEATH')), Serialize([PrintFunc([StringExpr('Hmph. Ninny.\\n')]), KillFunc(VarExpr('LOOP'), [])], THIS))
+StringExpr("HA! Loser can't even guess the cheat code.\\n")
+PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.\\n")])
+UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.\\n")])], THIS))
+DebateStmt(BinaryExpr('<=', VarExpr('CHOICE'), VarExpr('F')), Serialize([PrintFunc([StringExpr('Wrong! Try again, idiot.\\n')])], THIS), [UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), VarExpr('CHEAT')), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.\\n")])], THIS)), UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), VarExpr('DEATH')), Serialize([PrintFunc([StringExpr('Hmph. Ninny.\\n')]), KillFunc(VarExpr('LOOP'), [])], THIS)), UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.\\n")])], THIS))])
+StringExpr('\\n')
+PrintFunc([StringExpr('\\n')])
+TildeAthLoop(VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Which of the following is not a French word?\\n')]), PrintFunc([StringExpr('[A] sale\\n')]), PrintFunc([StringExpr('[B] mode\\n')]), PrintFunc([StringExpr('[C] grand\\n')]), PrintFunc([StringExpr('[D] chat\\n')]), PrintFunc([StringExpr('[E] A, B, C, and D are all French words\\n')]), PrintFunc([StringExpr('[F] A, B, C, and D are all not French words\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), ProcreateStmt(VarExpr('F'), StringExpr('F')), ProcreateStmt(VarExpr('CHEAT'), StringExpr('THE CHEAT CODE')), ProcreateStmt(VarExpr('DEATH'), StringExpr('DIE')), DebateStmt(BinaryExpr('<=', VarExpr('CHOICE'), VarExpr('F')), Serialize([PrintFunc([StringExpr('Wrong! Try again, idiot.\\n')])], LOOP), [UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), VarExpr('CHEAT')), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.\\n")])], LOOP)), UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), VarExpr('DEATH')), Serialize([PrintFunc([StringExpr('Hmph. Ninny.\\n')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.\\n")])], LOOP))]), PrintFunc([StringExpr('\\n')])], LOOP))
+KillFunc(VarExpr('THIS'), [])
+Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(0)), TildeAthLoop(VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Which of the following is not a French word?\\n')]), PrintFunc([StringExpr('[A] sale\\n')]), PrintFunc([StringExpr('[B] mode\\n')]), PrintFunc([StringExpr('[C] grand\\n')]), PrintFunc([StringExpr('[D] chat\\n')]), PrintFunc([StringExpr('[E] A, B, C, and D are all French words\\n')]), PrintFunc([StringExpr('[F] A, B, C, and D are all not French words\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), ProcreateStmt(VarExpr('F'), StringExpr('F')), ProcreateStmt(VarExpr('CHEAT'), StringExpr('THE CHEAT CODE')), ProcreateStmt(VarExpr('DEATH'), StringExpr('DIE')), DebateStmt(BinaryExpr('<=', VarExpr('CHOICE'), VarExpr('F')), Serialize([PrintFunc([StringExpr('Wrong! Try again, idiot.\\n')])], LOOP), [UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), VarExpr('CHEAT')), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.\\n")])], LOOP)), UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), VarExpr('DEATH')), Serialize([PrintFunc([StringExpr('Hmph. Ninny.\\n')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.\\n")])], LOOP))]), PrintFunc([StringExpr('\\n')])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS), 125)
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+{'THIS': BuiltinSymbol(), 'NULL': BuiltinSymbol(), 'DIE': BuiltinSymbol(), 'ATH': BuiltinSymbol(), 'print': BuiltinSymbol(), 'input': BuiltinSymbol(), 'import': BuiltinSymbol(), 'DEBATE': BuiltinSymbol(), 'UNLESS': BuiltinSymbol(), 'EXECUTE': BuiltinSymbol(), 'DIVULGATE': BuiltinSymbol(), 'FABRICATE': BuiltinSymbol(), 'REPLICATE': BuiltinSymbol(), 'PROCREATE': BuiltinSymbol(), 'BIFURCATE': BuiltinSymbol(), 'AGGREGATE': BuiltinSymbol(), 'LOOP': AthSymbol(True, 0, None), 'CHOICE': AthSymbol(True, 'DIE', None)}
+{'CHOICE': AthSymbol(True, 'A', None), 'F': AthSymbol(True, 'F', None), 'CHEAT': AthSymbol(True, 'THE CHEAT CODE', None), 'DEATH': AthSymbol(True, 'DIE', None)}
+
+<!--
+	Input + Traceback
+	Code check: comparing two strings in symbols
+	Status: Failed
+-->
+A
+B
+C
+D
+E
+F
+G
+Blarg
+THE CHEAT CODE
+DIE
+Traceback (most recent call last):
+  File "tildeath.py", line 17, in <module>
+    ath_interp.interpret(cmdargs.script)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athparser.py", line 599, in interpret
+    self.execute(result.value)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athparser.py", line 570, in execute
+    script.eval(self)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
+    stmt.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 303, in eval
+    self.body.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
+    stmt.eval(fsm)
+  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 324, in eval
+    value = input(prompt)
+KeyboardInterrupt
