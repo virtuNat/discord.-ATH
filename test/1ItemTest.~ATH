@@ -1,0 +1,23 @@
+//Testing string comparisons
+
+PROCREATE LOOP 0;
+~ATH(LOOP) {
+	print ("Which of the following is not a French word?\n");
+	print ("[A] sale\n");
+	print ("[B] mode\n");
+	print ("[C] grand\n");
+	print ("[D] chat\n");
+	print ("[E] A, B, C, and D are all French words\n");
+	print ("[F] A, B, C, and D are all not French words\n");
+	input CHOICE "";
+	
+	DEBATE (CHOICE <= "F") {
+		print ("Wrong! Try again, idiot.");
+	} UNLESS (CHOICE == "CHEAT CODE") {
+		print ("Damn, you caught me. It's a trick question.");
+	} UNLESS {
+		print ("HA! Loser can't even guess the cheat code.");
+	}
+	LOOP.DIE();
+}
+THIS.DIE();
