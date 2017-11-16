@@ -7,8 +7,8 @@ PROCREATE LOOP 0;
 	/*
 	No implmentation for strings as an array of symbols yet, so uhh
 	I dunno how this test case is gonna fly
-	I'm literally just gonna
-	"Copy" the logic for the conditional workaround I did for drocta ~ATH
+	Im literally just gonna
+	Copy the logic for the conditional workaround I did for drocta ~ATH
 	In which BIFURCATE-ing a string gives the first char then the rest
 	
 	*/
@@ -50,16 +50,16 @@ PROCREATE LOOP 0;
 		}
 	}
 	
-	DEBATE (F) {
-		print ("You're overreacting. Calm your shit.");
-	} UNLESS (E) {
-		print ("Same.");
-	} UNLESS (D) {
-		print ("Have you tried mixing coffee and energy drinks yet.");
-	} UNLESS (C) {
-		print (":wackyZany:");
-	} UNLESS (B) {
-		print ("Fortify!");
+	DEBATE (!F) {
+		print ("You're overreacting. Calm your shit.\n");
+	} UNLESS (!E) {
+		print ("Same tbh.\n");
+	} UNLESS (!D) {
+		print ("Have you tried mixing coffee and energy drinks yet.\n");
+	} UNLESS (!C) {
+		print (":wackyZany:\n");
+	} UNLESS (!B) {
+		print ("Fortify!\n");
 	} UNLESS {
 		print ("Aw, you wee bab. Do you want me to kiss your booboos away?");
 	}

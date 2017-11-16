@@ -12,12 +12,15 @@ PROCREATE LOOP 0;
 	input CHOICE "";
 	
 	DEBATE (CHOICE <= "F") {
-		print ("Wrong! Try again, idiot.");
-	} UNLESS (CHOICE == "CHEAT CODE") {
-		print ("Damn, you caught me. It's a trick question.");
+		print ("Wrong! Try again, idiot.\n");
+	} UNLESS (CHOICE == "THE CHEAT CODE") {
+		print ("Damn, you caught me. It's a trick question.\n");
+	} UNLESS (CHOICE == "DIE") {
+		print ("Hmph. Ninny.\n");
+		LOOP.DIE();
 	} UNLESS {
-		print ("HA! Loser can't even guess the cheat code.");
+		print ("HA! Loser can't even guess the cheat code.\n");
 	}
-	LOOP.DIE();
+	print ("\n");
 }
 THIS.DIE();

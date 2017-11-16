@@ -2,6 +2,7 @@ PROCREATE A 0;
 FABRICATE COUNT() {
 	DEBATE (A < 100) {
 		REPLICATE A (A + 1);
+		print ("~s ", A);
 		EXECUTE (COUNT);
 	}
 }
