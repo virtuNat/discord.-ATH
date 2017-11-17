@@ -8,9 +8,18 @@ import re
 import operator
 from functools import partial
 from symbol import (
-    isAthValue, AthExpr, AthSymbol,
-    SymbolError, SymbolDeath, EndTilDeath,
+    isAthValue, SymbolError,
+    AthExpr, AthSymbol, AthFunction,
+    SymbolDeath, DivulgateBack,
     )
+
+
+class EndTilDeath(Exception):
+    """Raised when the THIS symbol dies."""
+
+
+class BreakUnless(Exception):
+    """Raised when an Unless clause successfuly executes."""
 
 
 class VarExpr(AthExpr):
@@ -62,6 +71,17 @@ class IntExpr(NumExpr):
 
     def __init__(self, num):
         self.num = int(num)
+
+
+class StringExpr(AthExpr):
+    """Holds string values."""
+    __slots__ = ('string',)
+
+    def __init__(self, string):
+        self.string = string
+
+    def eval(self, fsm):
+        return self.string
 
 
 def bool_not(val):
@@ -212,52 +232,6 @@ class BinaryIPExpr(ArithExpr):
             )
 
 
-class StringExpr(AthExpr):
-    """Holds string values."""
-    __slots__ = ('string',)
-
-    def __init__(self, string):
-        self.string = string
-
-    def eval(self, fsm):
-        return self.string
-
-
-class BoolExpr(AthExpr):
-    """Superclass to all boolean syntax."""
-    __slots__ = ()
-
-
-class NotExpr(BoolExpr):
-    __slots__ = ('expr',)
-
-    def __init__(self, expr):
-        self.expr = expr
-
-    def eval(self, fsm):
-        value = self.expr.eval(fsm)
-        if isinstance(value, AthSymbol):
-            return AthSymbol(not value.alive)
-        else:
-            msg = 'May only perform boolean operations on symbols, not {}'
-            raise TypeError(msg.format(value.__class__.__name__))
-
-
-class TernaryExpr(BoolExpr):
-    __slots__ = ('when_body', 'clause', 'unless_body')
-
-    def __init__(self, when_body, clause, unless_body):
-        self.when_body = when_body
-        self.clause = clause
-        self.unless_body = unless_body
-
-    def eval(self, fsm):
-        if self.clause.eval(fsm):
-            return self.when_body.eval(fsm)
-        else:
-            return self.unless_body.eval(fsm)
-
-
 class Statement(AthExpr):
     """Superclass to all builtin statements."""
     __slots__ = ()
@@ -355,14 +329,13 @@ class ProcreateStmt(Statement):
     def eval(self, fsm):
         result = self.expr.eval(fsm)
         if not isinstance(result, AthSymbol):
-            symbol = AthSymbol()
-            symbol.assign_left(result)
+            symbol = AthSymbol(left=result)
             result = symbol
         elif self.expr.name == 'NULL':
             result = AthSymbol()
         
         if len(fsm.stack):
-            fsm.create_name(self.name.name, result)
+            fsm.assign_name(self.name.name, result)
         else:
             fsm.assign_name(self.name.name, result)
 
@@ -386,39 +359,6 @@ class ReplicateStmt(Statement):
         fsm.assign_name(self.name.name, symbol)
 
 
-class DivulgateBack(Exception):
-    """Raised when Divulgate is called."""
-
-
-class AthFunction(AthExpr):
-    """Function objects in ~ATH."""
-    __slots__ = ('name', 'argfmt', 'body')
-
-    def __init__(self, name, argfmt, body):
-        body.ctrl_name = name
-        self.name = name
-        self.argfmt = argfmt
-        self.body = body
-
-    def execute(self, fsm, args):
-        value = AthSymbol(False)
-        fsm.push_stack(args)
-        for stmt in self.body.stmt_list:
-            try:
-                stmt.eval(fsm)
-            except DivulgateBack:
-                try:
-                    value = stmt.value
-                except AttributeError:
-                    value = stmt.body.value
-                break
-            except SymbolDeath:
-                if not fsm.lookup_name(self.name).alive:
-                    break
-        fsm.pop_stack()
-        return value
-
-
 class FabricateStmt(Statement):
     __slots__ = ('name', 'argfmt', 'body')
 
@@ -430,7 +370,7 @@ class FabricateStmt(Statement):
     def eval(self, fsm):
         newflag = False
         try:
-            symbol = self.name.eval(fsm)
+            symbol = fsm.lookup_name(self.name.name)
         except NameError:
             newflag = True
             symbol = AthSymbol()
@@ -562,7 +502,7 @@ class KillFunc(Statement):
                 )
         if self.name.name == 'THIS':
             raise EndTilDeath
-        self.name.eval(fsm).kill()
+        fsm.lookup_name(self.name.name).kill()
         raise SymbolDeath
 
 
@@ -586,7 +526,7 @@ class BifurcateStmt(Statement):
                 fsm.assign_name(name, AthSymbol(right=value))
 
     def eval(self, fsm):
-        symbol = self.name.eval(fsm)
+        symbol = fsm.lookup_name(self.name.name)
         if isinstance(symbol, AthSymbol):
             self.assign_half(fsm, self.lexpr.name, symbol.left, True)
             self.assign_half(fsm, self.rexpr.name, symbol.right, False)
@@ -602,22 +542,20 @@ class AggregateStmt(Statement):
         self.rexpr = rexpr
         self.name = name
 
+    def refcopy(self, symbol):
+        pass
+
     def eval(self, fsm):
-        newflag = False
         try:
-            result = self.name.eval(fsm)
+            result = fsm.lookup_name(self.name.name)
         except NameError:
-            newflag = True
             result = AthSymbol()
+        lsym = self.lexpr.eval(fsm).refcopy()
+        rsym = self.rexpr.eval(fsm).refcopy()
 
-        result.assign_left(self.lexpr.eval(fsm))
-        result.assign_right(self.rexpr.eval(fsm))
-        if newflag:
-            fsm.assign_name(self.name.name, result)
-
-
-class BreakUnless(Exception):
-    """Raised when an Unless clause successfuly executes."""
+        result.assign_left(lsym)
+        result.assign_right(rsym)
+        fsm.assign_name(self.name.name, result)
 
 
 class DebateStmt(Statement):
@@ -662,20 +600,25 @@ class InspectStack(Statement):
         self.args = args
 
     def eval(self, fsm):
-        if len(self.args) > 1 and not isinstance(self.args[0], IntExpr):
-            raise ValueError('may only call stack frame index')
-
         if not self.args:
             print(fsm.global_vars)
             for frame in fsm.stack:
                 print(frame.scope_vars)
+            return None
+
+        index = self.args[0].eval(fsm)
+        if len(self.args) > 1 and not isinstance(index, int):
+            raise ValueError('may only call stack frame index')
+
+        if not index:
+            # 0, globals
+            print(fsm.global_vars)
+        elif abs(index) > len(fsm.stack):
+            # out of bounds, top stack
+            print(fsm.stack[-1].scope_vars)
+        elif index > 0:
+            # positive, adjust to index notation
+            print(fsm.stack[index - 1].scope_vars)
         else:
-            index = self.args[0].eval(fsm)
-            if not index:
-                print(fsm.global_vars)
-            elif abs(index) > len(fsm.stack):
-                print(fsm.stack[-1].scope_vars)
-            elif index > 0:
-                print(fsm.stack[index - 1].scope_vars)
-            elif index < 0:
-                print(fsm.stack[index].scope_vars)
+            # negative, as is
+            print(fsm.stack[index].scope_vars)

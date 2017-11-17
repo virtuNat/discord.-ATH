@@ -17,8 +17,8 @@ class SymbolDeath(Exception):
     """Raised when a symbol dies."""
 
 
-class EndTilDeath(Exception):
-    """Raised when the THIS symbol dies."""
+class DivulgateBack(Exception):
+    """Raised when Divulgate is called."""
 
 
 class AthExpr(object):
@@ -41,14 +41,73 @@ class AthExpr(object):
         return '{}({})'.format(self.__class__.__name__, attr_str)
 
 
+class AthFunction(AthExpr):
+    """Function objects in ~ATH."""
+    __slots__ = ('name', 'argfmt', 'body')
+
+    def __init__(self, name, argfmt, body):
+        body.ctrl_name = name
+        self.name = name
+        self.argfmt = argfmt
+        self.body = body
+
+    def execute(self, fsm, args):
+        value = AthSymbol(False)
+        fsm.push_stack(args)
+        for stmt in self.body.stmt_list:
+            try:
+                stmt.eval(fsm)
+            except DivulgateBack:
+                try:
+                    value = stmt.value
+                except AttributeError:
+                    value = stmt.body.value
+                break
+            except SymbolDeath:
+                if not fsm.lookup_name(self.name).alive:
+                    break
+        fsm.pop_stack()
+        return value
+
+
+class AthRefList(list):
+    """A list of symbols can't use __eq__ to compare values in lists."""
+
+    def __contains__(self, obj):
+        """Force in checks to use identity comparisons."""
+        for item in self:
+            if item is obj:
+                return True
+        return False
+
+    def remove(self, obj):
+        """Force removals to use identity comparisons."""
+        idx = 0
+        for item in self:
+            if item is obj:
+                self.pop(idx)
+                return None
+            idx += 1
+
+
 class AthSymbol(AthExpr):
     """~ATH Variable data structure."""
-    __slots__ = ('alive', 'left', 'right')
+    __slots__ = ('alive', 'left', 'right', 'leftof', 'rightof')
 
     def __init__(self, alive=True, left=None, right=None):
         self.alive = alive
-        self.left = left
-        self.right = right
+        self.left = None
+        self.right = None
+        self.assign_left(left)
+        self.assign_right(right)
+        self.leftof = AthRefList()
+        self.rightof = AthRefList()
+
+    def __repr__(self):
+        return '{}({}, {}, {})'.format(
+            self.__class__.__name__,
+            self.alive, self.left, self.right
+            )
 
     def cmpop(self, other, op):
         if not isAthValue(self.left):
@@ -159,23 +218,47 @@ class AthSymbol(AthExpr):
             newsymbol.right = self.right
         return newsymbol
 
+    def refcopy(self):
+        newsymbol = AthSymbol(self.alive, self.left, self.right)
+        newsymbol.leftof = self.leftof
+        self.leftof = AthRefList()
+        for left in self.leftof:
+            left.left = newsymbol
+        newsymbol.rightof = self.rightof
+        self.rightof = AthRefList()
+        for right in self.rightof:
+            right.right = newsymbol
+        return newsymbol
+
     def assign_left(self, value):
-        if (isAthValue(value)
-            or isinstance(value, AthSymbol)):
-            self.left = value
-        else:
+        if not (isAthValue(value)
+            or isinstance(value, AthSymbol)
+            or value is None
+            ):
             raise TypeError(
                 'May only assign constants or symbols to left'
                 )
+        if isinstance(self.left, AthSymbol):
+            self.left.leftof.remove(self)
+        self.left = value
+        if isinstance(value, AthSymbol) and self not in value.leftof:
+            self.left.leftof.append(self)
+            
 
     def assign_right(self, value):
-        if (isinstance(value, AthFunction)
-            or isinstance(value, AthSymbol)):
-            self.right = value
-        else:
+        if not (isinstance(value, AthFunction)
+            or isinstance(value, AthSymbol)
+            or value is None
+            ):
             raise TypeError(
                 'May only assign functions or symbols to right'
                 )
+        if isinstance(self.right, AthSymbol):
+            self.right.rightof.remove(self)
+        self.right = value
+        if isinstance(value, AthSymbol) and self not in value.rightof:
+            self.right.rightof.append(self)
+            
 
     def kill(self):
         self.alive = False

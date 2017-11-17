@@ -2,6 +2,7 @@ import sys
 from functools import partial, reduce
 
 from lexer import Lexer, Token
+from symbol import AthRefList
 from grafter import (
     Selector, ExprParser, StrictExpr,
     TokenGrafter, TagGrafter,
@@ -11,8 +12,8 @@ from grafter import (
 from athast import (
     AthSymbol, SymbolError, EndTilDeath,
     IntExpr, FloatExpr, StringExpr, VarExpr,
-    NotExpr, UnaryArithExpr, BinaryExpr,
-    TernaryExpr, Serialize, InspectStack,
+    UnaryArithExpr, BinaryExpr,
+    Serialize, InspectStack,
 
     InputStmt, PrintFunc, KillFunc,
     BifurcateStmt, AggregateStmt,
@@ -120,20 +121,6 @@ nameparser = TagGrafter('SYMBOL') ^ VarExpr
 def bltinparser(token):
     """Parses builtin tokens."""
     return TokenGrafter(token, 'BUILTIN')
-
-
-def ternaryexprparser(term):
-    def breakdown(tokens):
-        trueexpr, _, cond, _, falseexpr = tokens
-        return TernaryExpr(truexpr, cond, falseexpr)
-    return (
-        term
-        + bltinparser('DEBATE')
-        + term
-        + bltinparser('UNLESS')
-        + term
-        ^ breakdown
-        )
 
 
 def execexpr():
@@ -429,6 +416,7 @@ def inspstmt():
         + LazyGrafter(callparser)
         + bltinparser(')')
         + bltinparser(';')
+        ^ breakdown
         )
 
 
@@ -478,6 +466,13 @@ def echo_error(msg):
 class BuiltinSymbol(AthSymbol):
     __slots__ = ()
 
+    def __init__(self, alive=True):
+        self.alive = alive
+        self.left = None
+        self.right = None
+        self.leftof = AthRefList()
+        self.rightof = AthRefList()
+
     def assign_left(self, value):
         echo_error('SymbolError: Builtins cannot be assigned to!')
 
@@ -505,8 +500,18 @@ class AthStackFrame(object):
 
     def __setitem__(self, name, value=None):
         if value is None:
-            value = AthSymbol(True)
-        self.scope_vars[name] = value
+            value = AthSymbol(False)
+        try:
+            symbol = self.scope_vars[name]
+        except KeyError:
+            pass
+        else:
+            if isinstance(symbol.left, AthSymbol):
+                symbol.left.leftof.remove(symbol)
+            if isinstance(symbol.right, AthSymbol):
+                symbol.right.rightof.remove(symbol)
+        finally:
+            self.scope_vars[name] = value
 
 
 class TildeAthInterp(object):
@@ -545,22 +550,18 @@ class TildeAthInterp(object):
             raise NameError('Symbol {} not found'.format(name))
 
     def assign_name(self, name, value):
-        # print('{} assigned'.format(name))
-        try:
-            symbol = self.lookup_name(name)
-        except NameError:
-            self.create_name(name, value)
-        else:
-            if not isinstance(symbol, BuiltinSymbol):
-                self.global_vars[name] = value
-            else:
-                raise SymbolError('builtins can\'t be assigned to!')
-
-    def create_name(self, name, value):
         try:
             self.stack[-1][name] = value
         except IndexError:
-            self.global_vars[name] = value
+            try:
+                symbol = self.lookup_name(name)
+            except NameError:
+                self.global_vars[name] = value
+            else:
+                if not isinstance(symbol, BuiltinSymbol):
+                    self.global_vars[name] = value
+                else:
+                    raise SymbolError('builtins can\'t be assigned to')
 
     def push_stack(self, init_dict={}):
         newframe = AthStackFrame()
