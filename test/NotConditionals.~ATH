@@ -2,16 +2,9 @@
 
 PROCREATE LOOP 0;
 ~ATH(LOOP) {
-	input RATE "On a scale of A to AAAAA, how do you rate your suffering?";
+	input RATE "On a scale of A to AAAAA, how do you rate your suffering? ";
+	ENUMERATE RATE RATE;
 	
-	/*
-	No implmentation for strings as an array of symbols yet, so uhh
-	I dunno how this test case is gonna fly
-	Im literally just gonna
-	Copy the logic for the conditional workaround I did for drocta ~ATH
-	In which BIFURCATE-ing a string gives the first char then the rest
-	
-	*/
 	PROCREATE A 0;
 	PROCREATE B 0;
 	PROCREATE C 0;
@@ -22,7 +15,7 @@ PROCREATE LOOP 0;
 	BIFURCATE RATE[RATE, END];
 	~ATH(END) {
 		A.DIE();
-		BIFURCATE REST[RATE, END];
+		BIFURCATE END[RATE, END];
 		
 		~ATH(END) {
 			B.DIE();
@@ -50,20 +43,21 @@ PROCREATE LOOP 0;
 		}
 	}
 	
-	DEBATE (!F) {
-		print ("You're overreacting. Calm your shit.\n");
-	} UNLESS (!E) {
-		print ("Same tbh.\n");
-	} UNLESS (!D) {
-		print ("Have you tried mixing coffee and energy drinks yet.\n");
-	} UNLESS (!C) {
-		print (":wackyZany:\n");
-	} UNLESS (!B) {
-		print ("Fortify!\n");
-	} UNLESS {
+	DEBATE (A) {
 		print ("Aw, you wee bab. Do you want me to kiss your booboos away?");
+	} UNLESS (B) {
+		print ("Fortify!");
+	} UNLESS (C) {
+		print (":wackyZany:");
+	} UNLESS (D) {
+		print ("Have you tried mixing coffee and energy drinks yet.");
+	} UNLESS (E) {
+		print ("Same.");
+	} UNLESS {
+		print ("You're overreacting. Calm your shit.");
 	}
-	
+	print("\n");
+	INSPECT(-1);
 	LOOP.DIE();
 }
 THIS.DIE();
