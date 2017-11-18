@@ -47,7 +47,7 @@ contexts:
     - match: '\b(input|print|import|DEBATE|UNLESS|REPLICATE|DIVULGATE|REPLICATE)\b'
       scope: keyword.control.ath
     # Declaration keywords
-    - match: '\b(PROCREATE)\b'
+    - match: '\b(PROCREATE|ENUMERATE)\b'
       scope: storage.type.ath
     - match: '\b(BIFURCATE|AGGREGATE)\b'
       scope: support.function.ath
@@ -63,9 +63,10 @@ contexts:
       push:
         - match: \(
           push:
-            - match: '(!?({{name}}))?'
+            - match: '((!)?({{name}}))?'
               captures:
-                2: variable.parameter.ath
+                2: keyword.operator.logical.ath
+                3: variable.parameter.ath
               pop: true
         - match: \)
           pop: true
@@ -79,7 +80,7 @@ contexts:
       scope: keyword.operator.logical.ath
     - match: '(==|~=)'
       scope: keyword.operator.arithmetic.ath
-    - match: '(&|\||\^|~|<<|>>)'
+    - match: '(&|\||\^|~|<<|>>)=?'
       scope: keyword.operator.bitwise.ath
     - match: '(<=|<|>=|>)'
       scope: keyword.operator.arithmetic.ath
