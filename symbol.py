@@ -1,3 +1,4 @@
+"""Contains ~ATH's AST and data structure primitives for easier access."""
 import operator
 from functools import partialmethod
 
@@ -19,6 +20,14 @@ class SymbolDeath(Exception):
 
 class DivulgateBack(Exception):
     """Raised when Divulgate is called."""
+
+
+class EndTilDeath(Exception):
+    """Raised when the THIS symbol dies."""
+
+
+class BreakUnless(Exception):
+    """Raised when an Unless clause successfuly executes."""
 
 
 class AthExpr(object):
@@ -129,7 +138,7 @@ class AthSymbol(AthExpr):
             return AthSymbol(left=op(self.left, other.left))
         else:
             return AthSymbol(left=op(self.left, other), right=self.right)
-    
+
     def reop(self, other, op):
         if not isAthValue(self.left):
             raise SymbolError('symbol left is not a value')
@@ -243,7 +252,7 @@ class AthSymbol(AthExpr):
         self.left = value
         if isinstance(value, AthSymbol) and self not in value.leftof:
             self.left.leftof.append(self)
-            
+
 
     def assign_right(self, value):
         if not (isinstance(value, AthFunction)
@@ -258,7 +267,27 @@ class AthSymbol(AthExpr):
         self.right = value
         if isinstance(value, AthSymbol) and self not in value.rightof:
             self.right.rightof.append(self)
-            
+
 
     def kill(self):
         self.alive = False
+
+
+class BuiltinSymbol(AthSymbol):
+    __slots__ = ()
+
+    def __init__(self, alive=True):
+        self.alive = alive
+        self.left = None
+        self.right = None
+        self.leftof = AthRefList()
+        self.rightof = AthRefList()
+
+    def assign_left(self, value):
+        echo_error('SymbolError: Builtins cannot be assigned to!')
+
+    def assign_right(self, value):
+        echo_error('SymbolError: Builtins cannot be assigned to!')
+
+    def inop(self, other, op):
+        echo_error('SymbolError: Builtins cannot be assigned to!')

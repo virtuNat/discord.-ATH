@@ -1,3 +1,4 @@
+"""Separates a script file into tokens defined by a list of valid regexes."""
 import sys
 import re
 
@@ -33,7 +34,7 @@ class Lexer(object):
             for pattern, tag in expr_list
             ]
 
-    def lex(self, script):
+    def __call__(self, script):
         tokens = []
         seek = 0
         line = 0

@@ -1,8 +1,14 @@
-import sys
+"""The ~ATH interpreter.
+
+This contains the token regex list used by the lexer, all the
+parser definitions for the abstract syntax tree, and the finite
+state machine that creates the environment used to run programs
+built in the language.
+"""
 from functools import partial, reduce
 
 from lexer import Lexer, Token
-from symbol import AthRefList
+from symbol import AthSymbol, BuiltinSymbol, SymbolError
 from grafter import (
     Selector, ExprParser, StrictExpr,
     TokenGrafter, TagGrafter,
@@ -10,13 +16,12 @@ from grafter import (
     LazyGrafter, StrictGrafter,
     )
 from athast import (
-    AthSymbol, SymbolError, EndTilDeath,
     IntExpr, FloatExpr, StringExpr, VarExpr,
     UnaryArithExpr, BinaryExpr,
-    Serialize, InspectStack,
+    Serialize, InspectStack, EndTilDeath,
 
-    InputStmt, PrintFunc, KillFunc,
-    BifurcateStmt, AggregateStmt,
+    ImportStmt, InputStmt, PrintFunc, KillFunc,
+    BifurcateStmt, AggregateStmt, EnumerateStmt,
     ProcreateStmt, ReplicateStmt,
     FabricateStmt, ExecuteStmt, DivulgateStmt,
     DebateStmt, UnlessStmt, TildeAthLoop,
@@ -95,6 +100,7 @@ ath_lexer = Lexer([
     (r'REPLICATE', 'BUILTIN'), # Deep copy
     (r'BIFURCATE', 'BUILTIN'), # Split a symbol
     (r'AGGREGATE', 'BUILTIN'), # Merge a symbol
+    (r'ENUMERATE', 'BUILTIN'), # Merge a string
     # Bitwise in-place operators
     (r'&=', 'BUILTIN'), # Bitwise and
     (r'\|=', 'BUILTIN'), # Bitwise or
@@ -111,18 +117,18 @@ ath_lexer = Lexer([
     (r'[a-zA-Z]\w*', 'SYMBOL'),
 ])
 
-
-strparser = TagGrafter('STRING') ^ (lambda s: StringExpr(s[1:-1]))
+# Value/variable token primitives
 fltparser = TagGrafter('FLOAT') ^ FloatExpr
 intparser = TagGrafter('INT') ^ IntExpr
 nameparser = TagGrafter('SYMBOL') ^ VarExpr
+strparser = TagGrafter('STRING') ^ (lambda s: StringExpr(s[1:-1]))
 
-
+# Builtin primitive
 def bltinparser(token):
     """Parses builtin tokens."""
     return TokenGrafter(token, 'BUILTIN')
 
-
+# Expresssions
 def execexpr():
     """Parses the execution statement as an expression."""
     def breakdown(tokens):
@@ -131,18 +137,6 @@ def execexpr():
         bltinparser('EXECUTE')
         + bltinparser('(')
         + callparser()
-        + bltinparser(')')
-        ^ breakdown
-        )
-
-
-def exprgrpparser():
-    """Parses expression groups."""
-    def breakdown(tokens):
-        return tokens[1]
-    return (
-        bltinparser('(')
-        + LazyGrafter(exprparser)
         + bltinparser(')')
         ^ breakdown
         )
@@ -157,6 +151,18 @@ def exprvalparser():
         | fltparser
         | intparser
         | strparser
+        )
+
+
+def exprgrpparser():
+    """Parses expression groups."""
+    def breakdown(tokens):
+        return tokens[1]
+    return (
+        bltinparser('(')
+        + LazyGrafter(exprparser)
+        + bltinparser(')')
+        ^ breakdown
         )
 
 
@@ -184,13 +190,201 @@ def exprparser():
         ]
     term = exprvalparser() | exprgrpparser()
     return reduce(StrictExpr, [term] + [parse_ops(lvl) for lvl in op_order])
-# print(exprparser())
+
 
 def callparser():
     """Parses a group of expressions."""
     def cull_seps(graft):
         return graft[0] or graft[1]
     return Repeater(exprparser() + EnsureGraft(bltinparser(',')) ^ cull_seps)
+
+# Statements
+def replistmt():
+    """Parses the assignment statement."""
+    def breakdown(tokens):
+        _, name, expr, _ = tokens
+        return ReplicateStmt(name, expr)
+    return (
+        bltinparser('REPLICATE')
+        + nameparser
+        + (exprgrpparser() | exprvalparser())
+        + bltinparser(';')
+        ^ breakdown)
+
+
+def procrstmt():
+    """Parses value declarations."""
+    def breakdown(tokens):
+        _, name, expr, _ = tokens
+        if not expr:
+            expr = VarExpr('NULL')
+        return ProcreateStmt(name, expr)
+    return (
+        bltinparser('PROCREATE')
+        + nameparser
+        + EnsureGraft(exprparser())
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
+def bfctstmt():
+    """Parses the bifurcate statement."""
+    def breakdown(tokens):
+        _, name, _, lname, _, rname, _, _ = tokens
+        return BifurcateStmt(name, lname, rname)
+    return (
+        bltinparser('BIFURCATE')
+        + nameparser
+        + bltinparser('[')
+        + nameparser
+        + bltinparser(',')
+        + nameparser
+        + bltinparser(']')
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
+def aggrstmt():
+    """Parses the aggregate statement."""
+    def breakdown(tokens):
+        _, _, lname, _, rname, _, name, _ = tokens
+        return AggregateStmt(lname, rname, name)
+    return (
+        bltinparser('AGGREGATE')
+        + bltinparser('[')
+        + exprparser()
+        + bltinparser(',')
+        + exprparser()
+        + bltinparser(']')
+        + nameparser
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
+def enumstmt():
+    """Parses the enumerate statement."""
+    def breakdown(tokens):
+        _, string, stack, _ = tokens
+        return EnumerateStmt(string, stack)
+    return (
+        bltinparser('ENUMERATE')
+        + EnsureGraft(exprvalparser() | exprgrpparser())
+        + nameparser
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
+def importstmt():
+    """Parses the import statement."""
+    def breakdown(tokens):
+        _, module, alias, _ = tokens
+        return ImportStmt(module, alias)
+    return (
+        bltinparser('import')
+        + nameparser
+        + nameparser
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
+def inputstmt():
+    """Parses the input statement."""
+    def breakdown(tokens):
+        _, name, prompt, _ = tokens
+        return InputStmt(name, prompt)
+    return (
+        bltinparser('input')
+        + nameparser
+        + EnsureGraft(exprvalparser() | exprgrpparser())
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
+def printfunc():
+    """Parses the print function."""
+    def breakdown(tokens):
+        return PrintFunc(tokens[2])
+    return (
+        bltinparser('print')
+        + bltinparser('(')
+        + callparser()
+        + bltinparser(')')
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
+def killfunc():
+    """Parses the kill function."""
+    def breakdown(tokens):
+        name, _, _, _, args, _, _ = tokens
+        return KillFunc(name, args)
+    return (
+        nameparser
+        + bltinparser('.')
+        + bltinparser('DIE')
+        + bltinparser('(')
+        + LazyGrafter(callparser)
+        + bltinparser(')')
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
+def execfunc():
+    """Parses the execution statement as a statement."""
+    def breakdown(tokens):
+        return ExecuteStmt(tokens[2])
+    return (
+        bltinparser('EXECUTE')
+        + bltinparser('(')
+        + callparser()
+        + bltinparser(')')
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
+def divlgstmt():
+    """Parses the return statement."""
+    def breakdown(tokens):
+        return DivulgateStmt(tokens[1])
+    return (
+        bltinparser('DIVULGATE')
+        + exprparser()
+        + bltinparser(';')
+        ^ breakdown
+        )
+
+
+def fabristmt():
+    """Parses function declarations."""
+    def cull_seps(graft):
+        return graft[0] or graft[1]
+    argparser = Repeater(nameparser + EnsureGraft(bltinparser(',')) ^ cull_seps)
+
+    def breakdown(tokens):
+        _, name, _, args, _, _, body, _ = tokens
+        return FabricateStmt(name, args, body)
+
+    return (
+        bltinparser('FABRICATE')
+        + nameparser
+        + bltinparser('(')
+        + EnsureGraft(argparser)
+        + bltinparser(')')
+        + bltinparser('{')
+        + LazyGrafter(funcstmts)
+        + bltinparser('}')
+        ^ breakdown
+        )
+
 
 
 def tildeath():
@@ -248,165 +442,6 @@ def condistmt(fabri=False):
         )
 
 
-def execfunc():
-    """Parses the execution statement as a statement."""
-    def breakdown(tokens):
-        return ExecuteStmt(tokens[2])
-    return (
-        bltinparser('EXECUTE')
-        + bltinparser('(')
-        + callparser()
-        + bltinparser(')')
-        + bltinparser(';')
-        ^ breakdown
-        )
-
-
-def divlgstmt():
-    """Parses the return statement."""
-    def breakdown(tokens):
-        return DivulgateStmt(tokens[1])
-    return (
-        bltinparser('DIVULGATE')
-        + exprparser()
-        + bltinparser(';')
-        ^ breakdown
-        )
-
-
-def inputstmt():
-    """Parses the input statement."""
-    def breakdown(tokens):
-        _, name, prompt, _ = tokens
-        return InputStmt(name, prompt)
-    return (
-        bltinparser('input')
-        + nameparser
-        + EnsureGraft(exprvalparser() | exprgrpparser())
-        + bltinparser(';')
-        ^ breakdown
-        )
-
-
-def printfunc():
-    """Parses the print function."""
-    def breakdown(tokens):
-        return PrintFunc(tokens[2])
-    return (
-        bltinparser('print')
-        + bltinparser('(')
-        + callparser()
-        + bltinparser(')')
-        + bltinparser(';')
-        ^ breakdown
-        )
-
-
-def killfunc():
-    """Parses the kill function."""
-    def breakdown(tokens):
-        name, _, _, _, args, _, _ = tokens
-        return KillFunc(name, args)
-    return (
-        nameparser
-        + bltinparser('.')
-        + bltinparser('DIE')
-        + bltinparser('(')
-        + LazyGrafter(callparser)
-        + bltinparser(')')
-        + bltinparser(';')
-        ^ breakdown
-        )
-
-
-def fabristmt():
-    """Parses function declarations."""
-    def cull_seps(graft):
-        return graft[0] or graft[1]
-    argparser = Repeater(nameparser + EnsureGraft(bltinparser(',')) ^ cull_seps)
-
-    def breakdown(tokens):
-        _, name, _, args, _, _, body, _ = tokens
-        return FabricateStmt(name, args, body)
-
-    return (
-        bltinparser('FABRICATE')
-        + nameparser
-        + bltinparser('(')
-        + EnsureGraft(argparser)
-        + bltinparser(')')
-        + bltinparser('{')
-        + LazyGrafter(funcstmts)
-        + bltinparser('}')
-        ^ breakdown
-        )
-
-
-def procrstmt():
-    """Parses value declarations."""
-    def breakdown(tokens):
-        _, name, expr, _ = tokens
-        if not expr:
-            expr = VarExpr('NULL')
-        return ProcreateStmt(name, expr)
-    return (
-        bltinparser('PROCREATE')
-        + nameparser
-        + EnsureGraft(exprparser())
-        + bltinparser(';')
-        ^ breakdown
-        )
-
-
-def replistmt():
-    """Parses the assignment statement."""
-    def breakdown(tokens):
-        _, name, expr, _ = tokens
-        return ReplicateStmt(name, expr)
-    return (
-        bltinparser('REPLICATE')
-        + nameparser
-        + (exprgrpparser() | exprvalparser())
-        + bltinparser(';')
-        ^ breakdown)
-
-
-def bfctstmt():
-    """Parses the bifurcate statement."""
-    def breakdown(tokens):
-        _, name, _, lname, _, rname, _, _ = tokens
-        return BifurcateStmt(name, lname, rname)
-    return (
-        bltinparser('BIFURCATE')
-        + nameparser
-        + bltinparser('[')
-        + nameparser
-        + bltinparser(',')
-        + nameparser
-        + bltinparser(']')
-        + bltinparser(';')
-        ^ breakdown
-        )
-
-
-def aggrstmt():
-    """Parses the aggregate statement."""
-    def breakdown(tokens):
-        _, _, lname, _, rname, _, name, _ = tokens
-        return AggregateStmt(lname, rname, name)
-    return (
-        bltinparser('AGGREGATE')
-        + bltinparser('[')
-        + exprparser()
-        + bltinparser(',')
-        + exprparser()
-        + bltinparser(']')
-        + nameparser
-        + bltinparser(';')
-        ^ breakdown
-        )
-
-
 def inspstmt():
     def breakdown(tokens):
         return InspectStack(tokens[2])
@@ -423,191 +458,40 @@ def inspstmt():
 def funcstmts():
     """Parses the set of statements used in functions."""
     return Repeater(
-        replistmt()
-        | procrstmt()
-        | bfctstmt()
-        | aggrstmt()
-        | killfunc()
-        | execfunc()
-        | printfunc()
-        | inputstmt()
-        | tildeath()
-        | LazyGrafter(fabristmt)
-        | condistmt(True)
-        | divlgstmt()
+        replistmt() # assignment
+        | procrstmt() # val dec
+        | bfctstmt() # obtain ptrs
+        | aggrstmt() # stack ptrs
+        | enumstmt() # split str
+        | importstmt() # imports
+        | inputstmt() # input
+        | printfunc() # output
+        | killfunc() # kill ctrl
+        | execfunc() # run func
+        | divlgstmt() # return
+        | LazyGrafter(fabristmt) # func dec
+        | tildeath() # cond loop
+        | condistmt(True) # conditionals
         | inspstmt() # Debug, remove
         ) ^ Serialize
 
 
 def stmtparser():
     """Parses the set of statements used top-level."""
-    stmts = (
-        replistmt()
-        | procrstmt()
-        | bfctstmt()
-        | aggrstmt()
-        | killfunc()
-        | execfunc()
-        | printfunc()
-        | inputstmt()
-        | tildeath()
-        | fabristmt()
-        | condistmt()
+    return Repeater(
+        replistmt() # assignment
+        | procrstmt() # val dec
+        | bfctstmt() # obtain ptrs
+        | aggrstmt() # stack ptrs
+        | enumstmt() # split str
+        | importstmt() # imports
+        | inputstmt() # input
+        | printfunc() # output
+        | killfunc() # kill ctrl
+        | execfunc() # run func
+        | fabristmt() # func dec
+        | tildeath() # cond loop
+        | condistmt() # conditionals
         | inspstmt() # Debug, remove
-        )
-    return Repeater(stmts) ^ Serialize
-# print(stmtparser())
-
-def echo_error(msg):
-    sys.stderr.write(msg)
-    sys.exit(1)
-
-
-class BuiltinSymbol(AthSymbol):
-    __slots__ = ()
-
-    def __init__(self, alive=True):
-        self.alive = alive
-        self.left = None
-        self.right = None
-        self.leftof = AthRefList()
-        self.rightof = AthRefList()
-
-    def assign_left(self, value):
-        echo_error('SymbolError: Builtins cannot be assigned to!')
-
-    def assign_right(self, value):
-        echo_error('SymbolError: Builtins cannot be assigned to!')
-
-    def inop(self, other, op):
-        echo_error('SymbolError: Builtins cannot be assigned to!')
-
-
-class AthStackFrame(object):
-    """Keeps a record of all symbols declared in a given scope.
-    ~ATH implements dynamic scope, so be wary when coding in it!
-    """
-    __slots__ = ('scope_vars',)
-
-    def __init__(self):
-        self.scope_vars = {}
-
-    def __getitem__(self, name):
-        try:
-            return self.scope_vars[name]
-        except KeyError:
-            return None
-
-    def __setitem__(self, name, value=None):
-        if value is None:
-            value = AthSymbol(False)
-        try:
-            symbol = self.scope_vars[name]
-        except KeyError:
-            pass
-        else:
-            if isinstance(symbol.left, AthSymbol):
-                symbol.left.leftof.remove(symbol)
-            if isinstance(symbol.right, AthSymbol):
-                symbol.right.rightof.remove(symbol)
-        finally:
-            self.scope_vars[name] = value
-
-
-class TildeAthInterp(object):
-    """This is supposed to be a Finite State Machine"""
-    __slots__ = ()
-    global_vars = {
-        'THIS': BuiltinSymbol(),
-        'NULL': BuiltinSymbol(False),
-        'DIE': BuiltinSymbol(),
-        'ATH': BuiltinSymbol(),
-        'print': BuiltinSymbol(),
-        'input': BuiltinSymbol(),
-        'import': BuiltinSymbol(),
-        'DEBATE': BuiltinSymbol(),
-        'UNLESS': BuiltinSymbol(),
-        'EXECUTE': BuiltinSymbol(),
-        'DIVULGATE': BuiltinSymbol(),
-        'FABRICATE': BuiltinSymbol(),
-        'REPLICATE': BuiltinSymbol(),
-        'PROCREATE': BuiltinSymbol(),
-        'BIFURCATE': BuiltinSymbol(),
-        'AGGREGATE': BuiltinSymbol(),
-        }
-    stack = []
-    script_parser = StrictGrafter(stmtparser())
-
-    def lookup_name(self, name):
-        for frame in reversed(self.stack):
-            value = frame[name]
-            if value is not None:
-                # print('{} found'.format(name))
-                return value
-        try:
-            return self.global_vars[name]
-        except KeyError:
-            raise NameError('Symbol {} not found'.format(name))
-
-    def assign_name(self, name, value):
-        try:
-            self.stack[-1][name] = value
-        except IndexError:
-            try:
-                symbol = self.lookup_name(name)
-            except NameError:
-                self.global_vars[name] = value
-            else:
-                if not isinstance(symbol, BuiltinSymbol):
-                    self.global_vars[name] = value
-                else:
-                    raise SymbolError('builtins can\'t be assigned to')
-
-    def push_stack(self, init_dict={}):
-        newframe = AthStackFrame()
-        newframe.scope_vars.update(init_dict)
-        self.stack.append(newframe)
-
-    def pop_stack(self):
-        if len(self.stack):
-            return self.stack.pop()
-        else:
-            raise RuntimeError('Stack is already empty, dingus!')
-
-    def execute(self, script):
-        count = 0
-        try:
-            while True:
-                script.eval(self)
-                count += 1
-                if count >= 1025:
-                    echo_error('UnboundATHLoopError: THIS.DIE() not called')
-        except EndTilDeath:
-            sys.exit(0)
-        finally:
-            print(self.global_vars)
-            for frame in self.stack:
-                print(frame.scope_vars)
-
-    def interpret(self, fname):
-        if not fname.endswith('~ATH'):
-            echo_error('IOError: script must be a ~ATH file')
-        with open(fname, 'r') as script_file:
-            script = script_file.read()
-        tokens = ath_lexer.lex(script)
-        result = self.script_parser(tokens, 0)
-        if not result:
-            echo_error('RuntimeError: the parser could not understand the script')
-
-        for stmt in result.value.stmt_list:
-            if isinstance(stmt, TildeAthLoop):
-                break
-        else:
-            echo_error('RuntimeError: no ~ATH loop found in top-level script')
-
-        with open(fname[:-4]+'py', 'w') as py_file:
-            py_file.write('#!/usr/bin/env python\nfrom athast import *\n')
-            py_file.write('from athparser import TildeAthInterp\n\n')
-            py_file.write('ath_script = ' + repr(result.value))
-            py_file.write('\nTildeAthInterp().execute(ath_script)\n')
-        self.execute(result.value)
+        ) ^ Serialize
+ath_parser = StrictGrafter(stmtparser())

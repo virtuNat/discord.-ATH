@@ -1,3 +1,4 @@
+"""Functions that link tokens together based on defined criteria and behavior."""
 from lexer import Token
 
 
@@ -316,7 +317,7 @@ class Repeater(Grafter):
             print(graft.value)
             grafts.append(graft.value)
             index = graft.index
-            graft = self.graft(tokens, index)     
+            graft = self.graft(tokens, index)
         return Graft(grafts, index)
 
 
