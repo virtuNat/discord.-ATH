@@ -13,23 +13,27 @@ FABRICATE MERGESORT (LIST) {
 		PROCREATE RIGHT NULL;
 		
 		REPLICATE LENGTH ((INDEX + 1) /_ 2);
+		print ("Mid: ~d\n", LENGTH);
 		PROCREATE CNTL 0;
 		PROCREATE CNTR 0;
 		PROCREATE BLAH 0;
 		~ATH(BLAH) {
+			print ("BLUH\n");
 			BIFURCATE CURR[HEAD, TAIL];
 			BIFURCATE HEAD[I, VAL];
 			DEBATE (I < LENGTH) {
 				AGGREGATE [CNTL, VAL]NODE;
 				AGGREGATE [NODE, LEFT]LEFT;
 				REPLICATE CNTL (CNTL + 1);
+				print ("Added an item (~d) to the left stack.\n", VAL);
 			} UNLESS {
 				AGGREGATE [CNTR, VAL]NODE;
 				AGGREGATE [NODE, RIGHT]RIGHT;
 				REPLICATE CNTR (CNTR + 1);
+				print ("Added an item (~d) to the right stack.\n", VAL);
 			}
 			REPLICATE CURR TAIL;
-			DEBATE (!CURR) {
+			DEBATE (CURR) {
 				BLAH.DIE();
 			}
 		}
@@ -130,7 +134,7 @@ PROCREATE COUNT 0;
 				BIFURCATE SORTED[HEAD, TAIL];
 				BIFURCATE HEAD[INDEX, VALUE];
 				print ("~d\n", VALUE);
-				DEBATE (!TAIL) {
+				DEBATE (TAIL) {
 					END.DIE();
 				}
 			}
