@@ -14,22 +14,30 @@ PrintFunc([StringExpr('[E] A, B, C, and D are all French words\\n')])
 StringExpr('[F] A, B, C, and D are all not French words\\n')
 PrintFunc([StringExpr('[F] A, B, C, and D are all not French words\\n')])
 InputStmt(VarExpr('CHOICE'), StringExpr(''))
-StringExpr('Wrong! Try again, idiot.')
-PrintFunc([StringExpr('Wrong! Try again, idiot.')])
-StringExpr("Damn, you caught me. It's a trick question.")
-PrintFunc([StringExpr("Damn, you caught me. It's a trick question.")])
-UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), StringExpr('THE CHEAT CODE')), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.")])], THIS))
-StringExpr('Hmph. Ninny.')
-PrintFunc([StringExpr('Hmph. Ninny.')])
+EnumerateStmt(VarExpr('CHOICE'), VarExpr('CHARS'))
+BifurcateStmt(VarExpr('CHARS'), VarExpr('HEAD'), VarExpr('TAIL'))
+StringExpr('Wrong! Try again, idiot.\\n')
+PrintFunc([StringExpr('Wrong! Try again, idiot.\\n')])
+StringExpr("Are you blind? That's not even a choice.\\n")
+PrintFunc([StringExpr("Are you blind? That's not even a choice.\\n")])
+UnlessStmt(None, Serialize([PrintFunc([StringExpr("Are you blind? That's not even a choice.\\n")])], THIS))
+DebateStmt(BinaryExpr('||', BinaryExpr('&&', BinaryExpr('>=', VarExpr('CHOICE'), StringExpr('A')), BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('F'))), BinaryExpr('&&', BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('f')), BinaryExpr('>=', VarExpr('CHOICE'), StringExpr('a')))), Serialize([PrintFunc([StringExpr('Wrong! Try again, idiot.\\n')])], THIS), [UnlessStmt(None, Serialize([PrintFunc([StringExpr("Are you blind? That's not even a choice.\\n")])], THIS))])
+StringExpr("Damn, you caught me. It's a trick question.\\n")
+PrintFunc([StringExpr("Damn, you caught me. It's a trick question.\\n")])
+UnlessStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('THE CHEAT CODE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('the cheat code'))), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.\\n")])], THIS))
+StringExpr('Hmph. Ninny.\\n')
+PrintFunc([StringExpr('Hmph. Ninny.\\n')])
 KillFunc(VarExpr('LOOP'), [])
-UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), StringExpr('DIE')), Serialize([PrintFunc([StringExpr('Hmph. Ninny.')]), KillFunc(VarExpr('LOOP'), [])], THIS))
-StringExpr("HA! Loser can't even guess the cheat code.")
-PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.")])
-UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.")])], THIS))
-DebateStmt(BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('F')), Serialize([PrintFunc([StringExpr('Wrong! Try again, idiot.')])], THIS), [UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), StringExpr('THE CHEAT CODE')), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.")])], THIS)), UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), StringExpr('DIE')), Serialize([PrintFunc([StringExpr('Hmph. Ninny.')]), KillFunc(VarExpr('LOOP'), [])], THIS)), UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.")])], THIS))])
-TildeAthLoop(VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Which of the following is not a French word?\\n')]), PrintFunc([StringExpr('[A] sale\\n')]), PrintFunc([StringExpr('[B] mode\\n')]), PrintFunc([StringExpr('[C] grand\\n')]), PrintFunc([StringExpr('[D] chat\\n')]), PrintFunc([StringExpr('[E] A, B, C, and D are all French words\\n')]), PrintFunc([StringExpr('[F] A, B, C, and D are all not French words\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), DebateStmt(BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('F')), Serialize([PrintFunc([StringExpr('Wrong! Try again, idiot.')])], LOOP), [UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), StringExpr('THE CHEAT CODE')), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.")])], LOOP)), UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), StringExpr('DIE')), Serialize([PrintFunc([StringExpr('Hmph. Ninny.')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.")])], LOOP))])], LOOP))
+UnlessStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('DIE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('die'))), Serialize([PrintFunc([StringExpr('Hmph. Ninny.\\n')]), KillFunc(VarExpr('LOOP'), [])], THIS))
+StringExpr("HA! Loser can't even guess the cheat code.\\n")
+PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.\\n")])
+UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.\\n")])], THIS))
+DebateStmt(UnaryArithExpr('!', VarExpr('TAIL')), Serialize([DebateStmt(BinaryExpr('||', BinaryExpr('&&', BinaryExpr('>=', VarExpr('CHOICE'), StringExpr('A')), BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('F'))), BinaryExpr('&&', BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('f')), BinaryExpr('>=', VarExpr('CHOICE'), StringExpr('a')))), Serialize([PrintFunc([StringExpr('Wrong! Try again, idiot.\\n')])], THIS), [UnlessStmt(None, Serialize([PrintFunc([StringExpr("Are you blind? That's not even a choice.\\n")])], THIS))])], THIS), [UnlessStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('THE CHEAT CODE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('the cheat code'))), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.\\n")])], THIS)), UnlessStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('DIE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('die'))), Serialize([PrintFunc([StringExpr('Hmph. Ninny.\\n')]), KillFunc(VarExpr('LOOP'), [])], THIS)), UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.\\n")])], THIS))])
+StringExpr('\\n')
+PrintFunc([StringExpr('\\n')])
+TildeAthLoop(False, VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Which of the following is not a French word?\\n')]), PrintFunc([StringExpr('[A] sale\\n')]), PrintFunc([StringExpr('[B] mode\\n')]), PrintFunc([StringExpr('[C] grand\\n')]), PrintFunc([StringExpr('[D] chat\\n')]), PrintFunc([StringExpr('[E] A, B, C, and D are all French words\\n')]), PrintFunc([StringExpr('[F] A, B, C, and D are all not French words\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), EnumerateStmt(VarExpr('CHOICE'), VarExpr('CHARS')), BifurcateStmt(VarExpr('CHARS'), VarExpr('HEAD'), VarExpr('TAIL')), DebateStmt(UnaryArithExpr('!', VarExpr('TAIL')), Serialize([DebateStmt(BinaryExpr('||', BinaryExpr('&&', BinaryExpr('>=', VarExpr('CHOICE'), StringExpr('A')), BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('F'))), BinaryExpr('&&', BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('f')), BinaryExpr('>=', VarExpr('CHOICE'), StringExpr('a')))), Serialize([PrintFunc([StringExpr('Wrong! Try again, idiot.\\n')])], LOOP), [UnlessStmt(None, Serialize([PrintFunc([StringExpr("Are you blind? That's not even a choice.\\n")])], LOOP))])], LOOP), [UnlessStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('THE CHEAT CODE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('the cheat code'))), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.\\n")])], LOOP)), UnlessStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('DIE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('die'))), Serialize([PrintFunc([StringExpr('Hmph. Ninny.\\n')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.\\n")])], LOOP))]), PrintFunc([StringExpr('\\n')])], LOOP))
 KillFunc(VarExpr('THIS'), [])
-Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(0)), TildeAthLoop(VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Which of the following is not a French word?\\n')]), PrintFunc([StringExpr('[A] sale\\n')]), PrintFunc([StringExpr('[B] mode\\n')]), PrintFunc([StringExpr('[C] grand\\n')]), PrintFunc([StringExpr('[D] chat\\n')]), PrintFunc([StringExpr('[E] A, B, C, and D are all French words\\n')]), PrintFunc([StringExpr('[F] A, B, C, and D are all not French words\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), DebateStmt(BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('F')), Serialize([PrintFunc([StringExpr('Wrong! Try again, idiot.')])], LOOP), [UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), StringExpr('THE CHEAT CODE')), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.")])], LOOP)), UnlessStmt(BinaryExpr('==', VarExpr('CHOICE'), StringExpr('DIE')), Serialize([PrintFunc([StringExpr('Hmph. Ninny.')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.")])], LOOP))])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS), 108)
+Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(0)), TildeAthLoop(False, VarExpr('LOOP'), Serialize([PrintFunc([StringExpr('Which of the following is not a French word?\\n')]), PrintFunc([StringExpr('[A] sale\\n')]), PrintFunc([StringExpr('[B] mode\\n')]), PrintFunc([StringExpr('[C] grand\\n')]), PrintFunc([StringExpr('[D] chat\\n')]), PrintFunc([StringExpr('[E] A, B, C, and D are all French words\\n')]), PrintFunc([StringExpr('[F] A, B, C, and D are all not French words\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), EnumerateStmt(VarExpr('CHOICE'), VarExpr('CHARS')), BifurcateStmt(VarExpr('CHARS'), VarExpr('HEAD'), VarExpr('TAIL')), DebateStmt(UnaryArithExpr('!', VarExpr('TAIL')), Serialize([DebateStmt(BinaryExpr('||', BinaryExpr('&&', BinaryExpr('>=', VarExpr('CHOICE'), StringExpr('A')), BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('F'))), BinaryExpr('&&', BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('f')), BinaryExpr('>=', VarExpr('CHOICE'), StringExpr('a')))), Serialize([PrintFunc([StringExpr('Wrong! Try again, idiot.\\n')])], LOOP), [UnlessStmt(None, Serialize([PrintFunc([StringExpr("Are you blind? That's not even a choice.\\n")])], LOOP))])], LOOP), [UnlessStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('THE CHEAT CODE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('the cheat code'))), Serialize([PrintFunc([StringExpr("Damn, you caught me. It's a trick question.\\n")])], LOOP)), UnlessStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('DIE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('die'))), Serialize([PrintFunc([StringExpr('Hmph. Ninny.\\n')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), UnlessStmt(None, Serialize([PrintFunc([StringExpr("HA! Loser can't even guess the cheat code.\\n")])], LOOP))]), PrintFunc([StringExpr('\\n')])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS), 164)
 Which of the following is not a French word?
 [A] sale
 [B] mode
@@ -37,116 +45,93 @@ Which of the following is not a French word?
 [D] chat
 [E] A, B, C, and D are all French words
 [F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-Wrong! Try again, idiot.Which of the following is not a French word?
-[A] sale
-[B] mode
-[C] grand
-[D] chat
-[E] A, B, C, and D are all French words
-[F] A, B, C, and D are all not French words
-{'THIS': BuiltinSymbol(), 'NULL': BuiltinSymbol(), 'DIE': BuiltinSymbol(), 'ATH': BuiltinSymbol(), 'print': BuiltinSymbol(), 'input': BuiltinSymbol(), 'import': BuiltinSymbol(), 'DEBATE': BuiltinSymbol(), 'UNLESS': BuiltinSymbol(), 'EXECUTE': BuiltinSymbol(), 'DIVULGATE': BuiltinSymbol(), 'FABRICATE': BuiltinSymbol(), 'REPLICATE': BuiltinSymbol(), 'PROCREATE': BuiltinSymbol(), 'BIFURCATE': BuiltinSymbol(), 'AGGREGATE': BuiltinSymbol(), 'LOOP': AthSymbol(True, 0, None), 'CHOICE': AthSymbol(True, 'Luh', None)}
-{'CHOICE': AthSymbol(True, 'A', None)}
+Wrong! Try again, idiot.
 
-<!--
-	Input + Traceback
-	Code check: comparing strings in symbols to string literals
-	Status: Failed
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Wrong! Try again, idiot.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Are you blind? That's not even a choice.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+HA! Loser can't even guess the cheat code.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Are you blind? That's not even a choice.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Are you blind? That's not even a choice.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Damn, you caught me. It's a trick question.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Damn, you caught me. It's a trick question.
+
+Which of the following is not a French word?
+[A] sale
+[B] mode
+[C] grand
+[D] chat
+[E] A, B, C, and D are all French words
+[F] A, B, C, and D are all not French words
+Hmph. Ninny.
+
+{'THIS': BuiltinSymbol(True, None, None), 'NULL': BuiltinSymbol(False, None, None), 'DIE': BuiltinSymbol(True, None, None), 'ATH': BuiltinSymbol(True, None, None), 'print': BuiltinSymbol(True, None, None), 'input': BuiltinSymbol(True, None, None), 'import': BuiltinSymbol(True, None, None), 'DEBATE': BuiltinSymbol(True, None, None), 'UNLESS': BuiltinSymbol(True, None, None), 'EXECUTE': BuiltinSymbol(True, None, None), 'DIVULGATE': BuiltinSymbol(True, None, None), 'FABRICATE': BuiltinSymbol(True, None, None), 'REPLICATE': BuiltinSymbol(True, None, None), 'PROCREATE': BuiltinSymbol(True, None, None), 'BIFURCATE': BuiltinSymbol(True, None, None), 'AGGREGATE': BuiltinSymbol(True, None, None), 'ENUMERATE': BuiltinSymbol(True, None, None), 'LOOP': AthSymbol(False, 0, None)}
+
+<--
+	Input
+	Code check: ENUMERATE, string comparisons
+	Status: PASSED
 -->
+a
 A
-B
-C
-D
-E
-F
 G
 Blarg
+.
+_
+the cheat code
 THE CHEAT CODE
-DIE
-Luh
-Traceback (most recent call last):
-  File "tildeath.py", line 17, in <module>
-    ath_interp.interpret(cmdargs.script)
-  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athparser.py", line 599, in interpret
-    self.execute(result.value)
-  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athparser.py", line 570, in execute
-    script.eval(self)
-  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
-    stmt.eval(fsm)
-  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 303, in eval
-    self.body.eval(fsm)
-  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 280, in eval
-    stmt.eval(fsm)
-  File "C:\Users\DELL PC\Desktop\Cel\discord.-ATH\athast.py", line 324, in eval
-    value = input(prompt)
-EOFError: EOF when reading a line
-^C
+die
