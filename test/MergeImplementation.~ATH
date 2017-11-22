@@ -2,6 +2,7 @@
 //There's probably something wrong with this somewhere
 
 FABRICATE MERGESORT (LIST) {
+	print ("Merge sort algo start.\n");
 	REPLICATE CURR LIST;
 	BIFURCATE CURR[HEAD, TAIL];
 	
@@ -20,26 +21,31 @@ FABRICATE MERGESORT (LIST) {
 			DEBATE (I < LENGTH) {
 				AGGREGATE [CNTL, VAL]NODE;
 				AGGREGATE [NODE, LEFT]LEFT;
-				CNTL += 1;
+				REPLICATE CNTL (CNTL + 1);
 			} UNLESS {
 				AGGREGATE [CNTR, VAL]NODE;
 				AGGREGATE [NODE, RIGHT]RIGHT;
-				CNTR += 1;
+				REPLICATE CNTR (CNTR + 1);
 			}
 			REPLICATE CURR TAIL;
 		}
+		//Current error is somewhere before this line
+		print ("Split and recursed.\n");
 		
 		REPLICATE LEFT EXECUTE (MERGESORT, LEFT);
 		REPLICATE RIGHT EXECUTE (MERGESORT, RIGHT);
 		AGGREGATE [LEFT, RIGHT]TOMERGE;
 		REPLICATE SORTEDLIST EXECUTE (MERGE, TOMERGE);
+		print ("Going back now...\n");
 		DIVULGATE SORTEDLIST;
 	} UNLESS {
+		print ("Lonely boi\n");
 		DIVULGATE CURR;
 	}
 }
 
 FABRICATE MERGE (LISTS) {
+	print ("Merging...\n");
 	PROCREATE RESULT NULL;
 	PROCREATE CTR 0;
 
@@ -91,6 +97,7 @@ FABRICATE MERGE (LISTS) {
 		REPLICATE RIGHTY TAILR;
 	}
 	
+	print("Merged!\n");
 	DIVULGATE RESULT;
 }
 
@@ -98,28 +105,33 @@ PROCREATE LOOP;
 PROCREATE LIST NULL;
 PROCREATE COUNT 0;
 ~ATH(LOOP) {
-	print ("Select action:");
-	print ("[1] Add an integer to the list");
-	print ("[2] Sort and print list");
-	print ("[3] Exit");
+	print ("Select action:\n");
+	print ("[1] Add an integer to the list\n");
+	print ("[2] Sort and print list\n");
+	print ("[3] Exit\n");
 	input CHOICE "";
 	
 	DEBATE (CHOICE == 3) {
 		LOOP.DIE();
 	} UNLESS (CHOICE == 2) {
-		REPLICATE LIST EXECUTE (MERGE, LIST);
-		// MergeImplementation is written so it sorts the values in
-		// decreasing order to make it easier to print
-		REPLICATE SORTED LIST;
-		
-		PROCREATE END;
-		~ATH(END) {
-			BIFURCATE SORTED[HEAD, TAIL];
-			BIFURCATE HEAD[INDEX, VALUE];
-			print ("~d\n", VALUE);
-			DEBATE (!TAIL) {
-				END.DIE();
+		DEBATE (LIST) {
+			REPLICATE LIST EXECUTE (MERGESORT, LIST);
+			print("List was successfully sorted.\n");
+			// MergeImplementation is written so it sorts the values in
+			// decreasing order to make it easier to print
+			REPLICATE SORTED LIST;
+			
+			PROCREATE END;
+			~ATH(END) {
+				BIFURCATE SORTED[HEAD, TAIL];
+				BIFURCATE HEAD[INDEX, VALUE];
+				print ("~d\n", VALUE);
+				DEBATE (!TAIL) {
+					END.DIE();
+				}
 			}
+		} UNLESS {
+			print ("Queue is empty.\n");
 		}
 	} UNLESS (CHOICE == 1) {
 		input ITEM "Integer to add :";

@@ -7,13 +7,14 @@ FABRICATE FOO() {
 
 FABRICATE BAR() {
 	PROCREATE B 2;
-	EXECUTE(FOO);
+	REPLICATE A EXECUTE(FOO);
+	DIVULGATE A;
 }
 
 PROCREATE LOOP 1;
 ~ATH(LOOP) {
 	REPLICATE ANS EXECUTE(FOO);
-	print ("Foo: ~d", ANS); //10
+	print ("Foo: ~d\n", ANS); //10
 	REPLICATE ANS EXECUTE(BAR);
 	print ("Bar: ~d\n", ANS); //7
 	LOOP.DIE();
