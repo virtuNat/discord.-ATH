@@ -3,6 +3,7 @@
 
 FABRICATE MERGESORT (LIST) {
 	print ("Merge sort algo start.\n");
+	INSPECT (-1);
 	REPLICATE CURR LIST;
 	BIFURCATE CURR[HEAD, TAIL];
 	
@@ -11,10 +12,10 @@ FABRICATE MERGESORT (LIST) {
 		PROCREATE LEFT NULL;
 		PROCREATE RIGHT NULL;
 		
-		REPLICATE LENGTH (INDEX /_ 2);
+		REPLICATE LENGTH ((INDEX + 1) /_ 2);
 		PROCREATE CNTL 0;
 		PROCREATE CNTR 0;
-		PROCREATE BLAH;
+		PROCREATE BLAH 0;
 		~ATH(BLAH) {
 			BIFURCATE CURR[HEAD, TAIL];
 			BIFURCATE HEAD[I, VAL];
@@ -28,6 +29,9 @@ FABRICATE MERGESORT (LIST) {
 				REPLICATE CNTR (CNTR + 1);
 			}
 			REPLICATE CURR TAIL;
+			DEBATE (!CURR) {
+				BLAH.DIE();
+			}
 		}
 		//Current error is somewhere before this line
 		print ("Split and recursed.\n");
