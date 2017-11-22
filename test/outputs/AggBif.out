@@ -1,0 +1,22 @@
+ProcreateStmt(VarExpr('LOOP'), IntExpr(1))
+ProcreateStmt(VarExpr('X'), IntExpr(1))
+ProcreateStmt(VarExpr('Y'), IntExpr(2))
+AggregateStmt(VarExpr('X'), VarExpr('Y'), VarExpr('Z'))
+ProcreateStmt(VarExpr('A'), IntExpr(3))
+ReplicateStmt(VarExpr('Y'), VarExpr('A'))
+BifurcateStmt(VarExpr('Z'), VarExpr('B'), VarExpr('C'))
+StringExpr('~s, ~s')
+VarExpr('B')
+VarExpr('C')
+PrintFunc([StringExpr('~s, ~s'), VarExpr('B'), VarExpr('C')])
+KillFunc(VarExpr('LOOP'), [])
+TildeAthLoop(False, VarExpr('LOOP'), Serialize([ProcreateStmt(VarExpr('X'), IntExpr(1)), ProcreateStmt(VarExpr('Y'), IntExpr(2)), AggregateStmt(VarExpr('X'), VarExpr('Y'), VarExpr('Z')), ProcreateStmt(VarExpr('A'), IntExpr(3)), ReplicateStmt(VarExpr('Y'), VarExpr('A')), BifurcateStmt(VarExpr('Z'), VarExpr('B'), VarExpr('C')), PrintFunc([StringExpr('~s, ~s'), VarExpr('B'), VarExpr('C')]), KillFunc(VarExpr('LOOP'), [])], LOOP))
+KillFunc(VarExpr('THIS'), [])
+Graft(Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(1)), TildeAthLoop(False, VarExpr('LOOP'), Serialize([ProcreateStmt(VarExpr('X'), IntExpr(1)), ProcreateStmt(VarExpr('Y'), IntExpr(2)), AggregateStmt(VarExpr('X'), VarExpr('Y'), VarExpr('Z')), ProcreateStmt(VarExpr('A'), IntExpr(3)), ReplicateStmt(VarExpr('Y'), VarExpr('A')), BifurcateStmt(VarExpr('Z'), VarExpr('B'), VarExpr('C')), PrintFunc([StringExpr('~s, ~s'), VarExpr('B'), VarExpr('C')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS), 63)
+1, 2{'THIS': BuiltinSymbol(True, None, None), 'NULL': BuiltinSymbol(False, None, None), 'DIE': BuiltinSymbol(True, None, None), 'ATH': BuiltinSymbol(True, None, None), 'print': BuiltinSymbol(True, None, None), 'input': BuiltinSymbol(True, None, None), 'import': BuiltinSymbol(True, None, None), 'DEBATE': BuiltinSymbol(True, None, None), 'UNLESS': BuiltinSymbol(True, None, None), 'EXECUTE': BuiltinSymbol(True, None, None), 'DIVULGATE': BuiltinSymbol(True, None, None), 'FABRICATE': BuiltinSymbol(True, None, None), 'REPLICATE': BuiltinSymbol(True, None, None), 'PROCREATE': BuiltinSymbol(True, None, None), 'BIFURCATE': BuiltinSymbol(True, None, None), 'AGGREGATE': BuiltinSymbol(True, None, None), 'ENUMERATE': BuiltinSymbol(True, None, None), 'LOOP': AthSymbol(False, 1, None)}
+
+<--
+	--
+	Code check: AGGREGATE, BIFURCATE
+	Status: PASSED
+-->

@@ -1,0 +1,23 @@
+ProcreateStmt(VarExpr('A'), IntExpr(0))
+ReplicateStmt(VarExpr('A'), BinaryExpr('+', VarExpr('A'), IntExpr(1)))
+StringExpr('~s ')
+VarExpr('A')
+PrintFunc([StringExpr('~s '), VarExpr('A')])
+VarExpr('COUNT')
+ExecuteStmt([VarExpr('COUNT')])
+DebateStmt(BinaryExpr('<', VarExpr('A'), IntExpr(100)), Serialize([ReplicateStmt(VarExpr('A'), BinaryExpr('+', VarExpr('A'), IntExpr(1))), PrintFunc([StringExpr('~s '), VarExpr('A')]), ExecuteStmt([VarExpr('COUNT')])], THIS), [])
+FabricateStmt(VarExpr('COUNT'), [], Serialize([DebateStmt(BinaryExpr('<', VarExpr('A'), IntExpr(100)), Serialize([ReplicateStmt(VarExpr('A'), BinaryExpr('+', VarExpr('A'), IntExpr(1))), PrintFunc([StringExpr('~s '), VarExpr('A')]), ExecuteStmt([VarExpr('COUNT')])], THIS), [])], THIS))
+ProcreateStmt(VarExpr('LOOP'), IntExpr(0))
+VarExpr('COUNT')
+ExecuteStmt([VarExpr('COUNT')])
+KillFunc(VarExpr('LOOP'), [])
+TildeAthLoop(False, VarExpr('LOOP'), Serialize([ExecuteStmt([VarExpr('COUNT')]), KillFunc(VarExpr('LOOP'), [])], LOOP))
+KillFunc(VarExpr('THIS'), [])
+Graft(Serialize([ProcreateStmt(VarExpr('A'), IntExpr(0)), FabricateStmt(VarExpr('COUNT'), [], Serialize([DebateStmt(BinaryExpr('<', VarExpr('A'), IntExpr(100)), Serialize([ReplicateStmt(VarExpr('A'), BinaryExpr('+', VarExpr('A'), IntExpr(1))), PrintFunc([StringExpr('~s '), VarExpr('A')]), ExecuteStmt([VarExpr('COUNT')])], THIS), [])], THIS)), ProcreateStmt(VarExpr('LOOP'), IntExpr(0)), TildeAthLoop(False, VarExpr('LOOP'), Serialize([ExecuteStmt([VarExpr('COUNT')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS), 65)
+1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 {'THIS': BuiltinSymbol(True, None, None), 'NULL': BuiltinSymbol(False, None, None), 'DIE': BuiltinSymbol(True, None, None), 'ATH': BuiltinSymbol(True, None, None), 'print': BuiltinSymbol(True, None, None), 'input': BuiltinSymbol(True, None, None), 'import': BuiltinSymbol(True, None, None), 'DEBATE': BuiltinSymbol(True, None, None), 'UNLESS': BuiltinSymbol(True, None, None), 'EXECUTE': BuiltinSymbol(True, None, None), 'DIVULGATE': BuiltinSymbol(True, None, None), 'FABRICATE': BuiltinSymbol(True, None, None), 'REPLICATE': BuiltinSymbol(True, None, None), 'PROCREATE': BuiltinSymbol(True, None, None), 'BIFURCATE': BuiltinSymbol(True, None, None), 'AGGREGATE': BuiltinSymbol(True, None, None), 'ENUMERATE': BuiltinSymbol(True, None, None), 'A': AthSymbol(True, 0, None), 'COUNT': AthSymbol(True, None, AthFunction('COUNT', [], Serialize([DebateStmt(BinaryExpr('<', VarExpr('A'), IntExpr(100)), Serialize([ReplicateStmt(VarExpr('A'), BinaryExpr('+', VarExpr('A'), IntExpr(1))), PrintFunc([StringExpr('~s '), VarExpr('A')]), ExecuteStmt([VarExpr('COUNT')])], COUNT), [])], COUNT))), 'LOOP': AthSymbol(False, 0, None)}
+
+<--
+	--
+	Code check: Recursive function calls, global variables
+	Status: PASSED
+-->
