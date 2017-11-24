@@ -49,6 +49,7 @@ class Grafter(object):
         return ExprParser(self, other)
 
     def __pow__(self, other):
+        """Overload ** operator to do strict eval"""
         return StrictExpr(self, other)
 
     def __or__(self, other):
@@ -85,6 +86,7 @@ class Concatenator(Grafter):
             rvalue = self.reval(tokens, lvalue.index)
             if rvalue:
                 if isinstance(lvalue.value, tuple):
+                    # Avoid recursive tuples.
                     return Graft(lvalue.value + (rvalue.value,), rvalue.index)
                 return Graft((lvalue.value, rvalue.value), rvalue.index)
         return None
@@ -117,7 +119,7 @@ class Evaluator(Grafter):
     """Takes a grafter and a function.
 
     It will evaluate the grafter as arguments for the function,
-    and return the result of the function's evaluation.
+    and return the result of the function's evaluation as a graft.
     """
     __slots__ = ('graft', 'apply')
 
@@ -314,7 +316,7 @@ class Repeater(Grafter):
         grafts = []
         graft = self.graft(tokens, index)
         while graft:
-            print(graft.value)
+            print('Parsed:', graft.value)
             grafts.append(graft.value)
             index = graft.index
             graft = self.graft(tokens, index)
@@ -356,7 +358,14 @@ class StrictGrafter(Grafter):
 
     def __call__(self, tokens, index):
         graft = self.grafter(tokens, index)
-        print(graft)
         if graft.index == len(tokens):
+            print('Final:\n', graft.value, '\n', sep='')
             return graft
+        else:
+            print(
+                'Parser error: Starting from {} on line {}'.format(
+                    tokens[graft.index].token, 
+                    tokens[graft.index].line,
+                    )
+                )
         return None

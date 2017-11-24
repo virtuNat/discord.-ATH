@@ -1,14 +1,12 @@
 """The ~ATH interpreter.
 
-This contains the token regex list used by the lexer, all the
-parser definitions for the abstract syntax tree, and the finite
-state machine that creates the environment used to run programs
-built in the language.
+This contains the token regex list used by the lexer and all
+the parser builders used to build the parser that creates the
+abstract syntax tree.
 """
 from functools import partial, reduce
 
-from lexer import Lexer, Token
-from symbol import AthSymbol, BuiltinSymbol, SymbolError
+from lexer import Lexer
 from grafter import (
     Selector, ExprParser, StrictExpr,
     TokenGrafter, TagGrafter,
@@ -18,7 +16,7 @@ from grafter import (
 from athast import (
     IntExpr, FloatExpr, StringExpr, VarExpr,
     UnaryArithExpr, BinaryExpr,
-    Serialize, InspectStack, EndTilDeath,
+    Serialize, InspectStack,
 
     ImportStmt, InputStmt, PrintFunc, KillFunc,
     BifurcateStmt, AggregateStmt, EnumerateStmt,
@@ -216,8 +214,6 @@ def procrstmt():
     """Parses value declarations."""
     def breakdown(tokens):
         _, name, expr, _ = tokens
-        if not expr:
-            expr = VarExpr('NULL')
         return ProcreateStmt(name, expr)
     return (
         bltinparser('PROCREATE')
@@ -286,7 +282,7 @@ def importstmt():
     return (
         bltinparser('import')
         + nameparser
-        + nameparser
+        + EnsureGraft(nameparser)
         + bltinparser(';')
         ^ breakdown
         )

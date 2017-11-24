@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from traceback import print_exception
 from argparse import ArgumentParser
 from symbol import AthSymbol, BuiltinSymbol, EndTilDeath
 from athparser import ath_lexer, ath_parser, TildeAthLoop
@@ -16,8 +17,11 @@ class AthStackFrame(object):
     """
     __slots__ = ('scope_vars',)
 
-    def __init__(self):
-        self.scope_vars = {}
+    def __init__(self, scope_vars=None):
+        if not scope_vars:
+            self.scope_vars = {}
+        else:
+            self.scope_vars = scope_vars
 
     def __getitem__(self, name):
         try:
@@ -67,6 +71,21 @@ class TildeAthInterp(object):
             }
         self.stack = []
 
+    def __enter__(self):
+        if len(self.stack) >= 1025:
+            echo_error('StackOverflowError: i told you DOG i TOLD you about STACKS')
+        return self
+
+    def __exit__(self, *exc_info):
+        if len(self.stack):
+            self.stack.pop()
+        else:
+            raise RuntimeError('Stack is already empty, dingus!')
+
+    def push_stack(self, init_dict={}):
+        self.stack.append(AthStackFrame(init_dict))
+        return self
+
     def lookup_name(self, name):
         for frame in reversed(self.stack):
             value = frame[name]
@@ -92,17 +111,6 @@ class TildeAthInterp(object):
                 else:
                     raise SymbolError('builtins can\'t be assigned to')
 
-    def push_stack(self, init_dict={}):
-        newframe = AthStackFrame()
-        newframe.scope_vars.update(init_dict)
-        self.stack.append(newframe)
-
-    def pop_stack(self):
-        if len(self.stack):
-            return self.stack.pop()
-        else:
-            raise RuntimeError('Stack is already empty, dingus!')
-
     def execute(self, script):
         count = 0
         try:
@@ -113,10 +121,16 @@ class TildeAthInterp(object):
                     echo_error('UnboundATHLoopError: THIS.DIE() not called')
         except EndTilDeath:
             sys.exit(0)
+        except Exception:
+            print('Something really messed up!')
+            print_exception(*sys.exc_info(), file=sys.stdout)
+            raise
         finally:
-            print(self.global_vars)
-            for frame in self.stack:
+            for frame in reversed(self.stack):
+                print('Frame:')
                 print(frame.scope_vars)
+            print('Globals:')
+            print(self.global_vars)
 
     def interpret(self, fname):
         if not fname.endswith('~ATH'):

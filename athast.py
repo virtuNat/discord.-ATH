@@ -101,6 +101,12 @@ def bool_opr(lval, rval, op):
         raise SyntaxError('Invalid comparison operator: {}', op)
 
 
+def cmp_opr(lval, rval, op):
+    if isAthValue(lval):
+        lval = AthSymbol(bool(lval), left=lval)
+    return op(lval, rval)
+
+
 def symbol_opr(lval, rval, op):
     if not (isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol)):
         raise TypeError('May only perform living assertions on symbols')
@@ -172,12 +178,12 @@ class BinaryExpr(ArithExpr):
         '&': operator.and_,
         '|': operator.or_,
         '^': operator.xor,
-        '<': operator.lt,
-        '<=': operator.le,
-        '>': operator.gt,
-        '>=': operator.ge,
-        '==': operator.eq,
-        '~=': operator.ne,
+        '<': partial(cmp_opr, op=operator.lt),
+        '<=': partial(cmp_opr, op=operator.le),
+        '>': partial(cmp_opr, op=operator.gt),
+        '>=': partial(cmp_opr, op=operator.ge),
+        '==': partial(cmp_opr, op=operator.eq),
+        '~=': partial(cmp_opr, op=operator.ne),
         '&&': partial(bool_opr, op='&&'),
         '||': partial(bool_opr, op='||'),
         '^^': partial(bool_opr, op='^^'),
@@ -232,13 +238,13 @@ class Statement(AthExpr):
 class Serialize(Statement):
     __slots__ = ('stmt_list', 'ctrl_name', 'value')
 
-    def __init__(self, stmt_list, ctrl_name='THIS'):
+    def __init__(self, stmt_list):
         self.stmt_list = stmt_list
         self.value = None
-        super().__setattr__('ctrl_name', ctrl_name)
+        super().__setattr__('ctrl_name', 'THIS')
 
     def __repr__(self):
-        return '{}({}, {})'.format(
+        return '{}({}, {!r})'.format(
             self.__class__.__name__, self.stmt_list, self.ctrl_name
             )
 
@@ -260,8 +266,8 @@ class Serialize(Statement):
             except SymbolDeath:
                 if not fsm.lookup_name('THIS').alive:
                     raise EndTilDeath
-                elif not fsm.lookup_name(self.ctrl_name).alive:
-                    break
+                elif not fsm.lookup_name(self.ctrl_name):
+                    raise
             except DivulgateBack:
                 self.value = stmt.value
                 raise
@@ -294,19 +300,25 @@ class ProcreateStmt(Statement):
         self.expr = expr
 
     def eval(self, fsm):
-        result = self.expr.eval(fsm)
-        if not isinstance(result, AthSymbol):
-            symbol = AthSymbol(left=result)
-            result = symbol
-        elif self.expr.name == 'NULL':
-            result = AthSymbol()
+        try:
+            result = self.expr.eval(fsm)
+        except AttributeError:
+            fsm.assign_name(self.name.name, AthSymbol())
         else:
-            result = AthSymbol(left=result.left)
-
-        if len(fsm.stack):
-            fsm.assign_name(self.name.name, result)
-        else:
-            fsm.assign_name(self.name.name, result)
+            try:
+                symbol = fsm.lookup_name(self.name.name)
+            except NameError:
+                fsm.assign_name(self.name.name, AthSymbol(left=result))   
+            else:
+                if isAthValue(result):
+                    symbol.assign_left(result)
+                elif isinstance(result, AthSymbol):
+                    if isinstance(self.expr, VarExpr) and self.expr.name == 'NULL':
+                        symbol.assign_left(None)
+                    else:
+                        symbol.assign_left(result.left)
+                else:
+                    raise TypeError('Invalid assignment: {}'.format(result))            
 
 
 class BifurcateStmt(Statement):
@@ -319,7 +331,8 @@ class BifurcateStmt(Statement):
 
     def assign_half(self, fsm, name, value, left):
         if isinstance(value, AthSymbol):
-            fsm.assign_name(name, value)
+            if name != 'NULL':
+                fsm.assign_name(name, value)
         elif value is None:
             fsm.assign_name(name, AthSymbol(False))
         else:
@@ -388,7 +401,13 @@ class ImportStmt(Statement):
 
     def eval(self, fsm):
         module = fsm.__class__()
-        module.interpret(self.module.name + '.~ATH')
+        try:
+            module.interpret(self.module.name + '.~ATH')
+        except SystemExit as e:
+            if e.args[0]:
+                raise e
+            else:
+                module.lookup_name('THIS').alive = True
         if self.alias:
             try:
                 result = module.lookup_name(self.alias.name)
@@ -452,15 +471,15 @@ class PrintFunc(Statement):
         frmtstr = re.sub(r'(?<!\\)~s', '{!s}', frmtstr)
         frmtstr = re.sub(r'(?<!\\)~d', '{:.0f}', frmtstr)
         frmtstr = re.sub(r'(?<!\\)~((?:\d)?\.\d)?f', '{:\\1f}', frmtstr)
-        frmtstr = re.sub(r'(?<=\\)~', '~', frmtstr)
+        frmtstr = re.sub(r'\\~', '~', frmtstr)
         # Replace whitespace character escapes
         frmtstr = re.sub(r'\\a', '\a', frmtstr)
         frmtstr = re.sub(r'\\b', '\b', frmtstr)
-        frmtstr = re.sub(r'\\t', '\t', frmtstr)
-        frmtstr = re.sub(r'\\v', '\v', frmtstr)
         frmtstr = re.sub(r'\\f', '\f', frmtstr)
         frmtstr = re.sub(r'\\r', '\r', frmtstr)
         frmtstr = re.sub(r'\\n', '\n', frmtstr)
+        frmtstr = re.sub(r'\\t', '\t', frmtstr)
+        frmtstr = re.sub(r'\\v', '\v', frmtstr)
         # Grab the format arguments
         if len(self.args) > 1:
             frmtargs = []
@@ -499,8 +518,6 @@ class KillFunc(Statement):
             raise TypeError(
                 'DIE() expects 0 arguments, got: {}'.format(len(self.args))
                 )
-        if self.name.name == 'THIS':
-            raise EndTilDeath
         fsm.lookup_name(self.name.name).kill()
         raise SymbolDeath
 
@@ -535,10 +552,15 @@ class ExecuteStmt(Statement):
                     )
                 )
 
+        arg_dict = {}
         if len(args):
-            arg_dict = {name: arg.eval(fsm) for name, arg in zip(argnames, args)}
-        else:
-            arg_dict = {}
+            for name, argexpr in zip(argnames, args):
+                arg = argexpr.eval(fsm)
+                if isAthValue(arg):
+                    arg_dict[name] = AthSymbol(left=arg)
+                else:
+                    arg_dict[name] = arg
+
         return func.execute(fsm, arg_dict)
 
 
@@ -561,6 +583,7 @@ class FabricateStmt(Statement):
     __slots__ = ('name', 'argfmt', 'body')
 
     def __init__(self, name, argfmt, body):
+        body.ctrl_name = name.name
         self.name = name
         self.argfmt = argfmt
         self.body = body
@@ -595,11 +618,10 @@ class TildeAthLoop(Statement):
 
     def eval(self, fsm):
         dying = self.grave.eval(fsm)
-        fsm.push_stack()
-        while dying.alive != self.state:
-            self.body.eval(fsm)
-            dying = self.grave.eval(fsm)
-        fsm.pop_stack()
+        with fsm.push_stack():
+            while dying.alive != self.state:
+                self.body.eval(fsm)
+                dying = self.grave.eval(fsm)
 
 
 class DebateStmt(Statement):
@@ -612,13 +634,18 @@ class DebateStmt(Statement):
 
     def eval(self, fsm):
         if self.clause.eval(fsm):
-            self.body.eval(fsm)
+            try:
+                self.body.eval(fsm)
+            except SymbolDeath:
+                raise
         elif self.unlesses:
             for unless in self.unlesses:
                 try:
                     unless.eval(fsm)
                 except BreakUnless:
                     break
+                except SymbolDeath:
+                    raise
                 except DivulgateBack:
                     self.body.value = unless.body.value
                     raise

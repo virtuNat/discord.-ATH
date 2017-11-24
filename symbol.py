@@ -2,6 +2,7 @@
 import operator
 from functools import partialmethod
 
+
 def isAthValue(obj):
     """True if an object is a number or string."""
     return (isinstance(obj, int)
@@ -55,27 +56,27 @@ class AthFunction(AthExpr):
     __slots__ = ('name', 'argfmt', 'body')
 
     def __init__(self, name, argfmt, body):
-        body.ctrl_name = name
         self.name = name
         self.argfmt = argfmt
         self.body = body
 
     def execute(self, fsm, args):
         value = AthSymbol(False)
-        fsm.push_stack(args)
-        for stmt in self.body.stmt_list:
-            try:
-                stmt.eval(fsm)
-            except DivulgateBack:
+        with fsm.push_stack(args):
+            for stmt in self.body.stmt_list:
                 try:
-                    value = stmt.value
-                except AttributeError:
-                    value = stmt.body.value
-                break
-            except SymbolDeath:
-                if not fsm.lookup_name(self.name).alive:
+                    stmt.eval(fsm)
+                except DivulgateBack:
+                    try:
+                        value = stmt.value
+                    except AttributeError:
+                        value = stmt.body.value
                     break
-        fsm.pop_stack()
+                except SymbolDeath:
+                    if not fsm.lookup_name('THIS').alive:
+                        raise EndTilDeath
+                    elif not fsm.lookup_name(self.name).alive:
+                        break
         return value
 
 
@@ -113,7 +114,7 @@ class AthSymbol(AthExpr):
         self.rightof = AthRefList()
 
     def __repr__(self):
-        return '{}({}, {}, {})'.format(
+        return '{}({}, {!r}, {})'.format(
             self.__class__.__name__,
             self.alive, self.left, self.right
             )
@@ -142,10 +143,7 @@ class AthSymbol(AthExpr):
     def reop(self, other, op):
         if not isAthValue(self.left):
             raise SymbolError('symbol left is not a value')
-        if isinstance(other, AthSymbol):
-            return AthSymbol(left=op(other.left, self.left))
-        else:
-            return AthSymbol(left=op(other, self.left), right=self.right)
+        return AthSymbol(left=op(other, self.left), right=self.right)
 
     def inop(self, other, op):
         if not isAthValue(self.left):
