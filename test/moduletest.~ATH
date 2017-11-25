@@ -1,0 +1,21 @@
+// Gives you the Nth Fibonacci number. O(n) calculation time.
+FABRICATE FIB (LENGTH) {
+	PROCREATE N1 0;
+	PROCREATE N2 0;
+	PROCREATE N3 1;
+	PROCREATE LOOP;
+	~ATH (LOOP) {
+		DEBATE (LENGTH <= 1) {
+			LOOP.DIE();
+		}
+		PROCREATE N1 N2;
+		PROCREATE N2 N3;
+		PROCREATE N3 (N1 + N2);
+		REPLICATE LENGTH (LENGTH - 1);
+	}
+	DIVULGATE N3;
+}
+
+~ATH (THIS) {
+	THIS.DIE();
+} EXECUTE(NULL);

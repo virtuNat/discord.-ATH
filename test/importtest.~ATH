@@ -1,0 +1,13 @@
+// Imports the Fibonacci function.
+import moduletest FIB;
+PROCREATE MAIN;
+PROCREATE COUNT 1;
+// Print the first ten Fibonacchi numbers.
+~ATH (MAIN) {
+	print("F~d = ~d\n", COUNT, EXECUTE(FIB, COUNT));
+	DEBATE (COUNT >= 10){
+		MAIN.DIE();
+	}
+	PROCREATE COUNT (COUNT + 1);
+}
+THIS.DIE();
