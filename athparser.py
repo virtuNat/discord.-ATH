@@ -8,7 +8,7 @@ from functools import partial, reduce
 
 from lexer import Lexer
 from grafter import (
-    Selector, ExprParser, StrictExpr,
+    Selector, StrictExpr,
     TokenGrafter, TagGrafter,
     EnsureGraft, Repeater,
     LazyGrafter, StrictGrafter,

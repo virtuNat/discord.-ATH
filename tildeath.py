@@ -7,6 +7,7 @@ from athparser import ath_lexer, ath_parser, TildeAthLoop
 
 __version__ = '1.2.0 Beta'
 __author__ = 'virtuNat'
+sys.setrecursionlimit(16000)
 
 
 def echo_error(msg):
@@ -76,13 +77,6 @@ class TildeAthInterp(object):
         self.stack = []
 
     def __enter__(self):
-        stacklen = len(self.stack)
-        if stacklen >= 1000:
-            print('i told you DOG i TOLD you about STACKS!!')
-        elif stacklen >= 4000:
-            print('quick dude come get the ruler its ESCAPING from ABOVE!!')
-        elif stacklen >= 16000:
-            print('dude how HIGH do you have to even BE to do such a thing??')
         return self
 
     def __exit__(self, *exc_info):
@@ -93,6 +87,13 @@ class TildeAthInterp(object):
 
     def push_stack(self, init_dict={}):
         self.stack.append(AthStackFrame(init_dict))
+        stacklen = len(self.stack)
+        if stacklen >= 2000:
+            print('dude how HIGH do you have to even BE to do such a thing??')
+        elif stacklen >= 1500:
+            print('quick dude come get the ruler its ESCAPING from ABOVE!!')
+        elif stacklen >= 1000:
+            print('i told you DOG i TOLD you about STACKS!!')
         return self
 
     def lookup_name(self, name):
@@ -130,9 +131,13 @@ class TildeAthInterp(object):
                     echo_error('UnboundATHLoopError: THIS.DIE() not called')
         except EndTilDeath:
             sys.exit(0)
+        except RecursionError:
+            print('my GUY.')
+            print('stop making the stack frame not STOP from getting any taller!!!')
+            sys.exit(1)
         except Exception:
             print('Something really messed up!')
-            print_exception(*sys.exc_info(), file=sys.stdout)
+            # print_exception(*sys.exc_info(), file=sys.stdout)
             raise
         finally:
             for frame in reversed(self.stack):
