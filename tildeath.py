@@ -5,6 +5,9 @@ from argparse import ArgumentParser
 from symbol import AthSymbol, BuiltinSymbol, EndTilDeath
 from athparser import ath_lexer, ath_parser, TildeAthLoop
 
+__version__ = '1.2.0 Beta'
+__author__ = 'virtuNat'
+
 
 def echo_error(msg):
     sys.stderr.write(msg)
@@ -36,20 +39,21 @@ class AthStackFrame(object):
             symbol = self.scope_vars[name]
         except KeyError:
             pass
-        else:
-            if isinstance(symbol.left, AthSymbol):
-                symbol.left.leftof.remove(symbol)
-            if isinstance(symbol.right, AthSymbol):
-                symbol.right.rightof.remove(symbol)
+        # else:
+        #     if isinstance(symbol.left, AthSymbol):
+        #         symbol.left.leftof.remove(symbol)
+        #     if isinstance(symbol.right, AthSymbol):
+        #         symbol.right.rightof.remove(symbol)
         finally:
             self.scope_vars[name] = value
 
 
 class TildeAthInterp(object):
     """This is supposed to be a Finite State Machine"""
-    __slots__ = ('global_vars', 'stack')
+    __slots__ = ('modules', 'global_vars', 'stack')
 
     def __init__(self):
+        self.modules = {}
         self.global_vars = {
             'THIS': BuiltinSymbol(),
             'NULL': BuiltinSymbol(False),
@@ -72,8 +76,13 @@ class TildeAthInterp(object):
         self.stack = []
 
     def __enter__(self):
-        if len(self.stack) >= 1025:
-            echo_error('StackOverflowError: i told you DOG i TOLD you about STACKS')
+        stacklen = len(self.stack)
+        if stacklen >= 1000:
+            print('i told you DOG i TOLD you about STACKS!!')
+        elif stacklen >= 4000:
+            print('quick dude come get the ruler its ESCAPING from ABOVE!!')
+        elif stacklen >= 16000:
+            print('dude how HIGH do you have to even BE to do such a thing??')
         return self
 
     def __exit__(self, *exc_info):

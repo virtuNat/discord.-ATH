@@ -9,7 +9,7 @@ import operator
 from functools import partial
 from symbol import (
     isAthValue, SymbolError,
-    AthExpr, AthSymbol, AthFunction,
+    AthExpr, AthSymbol, BuiltinSymbol, AthFunction,
     SymbolDeath, DivulgateBack, EndTilDeath, BreakUnless
     )
 
@@ -76,6 +76,12 @@ class StringExpr(ArithExpr):
         return self.string
 
 
+def cmp_opr(lval, rval, op):
+    if isAthValue(lval):
+        lval = AthSymbol(bool(lval), left=lval)
+    return op(lval, rval)
+
+
 def bool_not(val):
     if isAthValue(val):
         val = AthSymbol(bool(val), left=val)
@@ -99,12 +105,6 @@ def bool_opr(lval, rval, op):
             )
     else:
         raise SyntaxError('Invalid comparison operator: {}', op)
-
-
-def cmp_opr(lval, rval, op):
-    if isAthValue(lval):
-        lval = AthSymbol(bool(lval), left=lval)
-    return op(lval, rval)
 
 
 def symbol_opr(lval, rval, op):
@@ -363,8 +363,11 @@ class AggregateStmt(Statement):
             result = fsm.lookup_name(self.name.name)
         except NameError:
             result = AthSymbol()
-        lsym = self.lexpr.eval(fsm).refcopy()
-        rsym = self.rexpr.eval(fsm).refcopy()
+            lsym = self.lexpr.eval(fsm)
+            rsym = self.rexpr.eval(fsm)
+        else:
+            lsym = self.lexpr.eval(fsm).refcopy(result)
+            rsym = self.rexpr.eval(fsm).refcopy(result)
 
         result.assign_left(lsym)
         result.assign_right(rsym)
@@ -400,26 +403,29 @@ class ImportStmt(Statement):
         self.alias = alias
 
     def eval(self, fsm):
-        module = fsm.__class__()
         try:
-            module.interpret(self.module.name + '.~ATH')
-        except SystemExit as e:
-            if e.args[0]:
-                raise e
-            else:
-                module.lookup_name('THIS').alive = True
-        if self.alias:
+            module_vars = fsm.modules[self.module.name]
+        except KeyError:
+            module = fsm.__class__()
             try:
-                result = module.lookup_name(self.alias.name)
-            except NameError:
-                raise NameError(
-                    'symbol {} not found in module {}'.format(
-                        self.alias.name, self.module.name
-                        )
+                module.interpret(self.module.name + '.~ATH')
+            except SystemExit as exitexec:
+                if exitexec.args[0]:
+                    raise exitexec
+            module_vars = {
+                key: value for key, value in module.global_vars.items()
+                if not isinstance(value, BuiltinSymbol)
+                }
+            fsm.modules[self.module.name] = module_vars
+        try:
+            symbol = module_vars[self.alias.name]
+        except KeyError:
+            raise NameError(
+                'symbol {} not found in module {}'.format(
+                    self.alias.name, self.module.name
                     )
-            fsm.assign_name(self.alias.name, result)
-        else:
-            fsm.global_vars.update(module.global_vars)
+                )
+        fsm.assign_name(self.alias.name, symbol)
 
 
 class InputStmt(Statement):

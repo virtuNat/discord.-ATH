@@ -282,7 +282,7 @@ def importstmt():
     return (
         bltinparser('import')
         + nameparser
-        + EnsureGraft(nameparser)
+        + nameparser
         + bltinparser(';')
         ^ breakdown
         )

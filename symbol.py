@@ -80,29 +80,29 @@ class AthFunction(AthExpr):
         return value
 
 
-class AthRefList(list):
-    """A list of symbols can't use __eq__ to compare values in lists."""
+# class AthRefList(list):
+#     """A list of symbols can't use __eq__ to compare values in lists."""
 
-    def __contains__(self, obj):
-        """Force in checks to use identity comparisons."""
-        for item in self:
-            if item is obj:
-                return True
-        return False
+#     def __contains__(self, obj):
+#         """Force in checks to use identity comparisons."""
+#         for item in self:
+#             if item is obj:
+#                 return True
+#         return False
 
-    def remove(self, obj):
-        """Force removals to use identity comparisons."""
-        idx = 0
-        for item in self:
-            if item is obj:
-                self.pop(idx)
-                return None
-            idx += 1
+#     def remove(self, obj):
+#         """Force removals to use identity comparisons."""
+#         idx = 0
+#         for item in self:
+#             if item is obj:
+#                 self.pop(idx)
+#                 return None
+#             idx += 1
 
 
 class AthSymbol(AthExpr):
     """~ATH Variable data structure."""
-    __slots__ = ('alive', 'left', 'right', 'leftof', 'rightof')
+    __slots__ = ('alive', 'left', 'right') #, 'leftof', 'rightof')
 
     def __init__(self, alive=True, left=None, right=None):
         self.alive = alive
@@ -110,16 +110,18 @@ class AthSymbol(AthExpr):
         self.right = None
         self.assign_left(left)
         self.assign_right(right)
-        self.leftof = AthRefList()
-        self.rightof = AthRefList()
+        # self.leftof = AthRefList()
+        # self.rightof = AthRefList()
 
     def __repr__(self):
-        return '{}({}, {!r}, {})'.format(
+        """Represent this symbol."""
+        return '{}({}, {!r}, {!r})'.format(
             self.__class__.__name__,
             self.alive, self.left, self.right
             )
 
     def cmpop(self, other, op):
+        """Base function for comparison operators."""
         if not isAthValue(self.left):
             raise SymbolError('symbol left is not a value')
         if isinstance(other, AthSymbol):
@@ -128,11 +130,13 @@ class AthSymbol(AthExpr):
             return AthSymbol(op(self.left, other), self.left, self.right)
 
     def unoop(self, op):
+        """Base function for unary operators."""
         if not isAthValue(self.left):
             raise SymbolError('symbol left is not a value')
         return AthSymbol(left=op(self.left))
 
     def binop(self, other, op):
+        """Base function for binary operators."""
         if not isAthValue(self.left):
             raise SymbolError('symbol left is not a value')
         if isinstance(other, AthSymbol):
@@ -141,11 +145,13 @@ class AthSymbol(AthExpr):
             return AthSymbol(left=op(self.left, other), right=self.right)
 
     def reop(self, other, op):
+        """Base function for reverse binary operators."""
         if not isAthValue(self.left):
             raise SymbolError('symbol left is not a value')
         return AthSymbol(left=op(other, self.left), right=self.right)
 
     def inop(self, other, op):
+        """Base function for in-place binary operators."""
         if not isAthValue(self.left):
             raise SymbolError('symbol left is not a value')
         self.left = op(self.left, other)
@@ -213,7 +219,38 @@ class AthSymbol(AthExpr):
     __lt__ = partialmethod(cmpop, op=operator.lt)
     __le__ = partialmethod(cmpop, op=operator.le)
 
+    def __contains__(self, symbol):
+        """Returns True if this symbol contains the given symbol as
+        one of its left or right values, or the left or right values
+        of those values if they're also symbols.
+
+        Note that this performs the test recursively, and might be slow
+        for large-scale binary symbol heaps.
+        """
+        if self.left is symbol or self.right is symbol:
+            # If either side is the symbol, return True.
+            return True
+        elif isinstance(self.left, AthSymbol):
+            if isinstance(self.right, AthSymbol):
+                # If both values are symbols, return True
+                # if at least one value contains the symbol
+                return (
+                    self.left.__contains__(symbol) or 
+                    self.right.__contains__(symbol)
+                    )
+            else:
+                # If only left is a symbol, check that one
+                return self.left.__contains__(symbol)
+        elif isinstance(self.right, AthSymbol):
+            # If only right is a symbol, check that one
+            return self.right.__contains__(symbol)
+        else:
+            # If neither are symbols, return False.
+            return False
+
+
     def copy(self):
+        """Deep copies this symbol and returns the result."""
         newsymbol = AthSymbol(self.alive)
         if isinstance(self.left, AthSymbol):
             newsymbol.left = self.left.copy()
@@ -225,17 +262,17 @@ class AthSymbol(AthExpr):
             newsymbol.right = self.right
         return newsymbol
 
-    def refcopy(self):
-        newsymbol = AthSymbol(self.alive, self.left, self.right)
-        newsymbol.leftof = self.leftof
-        self.leftof = AthRefList()
-        for left in self.leftof:
-            left.left = newsymbol
-        newsymbol.rightof = self.rightof
-        self.rightof = AthRefList()
-        for right in self.rightof:
-            right.right = newsymbol
-        return newsymbol
+    def refcopy(self, ref):
+        """Replaces all instances of a reference symbol in
+        this symbol with deep copies of that reference symbol.
+        """
+        if ref is self:
+            return self.copy()
+        if isinstance(self.left, AthSymbol):
+            self.assign_left(self.left.refcopy(ref))
+        if isinstance(self.right, AthSymbol):
+            self.assign_right(self.right.refcopy(ref))
+        return self
 
     def assign_left(self, value):
         if not (isAthValue(value)
@@ -245,11 +282,11 @@ class AthSymbol(AthExpr):
             raise TypeError(
                 'May only assign constants or symbols to left'
                 )
-        if isinstance(self.left, AthSymbol):
-            self.left.leftof.remove(self)
+        # if isinstance(self.left, AthSymbol):
+        #     self.left.leftof.remove(self)
         self.left = value
-        if isinstance(value, AthSymbol) and self not in value.leftof:
-            self.left.leftof.append(self)
+        # if isinstance(value, AthSymbol) and self not in value.leftof:
+        #     self.left.leftof.append(self)
 
 
     def assign_right(self, value):
@@ -260,14 +297,14 @@ class AthSymbol(AthExpr):
             raise TypeError(
                 'May only assign functions or symbols to right'
                 )
-        if isinstance(self.right, AthSymbol):
-            self.right.rightof.remove(self)
+        # if isinstance(self.right, AthSymbol):
+        #     self.right.rightof.remove(self)
         self.right = value
-        if isinstance(value, AthSymbol) and self not in value.rightof:
-            self.right.rightof.append(self)
-
+        # if isinstance(value, AthSymbol) and self not in value.rightof:
+        #     self.right.rightof.append(self)
 
     def kill(self):
+        """THIS.DIE()"""
         self.alive = False
 
 
@@ -278,8 +315,8 @@ class BuiltinSymbol(AthSymbol):
         self.alive = alive
         self.left = None
         self.right = None
-        self.leftof = AthRefList()
-        self.rightof = AthRefList()
+        # self.leftof = AthRefList()
+        # self.rightof = AthRefList()
 
     def assign_left(self, value):
         echo_error('SymbolError: Builtins cannot be assigned to!')
