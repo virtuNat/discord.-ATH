@@ -33,7 +33,7 @@ class BreakUnless(Exception):
 
 class AthExpr(object):
     """Base class of all ~ATH AST nodes."""
-    __slots__ = ()
+    __slots__ = () # 'result',)
 
     def __eq__(self, othr):
         if isinstance(othr, self.__class__):
@@ -60,49 +60,28 @@ class AthFunction(AthExpr):
         self.argfmt = argfmt
         self.body = body
 
-    def execute(self, fsm, args):
+    def execute(self, fsm):
         value = AthSymbol(False)
-        with fsm.push_stack(args):
-            for stmt in self.body.stmt_list:
+        for stmt in self.body.stmt_list:
+            try:
+                stmt.eval(fsm)
+            except DivulgateBack:
                 try:
-                    stmt.eval(fsm)
-                except DivulgateBack:
-                    try:
-                        value = stmt.value
-                    except AttributeError:
-                        value = stmt.body.value
+                    value = stmt.value
+                except AttributeError:
+                    value = stmt.body.value
+                break
+            except SymbolDeath:
+                if not fsm.lookup_name('THIS').alive:
+                    raise EndTilDeath
+                elif not fsm.lookup_name(self.name).alive:
                     break
-                except SymbolDeath:
-                    if not fsm.lookup_name('THIS').alive:
-                        raise EndTilDeath
-                    elif not fsm.lookup_name(self.name).alive:
-                        break
         return value
-
-
-# class AthRefList(list):
-#     """A list of symbols can't use __eq__ to compare values in lists."""
-
-#     def __contains__(self, obj):
-#         """Force in checks to use identity comparisons."""
-#         for item in self:
-#             if item is obj:
-#                 return True
-#         return False
-
-#     def remove(self, obj):
-#         """Force removals to use identity comparisons."""
-#         idx = 0
-#         for item in self:
-#             if item is obj:
-#                 self.pop(idx)
-#                 return None
-#             idx += 1
 
 
 class AthSymbol(AthExpr):
     """~ATH Variable data structure."""
-    __slots__ = ('alive', 'left', 'right') #, 'leftof', 'rightof')
+    __slots__ = ('alive', 'left', 'right')
 
     def __init__(self, alive=True, left=None, right=None):
         self.alive = alive
@@ -110,8 +89,6 @@ class AthSymbol(AthExpr):
         self.right = None
         self.assign_left(left)
         self.assign_right(right)
-        # self.leftof = AthRefList()
-        # self.rightof = AthRefList()
 
     def __repr__(self):
         """Represent this symbol."""
@@ -226,6 +203,9 @@ class AthSymbol(AthExpr):
 
         Note that this performs the test recursively, and might be slow
         for large-scale binary symbol heaps.
+
+        Average time: O(log(n))
+        Worst-case  : O(n)
         """
         if self.left is symbol or self.right is symbol:
             # If either side is the symbol, return True.
@@ -282,11 +262,7 @@ class AthSymbol(AthExpr):
             raise TypeError(
                 'May only assign constants or symbols to left'
                 )
-        # if isinstance(self.left, AthSymbol):
-        #     self.left.leftof.remove(self)
         self.left = value
-        # if isinstance(value, AthSymbol) and self not in value.leftof:
-        #     self.left.leftof.append(self)
 
 
     def assign_right(self, value):
@@ -297,11 +273,7 @@ class AthSymbol(AthExpr):
             raise TypeError(
                 'May only assign functions or symbols to right'
                 )
-        # if isinstance(self.right, AthSymbol):
-        #     self.right.rightof.remove(self)
         self.right = value
-        # if isinstance(value, AthSymbol) and self not in value.rightof:
-        #     self.right.rightof.append(self)
 
     def kill(self):
         """THIS.DIE()"""
@@ -315,8 +287,6 @@ class BuiltinSymbol(AthSymbol):
         self.alive = alive
         self.left = None
         self.right = None
-        # self.leftof = AthRefList()
-        # self.rightof = AthRefList()
 
     def assign_left(self, value):
         echo_error('SymbolError: Builtins cannot be assigned to!')

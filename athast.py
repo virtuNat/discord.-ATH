@@ -14,32 +14,24 @@ from symbol import (
     )
 
 
-class ArithExpr(AthExpr):
-    """Superclass to all arithmetic-based syntax."""
+class EvalExpr(AthExpr):
+    """Superclass to all expressions that are not statements."""
     __slots__ = ()
 
 
-class NumExpr(ArithExpr):
+class NumExpr(EvalExpr):
     """Superclass of both integers and floats."""
     __slots__ = ('num',)
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.num)
+        return '{}({!r})'.format(self.__class__.__name__, self.num)
 
     def eval(self, fsm):
         return self.num
 
 
 class FloatExpr(NumExpr):
-    """Holds float number values.
-
-    Arithmetic operators handle float and int values differently;
-    for addition, subtraction, and multiplication, return a float
-    if at least one operand is float otherwise return int.
-
-    For true division, return type is always float.
-    For floor division, return type is int if both operands are int.
-    """
+    """Holds float number values."""
     __slots__ = ()
 
     def __init__(self, num):
@@ -54,7 +46,7 @@ class IntExpr(NumExpr):
         self.num = int(num)
 
 
-class VarExpr(ArithExpr):
+class VarExpr(EvalExpr):
     """Contains a symbol name."""
     __slots__ = ('name',)
 
@@ -65,7 +57,7 @@ class VarExpr(ArithExpr):
         return fsm.lookup_name(self.name)
 
 
-class StringExpr(ArithExpr):
+class StringExpr(EvalExpr):
     """Holds string values."""
     __slots__ = ('string',)
 
@@ -103,8 +95,7 @@ def bool_opr(lval, rval, op):
             rval if rval and not lval else
             AthSymbol(False)
             )
-    else:
-        raise SyntaxError('Invalid comparison operator: {}', op)
+    raise SyntaxError('Invalid comparison operator: {}', op)
 
 
 def symbol_opr(lval, rval, op):
@@ -112,30 +103,25 @@ def symbol_opr(lval, rval, op):
         raise TypeError('May only perform living assertions on symbols')
     try:
         if op == '!=!':
-            value = (lval.left.alive == rval.left.alive
-                and lval.right.alive == rval.right.alive)
-        elif op == '!=?':
-            value = lval.left.alive == rval.left.alive
+            value = lval is rval
         elif op == '?=!':
-            value = lval.right.alive == rval.right.alive
+            value = lval.left.alive and rval.left.alive
+        elif op == '!=?':
+            value = lval.right.alive and rval.right.alive
         elif op == '~=!':
-            value = (lval.left.alive != rval.left.alive
-                and lval.right.alive == rval.right.alive)
+            value = not (lval.left.alive or rval.left.alive)
         elif op == '!=~':
-            value = (lval.left.alive == rval.left.alive
-                and lval.right.alive != rval.right.alive)
+            value = not (lval.right.alive or rval.right.alive)
         elif op == '~=~':
-            value = (lval.left.alive != rval.left.alive
-                and lval.right.alive != rval.right.alive)
+            value = lval is not rval
         else:
             raise SyntaxError('Invalid comparison operator: {}', op)
     except AttributeError:
         raise SymbolError('The relevant side(s) must be symbols')
-    else:
-        return AthSymbol(value)
+    return AthSymbol(value)
 
 
-class UnaryArithExpr(ArithExpr):
+class UnaryArithExpr(EvalExpr):
     """Handles unary arithmetic expressions."""
     __slots__ = ('op', 'expr')
     ops = {
@@ -145,24 +131,22 @@ class UnaryArithExpr(ArithExpr):
         '!': bool_not,
     }
 
-    def __init__(self, op, expr):
-        self.op = op
-        self.expr = expr
+    def __init__(self, args):
+        self.op, self.expr = args
 
     def eval(self, fsm):
         try:
             result = self.ops[self.op](self.expr.eval(fsm))
-            if isinstance(result, AthSymbol):
-                return result
-            elif isAthValue(result):
-                return AthSymbol(left=result)
-            else:
-                raise ValueError('Invalid result: {}'.format(result))
         except KeyError:
             raise SyntaxError('Unknown operator: {}', self.op)
+        if isinstance(result, AthSymbol):
+            return result
+        elif isAthValue(result):
+            return AthSymbol(left=result)
+        raise ValueError('Invalid result: {}'.format(result))
 
 
-class BinaryExpr(ArithExpr):
+class BinaryExpr(EvalExpr):
     """Handles binary expressions."""
     __slots__ = ('op', 'lexpr', 'rexpr')
     ops = {
@@ -188,8 +172,8 @@ class BinaryExpr(ArithExpr):
         '||': partial(bool_opr, op='||'),
         '^^': partial(bool_opr, op='^^'),
         '!=!': partial(symbol_opr, op='!=!'),
-        '!=?': partial(symbol_opr, op='!=?'),
         '?=!': partial(symbol_opr, op='?=!'),
+        '!=?': partial(symbol_opr, op='!=?'),
         '~=!': partial(symbol_opr, op='~=!'),
         '!=~': partial(symbol_opr, op='!=~'),
         '~=~': partial(symbol_opr, op='~=~'),
@@ -205,48 +189,52 @@ class BinaryExpr(ArithExpr):
         rval = self.rexpr.eval(fsm)
         try:
             result = self.ops[self.op](lval, rval)
-            if isinstance(result, AthSymbol):
-                return result
-            elif isAthValue(result):
-                return AthSymbol(left=result)
-            else:
-                raise ValueError('Invalid result: {}'.format(result))
         except KeyError:
             raise SyntaxError('Invalid operator: {}'.format(self.op))
-
-
-class BinaryIPExpr(ArithExpr):
-    """Handles in-place binary arithmetic operators."""
-    __slots__ = ('op', 'name', 'expr')
-
-    def __init__(self, op, name, expr):
-        self.op = op
-        self.name = name
-        self.expr = expr
-
-    def eval(self, fsm):
-        raise NotImplementedError(
-            '{} has not been implemented.'.format(self.__class__.__name__)
-            )
+        if isinstance(result, AthSymbol):
+            return result
+        elif isAthValue(result):
+            return AthSymbol(left=result)
+        raise ValueError('Invalid result: {}'.format(result))
 
 
 class Statement(AthExpr):
-    """Superclass to all builtin statements."""
+    """Superclass to all statements."""
     __slots__ = ()
 
 
-class Serialize(Statement):
-    __slots__ = ('stmt_list', 'ctrl_name', 'value')
+class ControlStmt(Statement):
+    """Superclass to all control flow statements."""
+    __slots__ = ()
 
-    def __init__(self, stmt_list):
-        self.stmt_list = stmt_list
-        self.value = None
-        super().__setattr__('ctrl_name', 'THIS')
-
-    def __repr__(self):
-        return '{}({}, {!r})'.format(
-            self.__class__.__name__, self.stmt_list, self.ctrl_name
+    def eval(self, fsm):
+        raise NotImplementedError(
+            'The FSM evaluates these statements.'
             )
+    
+
+class CondJumpStmt(ControlStmt):
+    """Statement that signals the execution to skip a number
+    of statements equivalent to its height if the clause is
+    evaluated to a living symbol.
+    """
+    __slots__ = ('clause', 'height')
+
+    def __init__(self, clause, height):
+        self.clause = clause
+        self.height = height
+
+
+class ATHASTList(ControlStmt):
+    __slots__ = ('stmt_list', 'ctrl_name', 'index')
+
+    def __init__(self, stmt_list, ctrl_name=None):
+        self.stmt_list = stmt_list
+        self.index = 0
+        if not ctrl_name:
+            super().__setattr__('ctrl_name', 'THIS')
+        else:
+            self.ctrl_name = ctrl_name
 
     def __setattr__(self, name, value):
         if name == 'ctrl_name':
@@ -259,18 +247,66 @@ class Serialize(Statement):
         else:
             super().__setattr__(name, value)
 
-    def eval(self, fsm):
-        for stmt in self.stmt_list:
-            try:
-                stmt.eval(fsm)
-            except SymbolDeath:
-                if not fsm.lookup_name('THIS').alive:
-                    raise EndTilDeath
-                elif not fsm.lookup_name(self.ctrl_name):
-                    raise
-            except DivulgateBack:
-                self.value = stmt.value
-                raise
+    def __repr__(self):
+        return '{}({}, {!r})'.format(
+            self.__class__.__name__, self.stmt_list, self.ctrl_name
+            )
+
+    def __getitem__(self, itemidx):
+        return self.stmt_list.__getitem__(itemidx)
+
+    def __len__(self):
+        return len(self.stmt_list)
+
+    def __iter__(self):
+        """Initializes iteration state."""
+        self.index = 0
+        return self
+
+    def __next__(self):
+        """Obtain the next statement from this list."""
+        try:
+            node = self.stmt_list[self.index]
+        except IndexError:
+            raise StopIteration
+        self.index += 1
+        return node
+
+    def flatten(self):
+        """Converts DEBATE/UNLESS constructs into conditional jumps."""
+        for stmt in self:
+            if isinstance(stmt, DebateStmt):
+                # Create two lists of statements before and after this one.
+                topslice = self.stmt_list[:self.index-2]
+                botslice = self.stmt_list[self.index:]
+                # Flatten the body of the DEBATE suite.
+                stmt.body.flatten()
+                # Create a new list of flattened statements.
+                midslice = [CondJumpStmt(stmt.clause, len(stmt.body)+1)]
+                midslice.extend(stmt.body.stmt_list)
+                # For each UNLESS suite that follows:
+                unless_idx = 0
+                for unless in stmt.unlesses:
+                    # Flatten the body.
+                    unless.body.flatten()
+                    bodylen = len(unless.body) + 1
+                    # Add the jump that allows the previous suites to skip this one.
+                    midslice.append(CondJumpStmt(None, bodylen))
+                    # If this is the last suite, there will be no jump at the end.
+                    if unless_idx == len(stmt.unlesses) - 1:
+                        bodylen -= 1
+                    # Add this suite.
+                    midslice.append(CondJumpStmt(unless.clause, bodylen))
+                    midslice.extend(unless.body.stmt_list)
+                    # Increment enumerate counter.
+                    unless_idx += 1
+                # Recombine the flattened DEBATE/UNLESS construct with the script.
+                self.stmt_list = topslice + midslice + botslice
+                # Compensate for the increased length.
+                self.index += len(midslice) - 1
+            elif (isinstance(stmt, TildeAthLoop)
+                or isinstance(stmt, FabricateStmt)):
+                stmt.body.flatten()
 
 
 class ReplicateStmt(Statement):
@@ -284,12 +320,11 @@ class ReplicateStmt(Statement):
         result = self.expr.eval(fsm)
         if isinstance(result, AthSymbol):
             symbol = result.copy()
-            symbol.alive = True
+            # symbol.alive = True
         elif isAthValue(result):
             symbol = AthSymbol(left=result.left)
-        else:
-            raise SymbolError('Bad copy: {}'.format(result))
         fsm.assign_name(self.name.name, symbol)
+        return None, None
 
 
 class ProcreateStmt(Statement):
@@ -303,22 +338,28 @@ class ProcreateStmt(Statement):
         try:
             result = self.expr.eval(fsm)
         except AttributeError:
+            # If there is no expression, assign an empty living symbol.
             fsm.assign_name(self.name.name, AthSymbol())
         else:
             try:
                 symbol = fsm.lookup_name(self.name.name)
             except NameError:
+                # If this symbol's name doesn't exist yet, make it.
                 fsm.assign_name(self.name.name, AthSymbol(left=result))   
             else:
                 if isAthValue(result):
+                    # If the result evaluates to a bare value, assign it directly.
                     symbol.assign_left(result)
                 elif isinstance(result, AthSymbol):
                     if isinstance(self.expr, VarExpr) and self.expr.name == 'NULL':
+                        # If NULL is assigned, empty the left value.
                         symbol.assign_left(None)
                     else:
+                        # Otherwise, the value is a symbol, so point the left value to it.
                         symbol.assign_left(result.left)
                 else:
-                    raise TypeError('Invalid assignment: {}'.format(result))            
+                    raise TypeError('Invalid assignment: {}'.format(result))
+        return None, None
 
 
 class BifurcateStmt(Statement):
@@ -332,8 +373,10 @@ class BifurcateStmt(Statement):
     def assign_half(self, fsm, name, value, left):
         if isinstance(value, AthSymbol):
             if name != 'NULL':
+                # If symbol is not NULL, copy its reference.
                 fsm.assign_name(name, value)
         elif value is None:
+            # If symbol is empty on that side, create dead symbol.
             fsm.assign_name(name, AthSymbol(False))
         else:
             if left:
@@ -343,11 +386,9 @@ class BifurcateStmt(Statement):
 
     def eval(self, fsm):
         symbol = fsm.lookup_name(self.name.name)
-        if isinstance(symbol, AthSymbol):
-            self.assign_half(fsm, self.lexpr.name, symbol.left, True)
-            self.assign_half(fsm, self.rexpr.name, symbol.right, False)
-        else:
-            raise SymbolError('May not bifurcate non-symbol')
+        self.assign_half(fsm, self.lexpr.name, symbol.left, True)
+        self.assign_half(fsm, self.rexpr.name, symbol.right, False)
+        return None, None
 
 
 class AggregateStmt(Statement):
@@ -359,19 +400,20 @@ class AggregateStmt(Statement):
         self.name = name
 
     def eval(self, fsm):
+        lsym = self.lexpr.eval(fsm)
+        rsym = self.rexpr.eval(fsm)
         try:
             result = fsm.lookup_name(self.name.name)
         except NameError:
             result = AthSymbol()
-            lsym = self.lexpr.eval(fsm)
-            rsym = self.rexpr.eval(fsm)
         else:
-            lsym = self.lexpr.eval(fsm).refcopy(result)
-            rsym = self.rexpr.eval(fsm).refcopy(result)
+            lsym = lsym.refcopy(result)
+            rsym = rsym.refcopy(result)
 
         result.assign_left(lsym)
         result.assign_right(rsym)
         fsm.assign_name(self.name.name, result)
+        return None, None
 
 
 class EnumerateStmt(Statement):
@@ -392,7 +434,9 @@ class EnumerateStmt(Statement):
         for i in range(len(charlist) - 1):
             charlist[i].assign_right(charlist[i + 1])
         charlist[-1].assign_right(AthSymbol(False))
+
         fsm.assign_name(self.stack.name, charlist[0])
+        return None, None
 
 
 class ImportStmt(Statement):
@@ -413,8 +457,7 @@ class ImportStmt(Statement):
                 if exitexec.args[0]:
                     raise exitexec
             module_vars = {
-                key: value for key, value in module.global_vars.items()
-                if not isinstance(value, BuiltinSymbol)
+                key: value for key, value in module.stack[0].scope_vars.items()
                 }
             fsm.modules[self.module.name] = module_vars
         try:
@@ -425,7 +468,8 @@ class ImportStmt(Statement):
                     self.alias.name, self.module.name
                     )
                 )
-        fsm.assign_name(self.alias.name, symbol)
+        fsm.assign_name(self.alias.name, symbol.copy())
+        return None, None
 
 
 class InputStmt(Statement):
@@ -442,8 +486,7 @@ class InputStmt(Statement):
                 prompt = prompt.left
             elif prompt.left is None:
                 prompt = ''
-            else:
-                raise SymbolError('Invalid prompt!')
+            raise SymbolError('Invalid prompt!')
         value = input(prompt)
         try:
             value = int(value)
@@ -452,7 +495,13 @@ class InputStmt(Statement):
                 value = float(value)
             except ValueError:
                 pass
-        fsm.assign_name(self.name.name, AthSymbol(left=value))
+        try:
+            symbol = fsm.lookup_name(self.name.name)
+        except NameError:
+            fsm.assign_name(self.name.name, AthSymbol(left=value))
+        else:
+            symbol.left = value
+        return None, None
 
 
 class PrintFunc(Statement):
@@ -462,53 +511,45 @@ class PrintFunc(Statement):
     def __init__(self, args):
         self.args = args
 
-    def get_string(self, fsm):
-        if isinstance(self.args[0], StringExpr):
-            return self.args[0].string
-        elif isinstance(self.args[0], VarExpr):
-            symbol = self.args[0].eval(fsm)
-            if isinstance(symbol.left, str):
-                return symbol.left
+    def get_string(self, fsm, args):
+        if isinstance(args[0], str):
+            return args[0]
+        elif isinstance(args[0], AthSymbol) and isinstance(args[0].left, str):
+            return args[0].left
         raise TypeError(
             'print must take string or symbol with string as first argument'
             )
 
-    def format(self, frmtstr, fsm):
+    def format(self, fsm, args):
+        frmtstr = self.get_string(fsm, args)
         frmtstr = re.sub(r'(?<!\\)~s', '{!s}', frmtstr)
         frmtstr = re.sub(r'(?<!\\)~d', '{:.0f}', frmtstr)
         frmtstr = re.sub(r'(?<!\\)~((?:\d)?\.\d)?f', '{:\\1f}', frmtstr)
         frmtstr = re.sub(r'\\~', '~', frmtstr)
-        # Replace whitespace character escapes
-        frmtstr = re.sub(r'\\a', '\a', frmtstr)
-        frmtstr = re.sub(r'\\b', '\b', frmtstr)
-        frmtstr = re.sub(r'\\f', '\f', frmtstr)
-        frmtstr = re.sub(r'\\r', '\r', frmtstr)
-        frmtstr = re.sub(r'\\n', '\n', frmtstr)
-        frmtstr = re.sub(r'\\t', '\t', frmtstr)
-        frmtstr = re.sub(r'\\v', '\v', frmtstr)
+        # Replace special character escapes
+        frmtstr = re.sub(r'\\a', '\a', frmtstr) # Bell
+        frmtstr = re.sub(r'\\b', '\b', frmtstr) # Backspace
+        frmtstr = re.sub(r'\\f', '\f', frmtstr) # Line-feed
+        frmtstr = re.sub(r'\\r', '\r', frmtstr) # Carriage Ret
+        frmtstr = re.sub(r'\\n', '\n', frmtstr) # Newline
+        frmtstr = re.sub(r'\\t', '\t', frmtstr) # H-Tab
+        frmtstr = re.sub(r'\\v', '\v', frmtstr) # V-Tab
         # Grab the format arguments
-        if len(self.args) > 1:
-            frmtargs = []
-            for arg in self.args[1:]:
-                result = arg.eval(fsm)
-                if isAthValue(result):
-                    frmtargs.append(result)
-                elif isinstance(result, AthSymbol):
-                    if isAthValue(result.left):
-                        frmtargs.append(result.left)
-                    else:
-                        raise TypeError('Invalid symbol value!')
-        else:
-            frmtargs = tuple()
+        frmtargs = []
+        if len(args) > 1:
+            for arg in args[1:]:
+                if isAthValue(arg):
+                    frmtargs.append(arg)
+                elif isinstance(arg, AthSymbol):
+                    if isAthValue(arg.left):
+                        frmtargs.append(arg.left)
+                    raise TypeError('Invalid symbol value!')
         return frmtstr.format(*frmtargs)
 
     def eval(self, fsm):
-        if self.args:
-            frmtstr = self.get_string(fsm)
-            frmtedstr = self.format(frmtstr, fsm)
-        else:
-            frmtedstr = ''
-        print(frmtedstr, end='')
+        args = [arg.eval(fsm) for arg in self.args]
+        print(self.format(fsm, args) if args else '', end='')
+        return None, None
 
 
 class KillFunc(Statement):
@@ -546,7 +587,7 @@ class ExecuteStmt(Statement):
         if name.name == 'NULL':
             return AthSymbol(False)
 
-        func = name.eval(fsm).right
+        func = fsm.lookup_name(name).right
         if not isinstance(func, AthFunction):
             raise TypeError('symbol executed must have been fabricated')
 
@@ -566,23 +607,14 @@ class ExecuteStmt(Statement):
                     arg_dict[name] = AthSymbol(left=arg)
                 else:
                     arg_dict[name] = arg
+        return func.execute, arg_dict
 
-        return func.execute(fsm, arg_dict)
 
-
-class DivulgateStmt(Statement):
-    __slots__ = ('expr', 'value')
+class DivulgateStmt(ControlStmt):
+    __slots__ = ('expr')
 
     def __init__(self, expr):
         self.expr = expr
-        self.value = None
-
-    def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.expr)
-
-    def eval(self, fsm):
-        self.value = self.expr.eval(fsm)
-        raise DivulgateBack
 
 
 class FabricateStmt(Statement):
@@ -595,42 +627,45 @@ class FabricateStmt(Statement):
         self.body = body
 
     def eval(self, fsm):
-        newflag = False
         try:
             symbol = fsm.lookup_name(self.name.name)
         except NameError:
-            newflag = True
-            symbol = AthSymbol()
-        symbol.right = AthFunction(self.name.name, self.argfmt, self.body)
-        if newflag:
+            symbol = AthSymbol(
+                right=AthFunction(self.name.name, self.argfmt, self.body)
+                )
             fsm.assign_name(self.name.name, symbol)
-
-
-class TildeAthLoop(Statement):
-    __slots__ = ('state', 'grave', 'body')
-
-    def __init__(self, grave, body):
-        if isinstance(grave, UnaryArithExpr):
-            if grave.op == '!' and isinstance(grave.expr, VarExpr):
-                self.state = True
-                grave = grave.expr
-        elif isinstance(grave, VarExpr):
-            self.state = False
-            body.ctrl_name = grave.name
         else:
-            raise TypeError('Invalid ~ATH expression')
+            symbol.right = AthFunction(self.name.name, self.argfmt, self.body)
+        return None, None
+
+
+class TildeAthLoop(ControlStmt):
+    __slots__ = ('grave', 'body', 'state')
+
+    def __init__(self, grave, body, state=None):
+        if state is None:
+            if isinstance(grave, UnaryArithExpr):
+                if grave.op == '!' and isinstance(grave.expr, VarExpr):
+                    self.state = True
+                    grave = grave.expr
+            elif isinstance(grave, VarExpr):
+                self.state = False
+                body.ctrl_name = grave.name
+            else:
+                raise SyntaxError('Invalid ~ATH expression')
+        else:
+            self.state = state
         self.grave = grave
         self.body = body
 
-    def eval(self, fsm):
-        dying = self.grave.eval(fsm)
-        with fsm.push_stack():
-            while dying.alive != self.state:
-                self.body.eval(fsm)
-                dying = self.grave.eval(fsm)
+    def __repr__(self):
+        return '{}({}, {}, {})'.format(
+            self.__class__.__name__,
+            self.state, self.grave, self.body
+            )
 
 
-class DebateStmt(Statement):
+class DebateStmt(ControlStmt):
     __slots__ = ('clause', 'body', 'unlesses')
 
     def __init__(self, clause, body, unlesses):
@@ -638,36 +673,13 @@ class DebateStmt(Statement):
         self.body = body
         self.unlesses = unlesses
 
-    def eval(self, fsm):
-        if self.clause.eval(fsm):
-            try:
-                self.body.eval(fsm)
-            except SymbolDeath:
-                raise
-        elif self.unlesses:
-            for unless in self.unlesses:
-                try:
-                    unless.eval(fsm)
-                except BreakUnless:
-                    break
-                except SymbolDeath:
-                    raise
-                except DivulgateBack:
-                    self.body.value = unless.body.value
-                    raise
 
-
-class UnlessStmt(Statement):
+class UnlessStmt(ControlStmt):
     __slots__ = ('clause', 'body')
 
     def __init__(self, clause, body):
         self.clause = clause
         self.body = body
-
-    def eval(self, fsm):
-        if self.clause is None or self.clause.eval(fsm):
-            self.body.eval(fsm)
-            raise BreakUnless
 
 
 class InspectStack(Statement):
@@ -678,26 +690,17 @@ class InspectStack(Statement):
 
     def eval(self, fsm):
         if not self.args:
-            print(fsm.global_vars)
+            print(fsm.bltin_vars)
             for frame in fsm.stack:
                 print(frame.scope_vars)
-            return None
+            return None, None
 
         index = self.args[0].eval(fsm)
         if isinstance(index, AthSymbol):
             index = index.left
         if len(self.args) > 1 and not isinstance(index, int):
             raise ValueError('may only call stack frame index')
-
         if not index:
-            # 0, globals
-            print(fsm.global_vars)
-        elif abs(index) > len(fsm.stack):
-            # out of bounds, top stack
-            print(fsm.stack[-1].scope_vars)
-        elif index > 0:
-            # positive, adjust to index notation
-            print(fsm.stack[index - 1].scope_vars)
-        else:
-            # negative, as is
-            print(fsm.stack[index].scope_vars)
+            print(fsm.bltin_vars)
+        print(fsm.stack[index].scope_vars)
+        return None, None

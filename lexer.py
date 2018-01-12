@@ -13,7 +13,7 @@ class Token(object):
         self.line = line
 
     def __repr__(self):
-        return '{}({}, {}, {})'.format(
+        return '{}({!r}, {!r}, {})'.format(
             self.__class__.__name__,
             self.token,
             self.tag,
@@ -21,7 +21,9 @@ class Token(object):
             )
 
     def __str__(self):
-        return '{} token containing: {}'.format(self.tag, self.token)
+        return '{} token on line {} containing: {}'.format(
+            self.tag, self.line + 1, self.token
+            )
 
 
 class Lexer(object):

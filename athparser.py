@@ -8,15 +8,15 @@ from functools import partial, reduce
 
 from lexer import Lexer
 from grafter import (
-    Selector, StrictExpr,
-    TokenGrafter, TagGrafter,
-    EnsureGraft, Repeater,
-    LazyGrafter, StrictGrafter,
+    ItemParser, TagsParser,
+    SelectParser, StrictParser,
+    OptionParser, RepeatParser,
+    LazierParser, ScriptParser,
     )
 from athast import (
     IntExpr, FloatExpr, StringExpr, VarExpr,
     UnaryArithExpr, BinaryExpr,
-    Serialize, InspectStack,
+    ATHASTList, InspectStack,
 
     ImportStmt, InputStmt, PrintFunc, KillFunc,
     BifurcateStmt, AggregateStmt, EnumerateStmt,
@@ -31,24 +31,15 @@ ath_lexer = Lexer([
     (r'//[^\n]*', None), # Single-line comment
     (r'\s+', None), # Whitespace
     # Code enclosures
-    (r'\(', 'BUILTIN'), # Conditional/Call open
-    (r'\)', 'BUILTIN'), # Conditional/Call close
+    (r'\(', 'BUILTIN'), # Group open
+    (r'\)', 'BUILTIN'), # Group close
     (r'{', 'BUILTIN'), # Suite open
     (r'}', 'BUILTIN'), # Suite close
-    (r'\[', 'BUILTIN'), # Symbol slice open
-    (r'\]', 'BUILTIN'), # Symbol slice close
+    (r'\[', 'BUILTIN'), # Value reference open
+    (r'\]', 'BUILTIN'), # Value reference close
     # Separators
     (r';', 'BUILTIN'), # Statement separator
-    (r'\.', 'BUILTIN'), # Lookup operator
     (r',', 'BUILTIN'), # Group operator
-    # Arithmetic in-place operators
-    (r'\+=', 'BUILTIN'), # Add
-    (r'-=', 'BUILTIN'), # Sub
-    (r'\*\*=', 'BUILTIN'), # Pow
-    (r'\*=', 'BUILTIN'), # Mul
-    (r'/_=', 'BUILTIN'), # FloorDiv
-    (r'/=', 'BUILTIN'), # TrueDiv
-    (r'%=', 'BUILTIN'), # Modulo
     # Arithmetic operators
     (r'\+', 'BUILTIN'), # Add, UnaryPos
     (r'-', 'BUILTIN'), # Sub, UnaryInv
@@ -64,9 +55,6 @@ ath_lexer = Lexer([
     (r'~=!', 'BUILTIN'), # Negate Left
     (r'!=~', 'BUILTIN'), # Negate Right
     (r'~=~', 'BUILTIN'), # Negate Both
-    # Bitwise shift in-place operators
-    (r'<<=', 'BUILTIN'), # Bitwise lshift
-    (r'>>=', 'BUILTIN'), # Bitwise rshift
     # Bitwise shift operators
     (r'<<', 'BUILTIN'), # Bitwise lshift
     (r'>>', 'BUILTIN'), # Bitwise rshift
@@ -99,10 +87,6 @@ ath_lexer = Lexer([
     (r'BIFURCATE', 'BUILTIN'), # Split a symbol
     (r'AGGREGATE', 'BUILTIN'), # Merge a symbol
     (r'ENUMERATE', 'BUILTIN'), # Merge a string
-    # Bitwise in-place operators
-    (r'&=', 'BUILTIN'), # Bitwise and
-    (r'\|=', 'BUILTIN'), # Bitwise or
-    (r'\^=', 'BUILTIN'), # Bitwise xor
     # Bitwise operators
     (r'&', 'BUILTIN'), # Bitwise and
     (r'\|', 'BUILTIN'), # Bitwise or
@@ -113,38 +97,34 @@ ath_lexer = Lexer([
     (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?', 'FLOAT'),
     (r'\d+', 'INT'),
     (r'[a-zA-Z]\w*', 'SYMBOL'),
+    # Lookup operator
+    (r'\.', 'BUILTIN'),
 ])
 
 # Value/variable token primitives
-fltparser = TagGrafter('FLOAT') ^ FloatExpr
-intparser = TagGrafter('INT') ^ IntExpr
-nameparser = TagGrafter('SYMBOL') ^ VarExpr
-strparser = TagGrafter('STRING') ^ (lambda s: StringExpr(s[1:-1]))
-
-# Builtin primitive
-def bltinparser(token):
-    """Parses builtin tokens."""
-    return TokenGrafter(token, 'BUILTIN')
+fltparser = TagsParser('FLOAT') ^ FloatExpr
+intparser = TagsParser('INT') ^ IntExpr
+nameparser = TagsParser('SYMBOL') ^ VarExpr
+strparser = TagsParser('STRING') ^ (lambda s: StringExpr(s[1:-1]))
+bltinparser = lambda t: ItemParser(t, 'BUILTIN')
 
 # Expresssions
 def execexpr():
     """Parses the execution statement as an expression."""
-    def breakdown(tokens):
-        return ExecuteStmt(tokens[2])
     return (
         bltinparser('EXECUTE')
         + bltinparser('(')
         + callparser()
         + bltinparser(')')
-        ^ breakdown
+        ^ (lambda t: ExecuteStmt(t[2]))
         )
 
 
 def exprvalparser():
     """Parses expression primitives."""
     return (
-        LazyGrafter(execexpr)
-        | LazyGrafter(unaryexprparser)
+        LazierParser(execexpr)
+        | LazierParser(unaryexprparser)
         | nameparser
         | fltparser
         | intparser
@@ -154,13 +134,11 @@ def exprvalparser():
 
 def exprgrpparser():
     """Parses expression groups."""
-    def breakdown(tokens):
-        return tokens[1]
     return (
         bltinparser('(')
-        + LazyGrafter(exprparser)
+        + LazierParser(exprparser)
         + bltinparser(')')
-        ^ breakdown
+        ^ (lambda t: t[1])
         )
 
 
@@ -168,14 +146,17 @@ def unaryexprparser():
     """Parses unary expressions."""
     term = exprvalparser() | exprgrpparser()
     ops = bltinparser('+') | bltinparser('-') | bltinparser('~') | bltinparser('!')
-    return ops + term ^ (lambda e: UnaryArithExpr(*e))
+    return ops + term ^ UnaryArithExpr
 
 
 def exprparser():
-    """Parses an expression."""
+    """Parses an infix expression."""
     def parse_ops(op_level):
-        ops = reduce(Selector, map(bltinparser, op_level))
+        # Parser that picks among a set of operators with the same precedence level.
+        ops = reduce(SelectParser, map(bltinparser, op_level))
+        # Double lambda juju that magically ensures the operator is preserved.
         return ops ^ (lambda op: lambda l, r: BinaryExpr(op, l, r))
+    # Operators listed in precendence order. Each tuple is a level of precedence.
     op_order = [
         ('**',),
         ('*', '/', '/_', '%'),
@@ -186,15 +167,17 @@ def exprparser():
         ('&&',), ('||',), ('^^',),
         ('!=!', '!=?', '?=!', '~=!', '!=~', '~=~')
         ]
+    # Expression terms are either primitives, other expressions, or either in groups.
     term = exprvalparser() | exprgrpparser()
-    return reduce(StrictExpr, [term] + [parse_ops(lvl) for lvl in op_order])
+    # What the fuck does this do and why does it work??????????
+    return reduce(StrictParser, [term] + [parse_ops(lvl) for lvl in op_order])
 
 
 def callparser():
     """Parses a group of expressions."""
     def cull_seps(graft):
         return graft[0] or graft[1]
-    return Repeater(exprparser() + EnsureGraft(bltinparser(',')) ^ cull_seps)
+    return RepeatParser(exprparser() + OptionParser(bltinparser(',')) ^ cull_seps)
 
 # Statements
 def replistmt():
@@ -218,7 +201,7 @@ def procrstmt():
     return (
         bltinparser('PROCREATE')
         + nameparser
-        + EnsureGraft(exprparser())
+        + OptionParser(exprparser())
         + bltinparser(';')
         ^ breakdown
         )
@@ -267,7 +250,7 @@ def enumstmt():
         return EnumerateStmt(string, stack)
     return (
         bltinparser('ENUMERATE')
-        + EnsureGraft(exprvalparser() | exprgrpparser())
+        + OptionParser(exprvalparser() | exprgrpparser())
         + nameparser
         + bltinparser(';')
         ^ breakdown
@@ -296,7 +279,7 @@ def inputstmt():
     return (
         bltinparser('input')
         + nameparser
-        + EnsureGraft(exprvalparser() | exprgrpparser())
+        + OptionParser(exprvalparser() | exprgrpparser())
         + bltinparser(';')
         ^ breakdown
         )
@@ -326,7 +309,7 @@ def killfunc():
         + bltinparser('.')
         + bltinparser('DIE')
         + bltinparser('(')
-        + LazyGrafter(callparser)
+        + LazierParser(callparser)
         + bltinparser(')')
         + bltinparser(';')
         ^ breakdown
@@ -363,7 +346,7 @@ def fabristmt():
     """Parses function declarations."""
     def cull_seps(graft):
         return graft[0] or graft[1]
-    argparser = Repeater(nameparser + EnsureGraft(bltinparser(',')) ^ cull_seps)
+    argparser = RepeatParser(nameparser + OptionParser(bltinparser(',')) ^ cull_seps)
 
     def breakdown(tokens):
         _, name, _, args, _, _, body, _ = tokens
@@ -373,10 +356,10 @@ def fabristmt():
         bltinparser('FABRICATE')
         + nameparser
         + bltinparser('(')
-        + EnsureGraft(argparser)
+        + OptionParser(argparser)
         + bltinparser(')')
         + bltinparser('{')
-        + LazyGrafter(funcstmts)
+        + LazierParser(funcstmts)
         + bltinparser('}')
         ^ breakdown
         )
@@ -394,7 +377,7 @@ def tildeath():
         + exprparser()
         + bltinparser(')')
         + bltinparser('{')
-        + LazyGrafter(stmtparser)
+        + LazierParser(stmtparser)
         + bltinparser('}')
         ^ breakdown
         )
@@ -409,6 +392,10 @@ def condistmt(fabri=False):
         return UnlessStmt(condexpr, body)
     def breakdown(tokens):
         _, _, condexpr, _, _, body, _, unlesses = tokens
+        for idx, unless in enumerate(unlesses):
+            if not unless.clause and idx < len(unlesses) - 1:
+                print('Invalid DEBATE/UNLESS format')
+                raise SyntaxError
         return DebateStmt(condexpr, body, unlesses)
     stmts = funcstmts if fabri else stmtparser
 
@@ -418,18 +405,18 @@ def condistmt(fabri=False):
         + exprparser()
         + bltinparser(')')
         + bltinparser('{')
-        + LazyGrafter(stmts)
+        + LazierParser(stmts)
         + bltinparser('}')
-        + EnsureGraft(
-            Repeater(
+        + OptionParser(
+            RepeatParser(
                 bltinparser('UNLESS')
-                + EnsureGraft(
+                + OptionParser(
                     bltinparser('(')
                     + exprparser()
                     + bltinparser(')')
                     )
                 + bltinparser('{')
-                + LazyGrafter(stmts)
+                + LazierParser(stmts)
                 + bltinparser('}')
                 ^ brkunless
                 )
@@ -444,7 +431,7 @@ def inspstmt():
     return(
         bltinparser('INSPECT')
         + bltinparser('(')
-        + LazyGrafter(callparser)
+        + LazierParser(callparser)
         + bltinparser(')')
         + bltinparser(';')
         ^ breakdown
@@ -453,7 +440,7 @@ def inspstmt():
 
 def funcstmts():
     """Parses the set of statements used in functions."""
-    return Repeater(
+    return RepeatParser(
         replistmt() # assignment
         | procrstmt() # val dec
         | bfctstmt() # obtain ptrs
@@ -465,16 +452,16 @@ def funcstmts():
         | killfunc() # kill ctrl
         | execfunc() # run func
         | divlgstmt() # return
-        | LazyGrafter(fabristmt) # func dec
+        | LazierParser(fabristmt) # func dec
         | tildeath() # cond loop
         | condistmt(True) # conditionals
         | inspstmt() # Debug, remove
-        ) ^ Serialize
+        ) ^ ATHASTList
 
 
 def stmtparser():
     """Parses the set of statements used top-level."""
-    return Repeater(
+    return RepeatParser(
         replistmt() # assignment
         | procrstmt() # val dec
         | bfctstmt() # obtain ptrs
@@ -489,5 +476,5 @@ def stmtparser():
         | tildeath() # cond loop
         | condistmt() # conditionals
         | inspstmt() # Debug, remove
-        ) ^ Serialize
-ath_parser = StrictGrafter(stmtparser())
+        ) ^ ATHASTList
+ath_parser = ScriptParser(stmtparser())

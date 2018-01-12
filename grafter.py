@@ -27,9 +27,10 @@ class Graft(object):
             )
 
 
-class Grafter(object):
+class BaseParser(object):
     """Grafts tokens together. Primitive."""
     __slots__ = ()
+
     def __repr__(self):
         attr_list = tuple([repr(getattr(self, slot)) for slot in self.__slots__])
         attr_str = ', '.join(attr_list)
@@ -37,31 +38,45 @@ class Grafter(object):
 
     def __call__(self, *args):
         raise NotImplementedError(
-            'Override Grafter call when subclassing.'
+            'Override BaseParser call when subclassing.'
             )
 
     def __add__(self, other):
         """Overload + operator to do concantenation"""
-        return Concatenator(self, other)
+        return ConcatParser(self, other)
 
     def __mul__(self, other):
         """Overload * operator to do L-R evaluation"""
-        return ExprParser(self, other)
+        return ExprsnParser(self, other)
 
     def __pow__(self, other):
         """Overload ** operator to do strict eval"""
-        return StrictExpr(self, other)
+        return StrictParser(self, other)
 
     def __or__(self, other):
         """Overload | operator to do alt selection"""
-        return Selector(self, other)
+        return SelectParser(self, other)
 
     def __xor__(self, other):
         """Overload ^ operator to do I-P evaluation"""
-        return Evaluator(self, other)
+        return WrapprParser(self, other)
+
+    def format(self, other):
+        if (
+            not isinstance(other, self.__class__)
+            and (
+                isinstance(other, ConcatParser)
+                or isinstance(other, SelectParser)
+                or isinstance(other, ExprsnParser)
+                or isinstance(other, StrictParser)
+                or isinstance(other, WrapprParser)
+                )
+            ):
+            return '({!r})'.format(other)
+        return repr(other)
 
 
-class Concatenator(Grafter):
+class ConcatParser(BaseParser):
     """Takes two grafters, the left and the right.
 
     It will evaluate the left grafter first, then the right grafter.
@@ -75,10 +90,9 @@ class Concatenator(Grafter):
         self.reval = right
 
     def __repr__(self):
-        return '({!r}) + ({!r})'.format(
-            self.leval,
-            self.reval
-            )
+        lstr = self.format(self.leval)
+        rstr = self.format(self.reval)
+        return lstr + ' + ' + rstr
 
     def __call__(self, tokens, index):
         lvalue = self.leval(tokens, index)
@@ -92,7 +106,7 @@ class Concatenator(Grafter):
         return None
 
 
-class Selector(Grafter):
+class SelectParser(BaseParser):
     """Takes two grafters, the left and the right.
 
     It will evaluate the left grafter first. If the left grafter is
@@ -106,16 +120,15 @@ class Selector(Grafter):
         self.reval = right
 
     def __repr__(self):
-        return '({!r}) | ({!r})'.format(
-            self.leval,
-            self.reval
-            )
+        lstr = self.format(self.leval)
+        rstr = self.format(self.reval)
+        return lstr + ' | ' + rstr
 
     def __call__(self, tokens, index):
         return self.leval(tokens, index) or self.reval(tokens, index)
 
 
-class Evaluator(Grafter):
+class WrapprParser(BaseParser):
     """Takes a grafter and a function.
 
     It will evaluate the grafter as arguments for the function,
@@ -128,10 +141,9 @@ class Evaluator(Grafter):
         self.apply = func
 
     def __repr__(self):
-        return '({!r}) ^ ({!r})'.format(
-            self.graft,
-            self.apply
-            )
+        lstr = self.format(self.graft)
+        rstr = self.format(self.apply)
+        return lstr + ' ^ ' + rstr
 
     def __call__(self, tokens, index):
         graft = self.graft(tokens, index)
@@ -141,7 +153,7 @@ class Evaluator(Grafter):
         return None
 
 
-class ExprParser(Grafter):
+class ExprsnParser(BaseParser):
     """A grafter that evaluates expressions using two grafters.
 
     The first grafter returns a list of items, while the
@@ -157,10 +169,9 @@ class ExprParser(Grafter):
         self.group = grouper
 
     def __repr__(self):
-        return '({!r}) * ({!r})'.format(
-            self.graft,
-            self.group
-            )
+        lstr = self.format(self.graft)
+        rstr = self.format(self.group)
+        return lstr + ' * ' + rstr
 
     def graft_next(self):
         """Concatenate the separator function and the next item
@@ -189,8 +200,8 @@ class ExprParser(Grafter):
         return self.result
 
 
-class StrictExpr(Grafter):
-    """ExprParser, but strict and doesn't allow dangling separators."""
+class StrictParser(BaseParser):
+    """ExprsnParser, but strict and doesn't allow dangling separators."""
     __slots__ = ('graft', 'group', 'result', 'graft_next')
 
     def __init__(self, grafter, grouper):
@@ -199,10 +210,9 @@ class StrictExpr(Grafter):
         self.graft_next = self.group + self.graft ^ self.eval_next
 
     def __repr__(self):
-        return '({!r}) ** ({!r})'.format(
-            self.graft,
-            self.group
-            )
+        lstr = self.format(self.graft)
+        rstr = self.format(self.group)
+        return lstr + ' ** ' + rstr
 
     def eval_next(self, graft):
         """Using the function bound to the separator, and the
@@ -222,7 +232,7 @@ class StrictExpr(Grafter):
         return self.result
 
 
-class TokenGrafter(Token, Grafter):
+class ItemParser(Token, BaseParser):
     """A grafter wrapper around a representative token value.
 
     It will return a Graft object if it can pull a token of the
@@ -257,8 +267,8 @@ class TokenGrafter(Token, Grafter):
         return None
 
 
-class TagGrafter(Grafter):
-    """TokenGrafter, but only matches tags."""
+class TagsParser(BaseParser):
+    """ItemParser, but only matches tags."""
     __slots__ = ('tag',)
 
     def __init__(self, tag):
@@ -286,7 +296,7 @@ class TagGrafter(Grafter):
         return None
 
 
-class EnsureGraft(Grafter):
+class OptionParser(BaseParser):
     """Guarantees that the result of a graft evaluation is a Graft object;
     if the evaluation fails the graft object's value is set to None.
 
@@ -301,7 +311,7 @@ class EnsureGraft(Grafter):
         return self.graft(tokens, index) or Graft(None, index)
 
 
-class Repeater(Grafter):
+class RepeatParser(BaseParser):
     """A grafter that will apply itself repeatedly until failure,
     returning the list of all grafts created from iteration.
 
@@ -316,14 +326,14 @@ class Repeater(Grafter):
         grafts = []
         graft = self.graft(tokens, index)
         while graft:
-            print('Parsed:', graft.value)
+            # print('Parsed:', graft.value)
             grafts.append(graft.value)
             index = graft.index
             graft = self.graft(tokens, index)
         return Graft(grafts, index)
 
 
-class LazyGrafter(Grafter):
+class LazierParser(BaseParser):
     """A grafter wrapper that takes a function returning a grafter,
     instead of a grafter itself. When called the first time, it will
     create its grafter from the function.
@@ -345,7 +355,7 @@ class LazyGrafter(Grafter):
         return self.grafter(tokens, index)
 
 
-class StrictGrafter(Grafter):
+class ScriptParser(BaseParser):
     """A grafter that must evaluate every token in the token list
     provided to it in order to return a graft, otherwise returns None.
 
@@ -359,13 +369,12 @@ class StrictGrafter(Grafter):
     def __call__(self, tokens, index):
         graft = self.grafter(tokens, index)
         if graft.index == len(tokens):
-            print('Final:\n', graft.value, '\n', sep='')
+            # print('Final:\n', graft.value, '\n', sep='')
             return graft
-        else:
-            print(
-                'Parser error: Starting from {} on line {}'.format(
-                    tokens[graft.index].token, 
-                    tokens[graft.index].line,
-                    )
+        print(
+            'Parser error: Starting from {} on line {}'.format(
+                tokens[graft.index].token, 
+                tokens[graft.index].line + 1,
                 )
-        return None
+            )
+        raise SyntaxError
