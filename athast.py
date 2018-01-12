@@ -10,7 +10,7 @@ from functools import partial
 from symbol import (
     isAthValue, SymbolError,
     AthExpr, AthSymbol, BuiltinSymbol, AthFunction,
-    SymbolDeath, DivulgateBack, EndTilDeath, BreakUnless
+    SymbolDeath, DivulgateBack
     )
 
 
@@ -277,12 +277,13 @@ class ATHASTList(ControlStmt):
         for stmt in self:
             if isinstance(stmt, DebateStmt):
                 # Create two lists of statements before and after this one.
-                topslice = self.stmt_list[:self.index-2]
+                topslice = self.stmt_list[:self.index-1]
                 botslice = self.stmt_list[self.index:]
                 # Flatten the body of the DEBATE suite.
                 stmt.body.flatten()
                 # Create a new list of flattened statements.
-                midslice = [CondJumpStmt(stmt.clause, len(stmt.body)+1)]
+                bodylen = len(stmt.body)+1 if stmt.unlesses else len(stmt.body)
+                midslice = [CondJumpStmt(stmt.clause, bodylen)]
                 midslice.extend(stmt.body.stmt_list)
                 # For each UNLESS suite that follows:
                 unless_idx = 0
@@ -543,7 +544,12 @@ class PrintFunc(Statement):
                 elif isinstance(arg, AthSymbol):
                     if isAthValue(arg.left):
                         frmtargs.append(arg.left)
-                    raise TypeError('Invalid symbol value!')
+                        continue
+                    raise TypeError(
+                        'Invalid symbol value {}!'.format(
+                            arg.left.__class__.__name__
+                            )
+                        )
         return frmtstr.format(*frmtargs)
 
     def eval(self, fsm):

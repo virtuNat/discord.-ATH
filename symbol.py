@@ -5,10 +5,12 @@ from functools import partialmethod
 
 def isAthValue(obj):
     """True if an object is a number or string."""
-    return (isinstance(obj, int)
+    return (
+        isinstance(obj, int)
         or isinstance(obj, float)
         or isinstance(obj, complex)
-        or isinstance(obj, str))
+        or isinstance(obj, str)
+        )
 
 
 class SymbolError(Exception):
@@ -21,14 +23,6 @@ class SymbolDeath(Exception):
 
 class DivulgateBack(Exception):
     """Raised when Divulgate is called."""
-
-
-class EndTilDeath(Exception):
-    """Raised when the THIS symbol dies."""
-
-
-class BreakUnless(Exception):
-    """Raised when an Unless clause successfuly executes."""
 
 
 class AthExpr(object):

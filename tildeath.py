@@ -6,7 +6,7 @@ from symbol import AthSymbol, BuiltinSymbol, SymbolDeath
 from athast import CondJumpStmt, ExecuteStmt, TildeAthLoop
 from athparser import ath_lexer, ath_parser
 
-__version__ = '1.2.0 Beta'
+__version__ = '1.3.4 Dev Build'
 __author__ = 'virtuNat'
 
 
@@ -109,7 +109,7 @@ class TildeAthInterp(object):
         try:
             self.stack[-1][name] = value
         except IndexError:
-            raise IndexError('All stack frames somehow died????')
+            raise RuntimeError('All the stack frames died, what the fuck happened?')
 
     def eval_state(self, ast, node):
         if isinstance(node, CondJumpStmt):
