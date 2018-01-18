@@ -27,7 +27,7 @@ class DivulgateBack(Exception):
 
 class AthExpr(object):
     """Base class of all ~ATH AST nodes."""
-    __slots__ = () # 'result',)
+    __slots__ = ()
 
     def __eq__(self, othr):
         if isinstance(othr, self.__class__):
@@ -45,7 +45,16 @@ class AthExpr(object):
         return '{}({})'.format(self.__class__.__name__, attr_str)
 
 
-class AthFunction(AthExpr):
+class AstExpr(AthExpr):
+    """Base class for AST expressions."""
+    __slots__ = ('eval_gen', 'return_val')
+
+    def iterate(self, fsm):
+        self.eval_gen = self.eval(fsm)
+        return self
+
+
+class AthFunction(AstExpr):
     """Function objects in ~ATH."""
     __slots__ = ('name', 'argfmt', 'body')
 
@@ -53,24 +62,6 @@ class AthFunction(AthExpr):
         self.name = name
         self.argfmt = argfmt
         self.body = body
-
-    def execute(self, fsm):
-        value = AthSymbol(False)
-        for stmt in self.body.stmt_list:
-            try:
-                stmt.eval(fsm)
-            except DivulgateBack:
-                try:
-                    value = stmt.value
-                except AttributeError:
-                    value = stmt.body.value
-                break
-            except SymbolDeath:
-                if not fsm.lookup_name('THIS').alive:
-                    raise EndTilDeath
-                elif not fsm.lookup_name(self.name).alive:
-                    break
-        return value
 
 
 class AthSymbol(AthExpr):

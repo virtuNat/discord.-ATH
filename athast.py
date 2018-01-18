@@ -9,12 +9,12 @@ import operator
 from functools import partial
 from symbol import (
     isAthValue, SymbolError,
-    AthExpr, AthSymbol, BuiltinSymbol, AthFunction,
+    AstExpr, AthSymbol, BuiltinSymbol, AthFunction,
     SymbolDeath, DivulgateBack
     )
 
 
-class EvalExpr(AthExpr):
+class EvalExpr(AstExpr):
     """Superclass to all expressions that are not statements."""
     __slots__ = ()
 
@@ -27,7 +27,7 @@ class NumExpr(EvalExpr):
         return '{}({!r})'.format(self.__class__.__name__, self.num)
 
     def eval(self, fsm):
-        return self.num
+        yield None, self.num
 
 
 class FloatExpr(NumExpr):
@@ -54,7 +54,7 @@ class VarExpr(EvalExpr):
         self.name = name
 
     def eval(self, fsm):
-        return fsm.lookup_name(self.name)
+        yield None, fsm.lookup_name(self.name)
 
 
 class StringExpr(EvalExpr):
@@ -65,7 +65,7 @@ class StringExpr(EvalExpr):
         self.string = string
 
     def eval(self, fsm):
-        return self.string
+        yield None, self.string
 
 
 def cmp_opr(lval, rval, op):
@@ -135,14 +135,15 @@ class UnaryArithExpr(EvalExpr):
         self.op, self.expr = args
 
     def eval(self, fsm):
+        yield self.expr, None
         try:
-            result = self.ops[self.op](self.expr.eval(fsm))
+            result = self.ops[self.op](self.return_val)
         except KeyError:
             raise SyntaxError('Unknown operator: {}', self.op)
         if isinstance(result, AthSymbol):
-            return result
+            yield None, result
         elif isAthValue(result):
-            return AthSymbol(left=result)
+            yield None, AthSymbol(left=result)
         raise ValueError('Invalid result: {}'.format(result))
 
 
@@ -185,20 +186,21 @@ class BinaryExpr(EvalExpr):
         self.rexpr = rexpr
 
     def eval(self, fsm):
-        lval = self.lexpr.eval(fsm)
-        rval = self.rexpr.eval(fsm)
+        yield self.lexpr, None
+        lval = self.return_val
+        yield self.rexpr, None
         try:
-            result = self.ops[self.op](lval, rval)
+            result = self.ops[self.op](lval, self.return_val)
         except KeyError:
             raise SyntaxError('Invalid operator: {}'.format(self.op))
         if isinstance(result, AthSymbol):
-            return result
+            yield None, result
         elif isAthValue(result):
-            return AthSymbol(left=result)
+            yield None, AthSymbol(left=result)
         raise ValueError('Invalid result: {}'.format(result))
 
 
-class Statement(AthExpr):
+class Statement(AstExpr):
     """Superclass to all statements."""
     __slots__ = ()
 
@@ -318,14 +320,14 @@ class ReplicateStmt(Statement):
         self.expr = expr
 
     def eval(self, fsm):
-        result = self.expr.eval(fsm)
-        if isinstance(result, AthSymbol):
-            symbol = result.copy()
+        yield self.expr, None
+        if isinstance(self.return_val, AthSymbol):
+            symbol = self.return_val.copy()
             # symbol.alive = True
-        elif isAthValue(result):
-            symbol = AthSymbol(left=result.left)
+        elif isAthValue(self.return_val):
+            symbol = AthSymbol(left=self.return_val.left)
         fsm.assign_name(self.name.name, symbol)
-        return None, None
+        yield None, symbol
 
 
 class ProcreateStmt(Statement):
@@ -336,31 +338,32 @@ class ProcreateStmt(Statement):
         self.expr = expr
 
     def eval(self, fsm):
-        try:
-            result = self.expr.eval(fsm)
-        except AttributeError:
+        if not self.expr:
             # If there is no expression, assign an empty living symbol.
-            fsm.assign_name(self.name.name, AthSymbol())
+            symbol = AthSymbol()
+            fsm.assign_name(self.name.name, symbol)
         else:
+            yield self.expr, None
             try:
                 symbol = fsm.lookup_name(self.name.name)
             except NameError:
                 # If this symbol's name doesn't exist yet, make it.
-                fsm.assign_name(self.name.name, AthSymbol(left=result))   
+                symbol = AthSymbol(left=self.return_val)
+                fsm.assign_name(self.name.name, symbol)  
             else:
-                if isAthValue(result):
+                if isAthValue(self.return_val):
                     # If the result evaluates to a bare value, assign it directly.
-                    symbol.assign_left(result)
-                elif isinstance(result, AthSymbol):
+                    symbol.assign_left(self.return_val)
+                elif isinstance(self.return_val, AthSymbol):
                     if isinstance(self.expr, VarExpr) and self.expr.name == 'NULL':
                         # If NULL is assigned, empty the left value.
                         symbol.assign_left(None)
                     else:
                         # Otherwise, the value is a symbol, so point the left value to it.
-                        symbol.assign_left(result.left)
+                        symbol.assign_left(self.return_val.left)
                 else:
                     raise TypeError('Invalid assignment: {}'.format(result))
-        return None, None
+        yield None, symbol
 
 
 class BifurcateStmt(Statement):
@@ -389,7 +392,7 @@ class BifurcateStmt(Statement):
         symbol = fsm.lookup_name(self.name.name)
         self.assign_half(fsm, self.lexpr.name, symbol.left, True)
         self.assign_half(fsm, self.rexpr.name, symbol.right, False)
-        return None, None
+        yield None, AthSymbol(False)
 
 
 class AggregateStmt(Statement):
@@ -401,20 +404,21 @@ class AggregateStmt(Statement):
         self.name = name
 
     def eval(self, fsm):
-        lsym = self.lexpr.eval(fsm)
-        rsym = self.rexpr.eval(fsm)
+        yield self.lexpr, None
+        lsym = self.return_val
+        yield self.rexpr, None
+        rsym = self.return_val
         try:
             result = fsm.lookup_name(self.name.name)
         except NameError:
             result = AthSymbol()
+            result.assign_left(lsym)
+            result.assign_right(rsym)
+            fsm.assign_name(self.name.name, result)
         else:
-            lsym = lsym.refcopy(result)
-            rsym = rsym.refcopy(result)
-
-        result.assign_left(lsym)
-        result.assign_right(rsym)
-        fsm.assign_name(self.name.name, result)
-        return None, None
+            result.assign_left(lsym.refcopy(result))
+            result.assign_right(rsym.refcopy(result))
+        yield None, result
 
 
 class EnumerateStmt(Statement):
@@ -425,9 +429,10 @@ class EnumerateStmt(Statement):
         self.stack = stack
 
     def eval(self, fsm):
-        string = self.string.eval(fsm)
-        if isinstance(string, AthSymbol):
-            string = string.left
+        yield self.string, None
+        string = self.return_val
+        if isinstance(self.return_val, AthSymbol):
+            string = self.return_val.left
         if not isinstance(string, str):
             raise TypeError('ENUMERATE only takes strings')
 
@@ -437,7 +442,7 @@ class EnumerateStmt(Statement):
         charlist[-1].assign_right(AthSymbol(False))
 
         fsm.assign_name(self.stack.name, charlist[0])
-        return None, None
+        yield None, charlist[0]
 
 
 class ImportStmt(Statement):
@@ -470,7 +475,7 @@ class ImportStmt(Statement):
                     )
                 )
         fsm.assign_name(self.alias.name, symbol.copy())
-        return None, None
+        yield None, symbol
 
 
 class InputStmt(Statement):
@@ -481,10 +486,12 @@ class InputStmt(Statement):
         self.prompt = prompt if prompt is not None else StringExpr('')
 
     def eval(self, fsm):
-        prompt = self.prompt.eval(fsm)
-        if isinstance(prompt, AthSymbol):
-            if isAthValue(prompt.left):
-                prompt = prompt.left
+        yield self.prompt, None
+        if isAthValue(self.return_val):
+            prompt = self.return_val
+        elif isinstance(self.return_val, AthSymbol):
+            if isAthValue(self.return_val.left):
+                prompt = self.return_val.left
             elif prompt.left is None:
                 prompt = ''
             raise SymbolError('Invalid prompt!')
@@ -499,10 +506,11 @@ class InputStmt(Statement):
         try:
             symbol = fsm.lookup_name(self.name.name)
         except NameError:
-            fsm.assign_name(self.name.name, AthSymbol(left=value))
+            symbol = AthSymbol(left=value)
+            fsm.assign_name(self.name.name, symbol)
         else:
             symbol.left = value
-        return None, None
+        yield None, symbol
 
 
 class PrintFunc(Statement):
@@ -531,7 +539,7 @@ class PrintFunc(Statement):
         frmtstr = re.sub(r'\\a', '\a', frmtstr) # Bell
         frmtstr = re.sub(r'\\b', '\b', frmtstr) # Backspace
         frmtstr = re.sub(r'\\f', '\f', frmtstr) # Line-feed
-        frmtstr = re.sub(r'\\r', '\r', frmtstr) # Carriage Ret
+        frmtstr = re.sub(r'\\r', '\r', frmtstr) # Carriage Return
         frmtstr = re.sub(r'\\n', '\n', frmtstr) # Newline
         frmtstr = re.sub(r'\\t', '\t', frmtstr) # H-Tab
         frmtstr = re.sub(r'\\v', '\v', frmtstr) # V-Tab
@@ -553,9 +561,13 @@ class PrintFunc(Statement):
         return frmtstr.format(*frmtargs)
 
     def eval(self, fsm):
-        args = [arg.eval(fsm) for arg in self.args]
-        print(self.format(fsm, args) if args else '', end='')
-        return None, None
+        args = []
+        for arg in self.args:
+            yield arg, None
+            args.append(self.return_val)
+        string = self.format(fsm, args) if args else ''
+        print(string, end='')
+        yield None, string
 
 
 class KillFunc(Statement):
@@ -573,6 +585,8 @@ class KillFunc(Statement):
                 )
         fsm.lookup_name(self.name.name).kill()
         raise SymbolDeath
+        # To ensure that this is also a function that returns a generator.
+        yield None, None
 
 
 class ExecuteStmt(Statement):
@@ -582,45 +596,51 @@ class ExecuteStmt(Statement):
         self.args = args
 
     def eval(self, fsm):
+        # Execute must have at least one argument.
         if not self.args:
             raise TypeError('execute statement missing symbol argument')
-
+        # Split the name and the function arguments.
         name = self.args[0]
-        args = self.args[1:]
-        if not isinstance(name, VarExpr):
-            raise TypeError('execute must have symbol as first argument')
-
-        if name.name == 'NULL':
-            return AthSymbol(False)
-
-        func = fsm.lookup_name(name).right
+        args = self.args[1:]        
+        # EXECUTE(NULL) will return NULL if called and returned from.
+        if isinstance(name, VarExpr) and name.name == 'NULL':
+            yield None, AthSymbol(False)
+            # Just in case something makes this move past here.
+            while True:
+                return
+        # Evaluate the name symbol, whatever it returns must have a function.
+        yield name, None  
+        func = self.return_val.right
         if not isinstance(func, AthFunction):
             raise TypeError('symbol executed must have been fabricated')
-
-        argnames = [arg.name for arg in func.argfmt]
-        if len(args) != len(argnames):
+        # Check if the number of passed arguments matches the intended format.
+        if len(args) != len(func.argfmt):
             raise TypeError(
                 'expected {} arguments, got {}'.format(
-                    len(argnames) + 1, len(args) + 1
+                    len(func.argfmt) + 1, len(args) + 1
                     )
                 )
-
+        # Build the scope dictionary.
         arg_dict = {}
         if len(args):
-            for name, argexpr in zip(argnames, args):
-                arg = argexpr.eval(fsm)
+            for name, argexpr in zip(func.argfmt, args):
+                yield argexpr, None
                 if isAthValue(arg):
-                    arg_dict[name] = AthSymbol(left=arg)
+                    arg_dict[name] = AthSymbol(left=self.return_val)
                 else:
-                    arg_dict[name] = arg
-        return func.execute, arg_dict
+                    arg_dict[name] = self.return_val
+        yield func, arg_dict
 
 
 class DivulgateStmt(ControlStmt):
-    __slots__ = ('expr')
+    __slots__ = ('expr',)
 
     def __init__(self, expr):
         self.expr = expr
+
+    def eval(self, fsm):
+        yield self.expr, None
+        yield None, self.return_val
 
 
 class FabricateStmt(Statement):
@@ -629,7 +649,7 @@ class FabricateStmt(Statement):
     def __init__(self, name, argfmt, body):
         body.ctrl_name = name.name
         self.name = name
-        self.argfmt = argfmt
+        self.argfmt = [arg.name for arg in argfmt]
         self.body = body
 
     def eval(self, fsm):
@@ -642,7 +662,15 @@ class FabricateStmt(Statement):
             fsm.assign_name(self.name.name, symbol)
         else:
             symbol.right = AthFunction(self.name.name, self.argfmt, self.body)
-        return None, None
+        yield None, symbol
+
+
+class LambdaFunc(Statement):
+    __slots__ = ('argfmt', 'expr')
+
+    def __init__(self, argfmt, expr):
+        self.argfmt = [arg.name for arg in argfmt]
+        self.expr = expr
 
 
 class TildeAthLoop(ControlStmt):
@@ -663,12 +691,6 @@ class TildeAthLoop(ControlStmt):
             self.state = state
         self.grave = grave
         self.body = body
-
-    def __repr__(self):
-        return '{}({}, {}, {})'.format(
-            self.__class__.__name__,
-            self.state, self.grave, self.body
-            )
 
 
 class DebateStmt(ControlStmt):
@@ -699,7 +721,9 @@ class InspectStack(Statement):
             print(fsm.bltin_vars)
             for frame in fsm.stack:
                 print(frame.scope_vars)
-            return None, None
+            yield None, None
+            while True:
+                return
 
         index = self.args[0].eval(fsm)
         if isinstance(index, AthSymbol):
@@ -709,4 +733,4 @@ class InspectStack(Statement):
         if not index:
             print(fsm.bltin_vars)
         print(fsm.stack[index].scope_vars)
-        return None, None
+        yield None, None

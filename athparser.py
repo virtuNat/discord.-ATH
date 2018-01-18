@@ -175,8 +175,8 @@ def exprparser():
 
 def callparser():
     """Parses a group of expressions."""
-    def cull_seps(graft):
-        return graft[0] or graft[1]
+    def cull_seps(tokens):
+        return tokens[0] or tokens[1]
     return RepeatParser(exprparser() + OptionParser(bltinparser(',')) ^ cull_seps)
 
 # Statements
