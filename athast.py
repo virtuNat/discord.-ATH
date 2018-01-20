@@ -9,9 +9,19 @@ import operator
 from functools import partial
 from symbol import (
     isAthValue, SymbolError,
-    AstExpr, AthSymbol, BuiltinSymbol, AthFunction,
+    AthExpr, AthSymbol, BuiltinSymbol, AthFunction,
     SymbolDeath, DivulgateBack
     )
+
+
+class AstExpr(AthExpr):
+    """Base class for AST expressions."""
+    __slots__ = ('eval_gen', 'return_val')
+
+    def iterate(self, fsm):
+        """Initializes the expression's generator and returns itself."""
+        self.eval_gen = self.eval(fsm)
+        return self
 
 
 class EvalExpr(AstExpr):
@@ -121,7 +131,7 @@ def symbol_opr(lval, rval, op):
     return AthSymbol(value)
 
 
-class UnaryArithExpr(EvalExpr):
+class UnaryExpr(EvalExpr):
     """Handles unary arithmetic expressions."""
     __slots__ = ('op', 'expr')
     ops = {
@@ -218,7 +228,7 @@ class ControlStmt(Statement):
 class CondJumpStmt(ControlStmt):
     """Statement that signals the execution to skip a number
     of statements equivalent to its height if the clause is
-    evaluated to a living symbol.
+    evaluated to a dead symbol.
     """
     __slots__ = ('clause', 'height')
 
@@ -284,25 +294,34 @@ class ATHASTList(ControlStmt):
                 # Flatten the body of the DEBATE suite.
                 stmt.body.flatten()
                 # Create a new list of flattened statements.
-                bodylen = len(stmt.body)+1 if stmt.unlesses else len(stmt.body)
+                bodylen = len(stmt.body) + int(bool(stmt.unlesses))
                 midslice = [CondJumpStmt(stmt.clause, bodylen)]
                 midslice.extend(stmt.body.stmt_list)
-                # For each UNLESS suite that follows:
-                unless_idx = 0
-                for unless in stmt.unlesses:
-                    # Flatten the body.
-                    unless.body.flatten()
-                    bodylen = len(unless.body) + 1
-                    # Add the jump that allows the previous suites to skip this one.
-                    midslice.append(CondJumpStmt(None, bodylen))
-                    # If this is the last suite, there will be no jump at the end.
-                    if unless_idx == len(stmt.unlesses) - 1:
-                        bodylen -= 1
-                    # Add this suite.
-                    midslice.append(CondJumpStmt(unless.clause, bodylen))
-                    midslice.extend(unless.body.stmt_list)
-                    # Increment enumerate counter.
-                    unless_idx += 1
+                if stmt.unlesses:
+                    # The offset created when due to the last UNLESS's lack of jumps.
+                    # The last UNLESS or a lone DEBATE will not jump off the end,
+                    # and if the last UNLESS has no clause, there will be no 
+                    # conditional jump at the head of its body.
+                    jumpoffset = -2 - int(stmt.unlesses[-1].clause is not None)
+                    # Manual enumerate counter.
+                    idx = 0
+                    # For each UNLESS suite that follows:
+                    for unless in stmt.unlesses:
+                        bodylen = sum(
+                            map(lambda u: len(u.body) + 2, stmt.unlesses[idx:]),
+                            jumpoffset
+                            )
+                        # Add the jump that allows execution to jump to the end.
+                        midslice.append(CondJumpStmt(None, bodylen))
+                        # Add the jump at the head of this unless.
+                        if unless.clause:
+                            bodylen = len(unless.body) + 3 + jumpoffset
+                            midslice.append(CondJumpStmt(unless.clause, bodylen))
+                        # Flatten the body and add it.
+                        unless.body.flatten()
+                        midslice.extend(unless.body.stmt_list)
+                        # Increment enumerate counter.
+                        idx += 1
                 # Recombine the flattened DEBATE/UNLESS construct with the script.
                 self.stmt_list = topslice + midslice + botslice
                 # Compensate for the increased length.
@@ -462,9 +481,7 @@ class ImportStmt(Statement):
             except SystemExit as exitexec:
                 if exitexec.args[0]:
                     raise exitexec
-            module_vars = {
-                key: value for key, value in module.stack[0].scope_vars.items()
-                }
+            module_vars = module.stack[0].scope_vars
             fsm.modules[self.module.name] = module_vars
         try:
             symbol = module_vars[self.alias.name]
@@ -674,11 +691,11 @@ class LambdaFunc(Statement):
 
 
 class TildeAthLoop(ControlStmt):
-    __slots__ = ('grave', 'body', 'state')
+    __slots__ = ('grave', 'body', 'coro', 'state')
 
-    def __init__(self, grave, body, state=None):
+    def __init__(self, grave, body, coro, state=None):
         if state is None:
-            if isinstance(grave, UnaryArithExpr):
+            if isinstance(grave, UnaryExpr):
                 if grave.op == '!' and isinstance(grave.expr, VarExpr):
                     self.state = True
                     grave = grave.expr
@@ -691,6 +708,7 @@ class TildeAthLoop(ControlStmt):
             self.state = state
         self.grave = grave
         self.body = body
+        self.coro = coro
 
 
 class DebateStmt(ControlStmt):
@@ -725,7 +743,8 @@ class InspectStack(Statement):
             while True:
                 return
 
-        index = self.args[0].eval(fsm)
+        yield self.args[0], None
+        index = self.return_val
         if isinstance(index, AthSymbol):
             index = index.left
         if len(self.args) > 1 and not isinstance(index, int):

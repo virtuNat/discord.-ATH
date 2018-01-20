@@ -6,7 +6,7 @@ from symbol import AthSymbol, AthFunction, BuiltinSymbol, SymbolDeath
 from athast import CondJumpStmt, ExecuteStmt, TildeAthLoop
 from athparser import ath_lexer, ath_parser
 
-__version__ = '1.3.5 Dev Build'
+__version__ = '1.3.6 Dev Build'
 __author__ = 'virtuNat'
 
 
@@ -21,13 +21,29 @@ class AthStackFrame(object):
     """
     __slots__ = ('scope_vars', 'return_pt', 'state', 'eval_stack')
 
-    def __init__(self, scope_vars=None, return_pt=None):
+    def __init__(self, scope_vars=None, return_pt=None, state=0, eval_stack=[]):
         if not scope_vars:
             self.scope_vars = {}
         else:
             self.scope_vars = scope_vars
         self.return_pt = return_pt
-        self.state = 0
+        self.state = state
+        self.eval_stack = eval_stack
+
+    def __str__(self):
+        return """Stack Frame under state {} holding {} 
+            with dynamic scope {} and pending {}""".format(
+            self.state, self.return_pt, self.scope_vars, self.eval_stack
+            )
+
+    def __repr__(self):
+        return '{}({}, {}, {}, {})'.format(
+            self.__class__.__name__,
+            self.scope_vars,
+            self.return_pt.__class__.__name__,
+            self.state,
+            [item.__class__.__name__ for item in self.eval_stack],
+            )
 
     def __getitem__(self, name):
         return self.scope_vars[name]
@@ -74,6 +90,7 @@ class TildeAthInterp(object):
 
     def push_stack(self, ast, state, init_dict={}):
         self.stack[-1].return_pt = ast
+        self.stack[-1].state = self.state
         self.stack.append(AthStackFrame(init_dict))
         self.state = state
         stacklen = len(self.stack)
@@ -117,7 +134,7 @@ class TildeAthInterp(object):
             # Pass the return value to the caller.
             eval_stack[-1].return_val = return_val
         while True:
-            print('Stack: ', eval_stack[-1])
+            # print(eval_stack)
             # Execution must continue from the expression on top of the stack.
             try:
                 # Evaluate the expression at the top of the stack.
@@ -128,7 +145,9 @@ class TildeAthInterp(object):
                     sys.exit(0)
                 elif not self.lookup_name(ctrl_name):
                     # If the AST control name dies, reraise.
-                    return self.pop_stack()
+                    raise
+                callback, value = None, None
+            # print(value if value is not None else '')
             if callback:
                 # If there's a callback, see if it's a function call.
                 if not isinstance(callback, AthFunction):
@@ -147,13 +166,12 @@ class TildeAthInterp(object):
                 eval_stack[-1].return_val = value
             except IndexError:
                 # If there are no more statements, move on.
-                return None
+                return value
 
     def execute(self, ast):
         count = 0
         try:
             while True:
-                print(ast.index)
                 if not self.state: # Toplevel execution.
                     try:
                         node = next(ast)
@@ -166,6 +184,7 @@ class TildeAthInterp(object):
                                 'UnboundATHLoopError: THIS.DIE() not called'
                                 )
                         count += 1
+                        print([frame for frame in self.stack])
                         continue
                 elif self.state == 1: # Looping
                     try:
@@ -179,42 +198,42 @@ class TildeAthInterp(object):
                             iter(ast)
                         continue
                 elif self.state == 2: # Function execution
-                    try:
-                        node = next(ast)
-                    except StopIteration:
-                        # Reset AST iteration state.
-                        iter(ast)
-                        # Prevent infinite iteration from toplevel.
-                        if count == 1025:
-                            echo_error(
-                                'UnboundATHLoopError: THIS.DIE() not called'
-                                )
-                        count += 1  
-                    self.state = 0
                     continue
                 # Evalutate execution state.
                 if isinstance(node, CondJumpStmt):
                     # Jump if no condition or on failure.
-                    if node.clause and node.clause.eval(self):
-                        continue
+                    if node.clause:
+                        try:
+                            cond = self.trampoline([node.clause.iterate(self)], ast)
+                        except SymbolDeath:
+                            ast = self.pop_stack()
+                            continue
+                        if cond:
+                            continue
                     ast.index += node.height
                     continue
                 elif isinstance(node, TildeAthLoop):
+                    # Do not allow entry into the loop when the variable state matches
+                    # failure condition.
+                    if self.lookup_name(node.grave.name).alive == node.state:
+                        continue
                     # Add stack frame and replace ast reference.
                     self.push_stack(ast, 1)
                     ast = iter(node.body)
                     ctrl_name = ast.ctrl_name
                     continue
                 elif isinstance(node, ExecuteStmt):
-                    self.state = 2
                     continue
-                self.trampoline([node.iterate(self)], ast)
+                try:
+                    self.trampoline([node.iterate(self)], ast)
+                except SymbolDeath:
+                    ast = self.pop_stack()
         except RecursionError:
             print('my GUY.')
             print('stop making the stack not STOP from getting any taller!!!')
             sys.exit(1)
         except KeyboardInterrupt:
-            print(self.stack[-1].scope_vars)
+            print('\n'.join(repr(frame.scope_vars) for frame in self.stack))
             raise
         except Exception:
             print('dude its ESCAPING TO THE SIDE, stop it!!!!')

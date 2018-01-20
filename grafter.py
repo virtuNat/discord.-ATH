@@ -372,7 +372,7 @@ class ScriptParser(BaseParser):
             # print('Final:\n', graft.value, '\n', sep='')
             return graft
         print(
-            'Parser error: Starting from {} on line {}'.format(
+            'Parser error: Starting from {} on line {}\n'.format(
                 tokens[graft.index].token, 
                 tokens[graft.index].line + 1,
                 )

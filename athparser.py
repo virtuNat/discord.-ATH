@@ -15,7 +15,7 @@ from grafter import (
     )
 from athast import (
     IntExpr, FloatExpr, StringExpr, VarExpr,
-    UnaryArithExpr, BinaryExpr,
+    UnaryExpr, BinaryExpr,
     ATHASTList, InspectStack,
 
     ImportStmt, InputStmt, PrintFunc, KillFunc,
@@ -146,7 +146,7 @@ def unaryexprparser():
     """Parses unary expressions."""
     term = exprvalparser() | exprgrpparser()
     ops = bltinparser('+') | bltinparser('-') | bltinparser('~') | bltinparser('!')
-    return ops + term ^ UnaryArithExpr
+    return ops + term ^ UnaryExpr
 
 
 def exprparser():
@@ -369,16 +369,17 @@ def fabristmt():
 def tildeath():
     """Parses ~ATH loops."""
     def breakdown(tokens):
-        _, _, graveexpr, _, _, body, _ = tokens
-        return TildeAthLoop(graveexpr, body)
+        _, _, graveexpr, _, _, body, _, coro = tokens
+        return TildeAthLoop(graveexpr, body, coro)
     return (
         bltinparser('~ATH')
         + bltinparser('(')
-        + exprparser()
+        + (nameparser | unaryexprparser())
         + bltinparser(')')
         + bltinparser('{')
         + LazierParser(stmtparser)
         + bltinparser('}')
+        + execfunc()
         ^ breakdown
         )
 

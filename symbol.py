@@ -45,16 +45,7 @@ class AthExpr(object):
         return '{}({})'.format(self.__class__.__name__, attr_str)
 
 
-class AstExpr(AthExpr):
-    """Base class for AST expressions."""
-    __slots__ = ('eval_gen', 'return_val')
-
-    def iterate(self, fsm):
-        self.eval_gen = self.eval(fsm)
-        return self
-
-
-class AthFunction(AstExpr):
+class AthFunction(AthExpr):
     """Function objects in ~ATH."""
     __slots__ = ('name', 'argfmt', 'body')
 
@@ -73,14 +64,7 @@ class AthSymbol(AthExpr):
         self.left = None
         self.right = None
         self.assign_left(left)
-        self.assign_right(right)
 
-    def __repr__(self):
-        """Represent this symbol."""
-        return '{}({}, {!r}, {!r})'.format(
-            self.__class__.__name__,
-            self.alive, self.left, self.right
-            )
 
     def cmpop(self, other, op):
         """Base function for comparison operators."""
