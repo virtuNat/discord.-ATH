@@ -44,6 +44,16 @@ class AthExpr(object):
         attr_str = ', '.join(attr_list)
         return '{}({})'.format(self.__class__.__name__, attr_str)
 
+    def copy(self):
+        attr_list = []
+        for slot in self.__slots__:
+            slotval = getattr(self, slot)
+            if isinstance(slotval, AthExpr):
+                attr_list.append(slotval.copy())
+                continue
+            attr_list.append(slotval)
+        return self.__class__(*attr_list)
+
 
 class AthFunction(AthExpr):
     """Function objects in ~ATH."""
@@ -53,6 +63,9 @@ class AthFunction(AthExpr):
         self.name = name
         self.argfmt = argfmt
         self.body = body
+
+    def copy(self):
+        return self.__class__(self.name, self.argfmt, self.body.copy())
 
 
 class AthSymbol(AthExpr):
@@ -64,7 +77,7 @@ class AthSymbol(AthExpr):
         self.left = None
         self.right = None
         self.assign_left(left)
-
+        self.assign_right(right)
 
     def cmpop(self, other, op):
         """Base function for comparison operators."""

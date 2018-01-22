@@ -16,9 +16,9 @@ from grafter import (
 from athast import (
     IntExpr, FloatExpr, StringExpr, VarExpr,
     UnaryExpr, BinaryExpr,
-    ATHASTList, InspectStack,
+    AthAstList, InspectStack,
 
-    ImportStmt, InputStmt, PrintFunc, KillFunc,
+    ImportStmt, InputStmt, PrintStmt, KillStmt,
     BifurcateStmt, AggregateStmt, EnumerateStmt,
     ProcreateStmt, ReplicateStmt,
     FabricateStmt, ExecuteStmt, DivulgateStmt,
@@ -288,7 +288,7 @@ def inputstmt():
 def printfunc():
     """Parses the print function."""
     def breakdown(tokens):
-        return PrintFunc(tokens[2])
+        return PrintStmt(tokens[2])
     return (
         bltinparser('print')
         + bltinparser('(')
@@ -303,7 +303,7 @@ def killfunc():
     """Parses the kill function."""
     def breakdown(tokens):
         name, _, _, _, args, _, _ = tokens
-        return KillFunc(name, args)
+        return KillStmt(name, args)
     return (
         nameparser
         + bltinparser('.')
@@ -369,12 +369,13 @@ def fabristmt():
 def tildeath():
     """Parses ~ATH loops."""
     def breakdown(tokens):
-        _, _, graveexpr, _, _, body, _, coro = tokens
-        return TildeAthLoop(graveexpr, body, coro)
+        _, _, state, grave, _, _, body, _, coro = tokens
+        return TildeAthLoop(bool(state), grave, body, coro)
     return (
         bltinparser('~ATH')
         + bltinparser('(')
-        + (nameparser | unaryexprparser())
+        + OptionParser(bltinparser('!'))
+        + nameparser
         + bltinparser(')')
         + bltinparser('{')
         + LazierParser(stmtparser)
@@ -457,7 +458,7 @@ def funcstmts():
         | tildeath() # cond loop
         | condistmt(True) # conditionals
         | inspstmt() # Debug, remove
-        ) ^ ATHASTList
+        ) ^ AthAstList
 
 
 def stmtparser():
@@ -477,5 +478,5 @@ def stmtparser():
         | tildeath() # cond loop
         | condistmt() # conditionals
         | inspstmt() # Debug, remove
-        ) ^ ATHASTList
+        ) ^ AthAstList
 ath_parser = ScriptParser(stmtparser())
