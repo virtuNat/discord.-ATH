@@ -20,7 +20,7 @@ from athast import (
 
     ImportStmt, InputStmt, PrintStmt, KillStmt,
     BifurcateStmt, AggregateStmt, EnumerateStmt,
-    ProcreateStmt, ReplicateStmt,
+    ProcreateStmt, PropagateStmt, ReplicateStmt,
     FabricateStmt, ExecuteStmt, DivulgateStmt,
     DebateStmt, UnlessStmt, TildeAthLoop,
     )
@@ -83,6 +83,7 @@ ath_lexer = Lexer([
     (r'DIVULGATE', 'BUILTIN'), # Return a symbol
     (r'FABRICATE', 'BUILTIN'), # Subroutine declaration
     (r'PROCREATE', 'BUILTIN'), # Value declaration
+    # (r'PROPAGATE', 'BUILTIN'), # Reference copy
     (r'REPLICATE', 'BUILTIN'), # Deep copy
     (r'BIFURCATE', 'BUILTIN'), # Split a symbol
     (r'AGGREGATE', 'BUILTIN'), # Merge a symbol
@@ -180,6 +181,20 @@ def callparser():
     return RepeatParser(exprparser() + OptionParser(bltinparser(',')) ^ cull_seps)
 
 # Statements
+# def propastmt():
+#     """Parses the reference statement."""
+#     def breakdown(tokens):
+#         _, src, tgt, _ = tokens
+#         return PropagateStmt(src, tgt)
+#     return (
+#         bltinparser('PROPAGATE')
+#         + nameparser
+#         + OptionParser(nameparser)
+#         + bltinparser(';')
+#         ^ breakdown
+#         )
+
+
 def replistmt():
     """Parses the assignment statement."""
     def breakdown(tokens):
@@ -190,7 +205,8 @@ def replistmt():
         + nameparser
         + (exprgrpparser() | exprvalparser())
         + bltinparser(';')
-        ^ breakdown)
+        ^ breakdown
+        )
 
 
 def procrstmt():
@@ -301,11 +317,19 @@ def printfunc():
 
 def killfunc():
     """Parses the kill function."""
+    def cull_seps(graft):
+        return graft[0] or graft[1]
+    argparser = RepeatParser(nameparser + OptionParser(bltinparser(',')) ^ cull_seps)
     def breakdown(tokens):
         name, _, _, _, args, _, _ = tokens
         return KillStmt(name, args)
     return (
-        nameparser
+        (nameparser | (
+            bltinparser('[')
+            + argparser
+            + bltinparser(']')
+            )
+        )
         + bltinparser('.')
         + bltinparser('DIE')
         + bltinparser('(')
@@ -444,6 +468,7 @@ def funcstmts():
     """Parses the set of statements used in functions."""
     return RepeatParser(
         replistmt() # assignment
+        # | propastmt() # reference
         | procrstmt() # val dec
         | bfctstmt() # obtain ptrs
         | aggrstmt() # stack ptrs
@@ -465,6 +490,7 @@ def stmtparser():
     """Parses the set of statements used top-level."""
     return RepeatParser(
         replistmt() # assignment
+        # | propastmt() # reference
         | procrstmt() # val dec
         | bfctstmt() # obtain ptrs
         | aggrstmt() # stack ptrs

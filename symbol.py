@@ -21,10 +21,6 @@ class SymbolDeath(Exception):
     """Raised when a symbol dies."""
 
 
-class DivulgateBack(Exception):
-    """Raised when Divulgate is called."""
-
-
 class AthExpr(object):
     """Base class of all ~ATH AST nodes."""
     __slots__ = ()

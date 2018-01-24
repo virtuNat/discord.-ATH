@@ -1,0 +1,70 @@
+// nesting.~ATH
+~ATH(THIS){
+	input NUM "Enter a number: ";
+	DEBATE(NUM < 8){
+		print("Your number is less than 8.\n");
+		DEBATE(NUM < 4){
+			print("Your number is less than 4.\n");
+			DEBATE(NUM == 3){
+				print("Congrats, your number is 3.\n");
+				print("Look at how achieved you are.\n");
+			}
+			UNLESS(NUM == 2){
+				print("Congrats, your number is 2.\n");
+				print("Look at how achieved you are.\n");
+			}
+			UNLESS(NUM == 1){
+				print("Congrats, your number is 1.\n");
+				print("Look at how achieved you are.\n");
+			}
+			UNLESS(NUM == 0){
+				print("Congrats, your number is 0.\n");
+				print("Look at how achieved you are.\n");
+			}
+			UNLESS{
+				print("Negative? How deplorable.\n");
+			}
+		}
+		UNLESS(NUM > 4){
+			print("Your number is more than 4.\n");
+			DEBATE(NUM == 5){
+				print("Congrats, your number is 5.\n");
+				print("Look at how achieved you are.\n");
+			}
+			UNLESS(NUM == 6){
+				print("Congrats, your number is 6.\n");
+				print("Look at how achieved you are.\n");
+			}
+			UNLESS(NUM == 7){
+				print("Congrats, your number is 7.\n");
+				print("Look at how achieved you are.\n");
+			}
+			UNLESS{
+				print("This should never fuckin print.\n");
+			}
+		}
+		UNLESS{
+			print("Congrats, your number is 4.\n");
+			print("Look at how achieved you are.\n");
+		}
+	}
+	UNLESS(NUM > 8){
+		print("Your number is more than 8.\n");
+		DEBATE(NUM < 12){
+			print("Your number is less than 12.\n");
+		}
+		UNLESS(NUM > 12){
+			print("Your number is more than 12.\n");
+		}
+		UNLESS{
+			print("Congrats, your number is 12.\n");
+			print("Look at how achieved you are.\n");
+		}
+	}
+	UNLESS{
+		print("Congrats, your number is 8.\n");
+		print("Look at how achieved you are.\n");
+	}
+	print("Time to end the program, mate.\n");
+	THIS.DIE();
+}EXECUTE(NULL);

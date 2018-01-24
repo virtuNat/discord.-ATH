@@ -1,0 +1,19 @@
+//ackermann.~ATH
+
+FABRICATE ACK(M, N){
+	DEBATE(M == 0){
+		DIVULGATE N + 1;
+	}
+	UNLESS(N == 0){
+		DIVULGATE EXECUTE(ACK, M - 1, 1);
+	}
+	UNLESS{
+		DIVULGATE EXECUTE(ACK, M - 1, EXECUTE(ACK, M, N - 1));
+	}
+}
+
+~ATH(THIS){
+    input NUM "Get the ackermann function of: ";
+    print("The value of A(n, n) is ~d.\n", EXECUTE(ACK, NUM, NUM));
+    THIS.DIE();
+}EXECUTE(NULL);

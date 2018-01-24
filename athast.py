@@ -8,9 +8,8 @@ import re
 import operator
 from functools import partial
 from symbol import (
-    isAthValue, SymbolError,
+    isAthValue, SymbolError, SymbolDeath,
     AthExpr, AthSymbol, BuiltinSymbol, AthFunction,
-    SymbolDeath, DivulgateBack
     )
 
 
@@ -285,7 +284,10 @@ class AthAstList(ControlStmt):
         self.index = len(self)
         while self.index >= 0:
             self.index -= 1
-            yield self.stmt_list[self.index]
+            try:
+                yield self.stmt_list[self.index]
+            except IndexError:
+                break
 
     def copy(self):
         return self.__class__(
@@ -351,6 +353,25 @@ class AthAstList(ControlStmt):
                     stmt.height += target.height + 1
 
 
+class PropagateStmt(Statement):
+    __slots__ = ('source', 'target')
+
+    def __init__(self, source, target):
+        self.source = source
+        self.target = target
+
+    def eval(self, fsm):
+        try:
+            symbol = fsm.lookup_name(self.source.name)
+        except NameError:
+            raise NameError('Symbol {} not found!'.format(self.source.name))
+        if self.target:
+            fsm.assign_name(self.target.name, symbol)
+        else:
+            fsm.assign_name(self.source.name, symbol)
+        yield None, symbol
+
+
 class ReplicateStmt(Statement):
     __slots__ = ('name', 'expr')
 
@@ -360,11 +381,12 @@ class ReplicateStmt(Statement):
 
     def eval(self, fsm):
         yield self.expr, None
-        if isinstance(self.return_val, AthSymbol):
+        if isinstance(self.expr, VarExpr):
             symbol = self.return_val.copy()
-            # symbol.alive = True
+        elif isinstance(self.return_val, AthSymbol):
+            symbol = self.return_val
         elif isAthValue(self.return_val):
-            symbol = AthSymbol(left=self.return_val.left)
+            symbol = AthSymbol(left=self.return_val)
         fsm.assign_name(self.name.name, symbol)
         yield None, symbol
 
@@ -413,24 +435,34 @@ class BifurcateStmt(Statement):
         self.lexpr = lexpr
         self.rexpr = rexpr
 
-    def assign_half(self, fsm, name, value, left):
-        if isinstance(value, AthSymbol):
-            if name != 'NULL':
-                # If symbol is not NULL, copy its reference.
-                fsm.assign_name(name, value)
-        elif value is None:
-            # If symbol is empty on that side, create dead symbol.
-            fsm.assign_name(name, AthSymbol(False))
-        else:
-            if left:
-                fsm.assign_name(name, AthSymbol(left=value))
-            else:
-                fsm.assign_name(name, AthSymbol(right=value))
-
     def eval(self, fsm):
         symbol = fsm.lookup_name(self.name.name)
-        self.assign_half(fsm, self.lexpr.name, symbol.left, True)
-        self.assign_half(fsm, self.rexpr.name, symbol.right, False)
+        if self.lexpr.name != 'NULL':
+            if isinstance(symbol.left, AthSymbol):
+                if self.lexpr.name != self.name.name:
+                    fsm.assign_name(self.lexpr.name, symbol.left)
+                else:
+                    syml = symbol.left
+                    symbol.alive = syml.alive
+                    symbol.left = syml.left
+                    symbol.right = syml.right
+            elif symbol.left is None:
+                fsm.assign_name(self.lexpr.name, AthSymbol(False))
+            else:
+                fsm.assign_name(self.lexpr.name, AthSymbol(left=symbol.left))
+        if self.rexpr.name != 'NULL':
+            if isinstance(symbol.right, AthSymbol):
+                if self.rexpr.name != self.name.name:
+                    fsm.assign_name(self.rexpr.name, symbol.right)
+                else:
+                    syml = symbol.right
+                    symbol.alive = syml.alive
+                    symbol.left = syml.left
+                    symbol.right = syml.right
+            elif symbol.right is None:
+                fsm.assign_name(self.rexpr.name, AthSymbol(False))
+            else:
+                fsm.assign_name(self.rexpr.name, AthSymbol(right=symbol.right))
         yield None, AthSymbol(False)
 
 
@@ -443,10 +475,16 @@ class AggregateStmt(Statement):
         self.name = name
 
     def eval(self, fsm):
-        yield self.lexpr, None
-        lsym = self.return_val
-        yield self.rexpr, None
-        rsym = self.return_val
+        if isinstance(self.lexpr, VarExpr) and self.lexpr.name == 'NULL':
+            lsym = AthSymbol(False)
+        else:
+            yield self.lexpr, None
+            lsym = self.return_val
+        if isinstance(self.rexpr, VarExpr) and self.rexpr.name == 'NULL':
+            rsym = AthSymbol(False)
+        else:
+            yield self.rexpr, None
+            rsym = self.return_val
         try:
             result = fsm.lookup_name(self.name.name)
         except NameError:
@@ -455,8 +493,12 @@ class AggregateStmt(Statement):
             result.assign_right(rsym)
             fsm.assign_name(self.name.name, result)
         else:
-            result.assign_left(lsym.refcopy(result))
-            result.assign_right(rsym.refcopy(result))
+            result.assign_left(
+                lsym if isAthValue(lsym) else lsym.refcopy(result)
+                )
+            result.assign_right(
+                rsym if isinstance(rsym, AthFunction) else rsym.refcopy(result)
+                )
         yield None, result
 
 
@@ -568,8 +610,7 @@ class PrintStmt(Statement):
 
     def format(self, fsm, args):
         frmtstr = self.get_string(fsm, args)
-        frmtstr = re.sub(r'(?<!\\)~s', '{!s}', frmtstr)
-        frmtstr = re.sub(r'(?<!\\)~d', '{!s}', frmtstr)
+        frmtstr = re.sub(r'(?<!\\)~[s|d]', '{!s}', frmtstr)
         frmtstr = re.sub(r'(?<!\\)~((?:\d)?\.\d)?f', '{:\\1f}', frmtstr)
         frmtstr = re.sub(r'\\~', '~', frmtstr)
         # Replace special character escapes
@@ -609,10 +650,10 @@ class PrintStmt(Statement):
 
 class KillStmt(Statement):
     """Kills a ~ATH symbol."""
-    __slots__ = ('name', 'args')
+    __slots__ = ('graves', 'args')
 
-    def __init__(self, name, args):
-        self.name = name
+    def __init__(self, graves, args):
+        self.graves = graves
         self.args = args
 
     def eval(self, fsm):
@@ -620,7 +661,11 @@ class KillStmt(Statement):
             raise TypeError(
                 'DIE() expects 0 arguments, got: {}'.format(len(self.args))
                 )
-        fsm.lookup_name(self.name.name).kill()
+        if isinstance(self.graves, list):
+            for symbol in self.graves:
+                fsm.lookup_name(symbol.name).kill()
+        else:
+            fsm.lookup_name(self.graves.name).kill()
         raise SymbolDeath
         # To ensure that this is also a function that returns a generator.
         yield None, None

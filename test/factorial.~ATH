@@ -1,12 +1,13 @@
-FABRICATE FACTORIAL(NUM){
+// factorial.~ATH
+FABRICATE FACT(PROD, NUM){
 	DEBATE(NUM > 1){
-		DIVULGATE NUM * EXECUTE(FACTORIAL, NUM - 1);
+		DIVULGATE EXECUTE(FACT, PROD * NUM, NUM - 1);
 	}
-	DIVULGATE 1;
+	DIVULGATE PROD;
 }
 
 ~ATH(THIS){
 	input NUM "Get the factorial of: ";
-	print("~d! is ~d\n", NUM, EXECUTE(FACTORIAL, NUM));
+	print("The factorial is ~d.\n", EXECUTE(FACT, 1, NUM));
 	THIS.DIE();
-} EXECUTE(NULL);
+}EXECUTE(NULL);

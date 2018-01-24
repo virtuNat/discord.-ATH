@@ -6,7 +6,7 @@ from symbol import AthSymbol, AthFunction, BuiltinSymbol, SymbolDeath
 from athast import AthAstList, CondJumpStmt, ExecuteStmt, DivulgateStmt, TildeAthLoop
 from athparser import ath_lexer, ath_parser
 
-__version__ = '1.3.7 Dev Build'
+__version__ = '1.4.0 Dev Build'
 __author__ = 'virtuNat'
 
 
@@ -18,6 +18,9 @@ def echo_error(msg):
 class AthStackFrame(object):
     """Keeps a record of all symbols declared in a given scope.
     ~ATH implements dynamic scope, so be wary when coding in it!
+
+    It also keeps AST execution and evaluation state, so that the
+    execution and evaluation trampolines know where to continue.
     """
     __slots__ = ('scope_vars', 'return_pt', 'state', 'eval_stack')
 
@@ -62,11 +65,12 @@ class AthStackFrame(object):
 class TildeAthInterp(object):
     """This is supposed to be a Finite State Machine"""
     __slots__ = ('modules', 'bltin_vars', 'stack', 'ast', 'state')
-    TOPLEVEL_STATE = 0
-    TILDEATH_STATE = 1
-    TILALIVE_STATE = 2
-    FUNCEXEC_STATE = 3
-    FXRETURN_STATE = 4
+    # Execution state final variables.
+    TOPLEVEL_STATE = 0 # Toplevel imperative execution
+    TILDEATH_STATE = 1 # Looping in breakable death-checking loops
+    TILALIVE_STATE = 2 # Looping in continuable life-checking loops
+    FUNCEXEC_STATE = 3 # Inside a function body
+    FXRETURN_STATE = 4 # Returning from a function
 
     def __init__(self):
         self.modules = {}
@@ -96,14 +100,13 @@ class TildeAthInterp(object):
         self.state = 0
 
     def push_stack(self, state, init_dict={}):
+        """Adds one stack frame and handles most of the internal state changes."""
         self.stack[-1].return_pt = self.ast
         self.stack[-1].state = self.state
         self.stack.append(AthStackFrame(init_dict, None, state))
         self.state = state
         stacklen = len(self.stack)
-        if stacklen < 1000:
-            return
-        elif stacklen == 1000:
+        if stacklen == 1000:
             print('i told you DOG i TOLD you about STACKS!!')
         elif stacklen == 2000:
             print('quick dude come get the ruler its ESCAPING from ABOVE!!')
@@ -114,11 +117,13 @@ class TildeAthInterp(object):
             print('stop making the stack not STOP from getting any taller!!!')
 
     def pop_stack(self, state=None):
+        """Removes one stack frame."""
         self.stack.pop()
         self.state = self.stack[-1].state if state is None else state
         self.ast = self.stack[-1].return_pt
 
     def lookup_name(self, name):
+        """Dynamic scope lookup."""
         for frame in reversed(self.stack):
             try:
                 return frame[name]
@@ -130,19 +135,40 @@ class TildeAthInterp(object):
             raise NameError('Symbol {} not found'.format(name))
 
     def assign_name(self, name, value):
+        """Dynamic scope assignment."""
         try:
             self.stack[-1][name] = value
         except IndexError:
             raise RuntimeError('All the stack frames died, what the fuck happened?')
 
+    def is_tail_call(self, eval_stack):
+        """Returns True if the currently evaluated AST node is a tail call."""
+        eval_len = len(eval_stack)
+        if eval_len == 2 and isinstance(eval_stack[0], DivulgateStmt):
+            # Top expression in a return statement is a function call
+            return True
+        if eval_len == 1 and self.state == self.FUNCEXEC_STATE:
+            # The statement being evaluated in a function is another call
+            ast_len = len(self.ast)
+            if self.ast.index >= ast_len:
+                # Execution points outside function body
+                return True
+            node = self.ast[self.ast.index]
+            if isinstance(node, CondJumpStmt) and node.clause is None:
+                # Execution points to an unconditional jump
+                if self.ast.index + node.height + 1 >= ast_len:
+                    # Jump points outside function body
+                    return True
+        return False
+
     def trampoline(self, eval_stack, return_val=None):
+        """Evaluation trampoline that models recursive AST node calls."""
         ctrl_name = self.ast.ctrl_name
         # If return_val is not None, a value was returned from a function.
         if return_val is not None:
             # Pass the return value to the caller.
             eval_stack[-1].return_val = return_val
         while True:
-            # print(eval_stack)
             # Execution must continue from the expression on top of the stack.
             try:
                 # Evaluate the expression at the top of the stack.
@@ -162,6 +188,11 @@ class TildeAthInterp(object):
                     # Push evaluation stack if it's not a function.
                     eval_stack.append(callback.iterate(self))
                     continue
+                # If it is a tail call, don't push the stack.
+                if self.is_tail_call(eval_stack):
+                    self.stack[-1].scope_vars = value
+                    self.stack[-1].eval_stack = []
+                    return iter(callback.body)
                 # If the callback is a function, move to function state.
                 eval_stack.pop()
                 self.stack[-1].eval_stack = eval_stack
@@ -174,9 +205,11 @@ class TildeAthInterp(object):
                 eval_stack[-1].return_val = value
             except IndexError:
                 # If there are no more statements, move on.
+                self.stack[-1].eval_stack = []
                 return value
 
     def execute(self):
+        """Executes an interpreter given an ast attribute."""
         count = 0
         try:
             while True:
@@ -197,7 +230,7 @@ class TildeAthInterp(object):
                     try:
                         node = next(self.ast)
                     except StopIteration:
-                        if not self.lookup_name(ast.ctrl_name):
+                        if not self.lookup_name(self.ast.ctrl_name):
                             # If the control name died, kill the loop.
                             self.pop_stack()
                         else:
@@ -208,7 +241,7 @@ class TildeAthInterp(object):
                     try:
                         node = next(self.ast)
                     except StopIteration:
-                        if self.lookup_name(ast.ctrl_name):
+                        if self.lookup_name(self.ast.ctrl_name):
                             # If the control name lives, kill the loop.
                             self.pop_stack()
                         else:
@@ -223,6 +256,9 @@ class TildeAthInterp(object):
                         return_val = AthSymbol(False)
                         continue
                 elif self.state == self.FXRETURN_STATE:
+                    if not self.stack[-1].eval_stack:
+                        self.state = self.stack[-1].state
+                        continue
                     try:
                         value = self.trampoline(self.stack[-1].eval_stack, return_val)
                     except SymbolDeath:
