@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import sys
-from time import time
 from argparse import ArgumentParser
 from symbol import AthSymbol, AthFunction, BuiltinSymbol, SymbolDeath
 from athast import AthAstList, CondJumpStmt, ExecuteStmt, DivulgateStmt, TildeAthLoop
 from athparser import ath_lexer, ath_parser
 
-__version__ = '1.4.0 Dev Build'
+
+__version__ = '1.4.3 Beta'
 __author__ = 'virtuNat'
 
 

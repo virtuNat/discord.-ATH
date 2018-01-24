@@ -1,0 +1,22 @@
+PROCREATE LOOP 0;
+~ATH(LOOP){
+	print("~d", LOOP);
+	DEBATE(LOOP > 9){
+		LOOP.DIE();
+	}
+	REPLICATE LOOP (LOOP + 1);
+	print(", ")
+}EXECUTE(NULL);
+
+print("\n~d\n", LOOP);
+
+~ATH(!LOOP){
+	print("~d", LOOP);
+	DEBATE(LOOP <= 0){
+		REPLICATE LOOP (LOOP - 1);
+		print(", ");
+		LOOP.DIE();
+	}
+	REPLICATE LOOP !LOOP;
+}EXECUTE(NULL);
+THIS.DIE();

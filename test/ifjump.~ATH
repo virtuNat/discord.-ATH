@@ -1,0 +1,15 @@
+// ifjump.~ATH
+PROCREATE TEST;
+~ATH(THIS){
+  DEBATE(TEST){
+    print("Test!\n");
+    REPLICATE TEST !TEST;
+  }
+  UNLESS(!TEST){
+    print("Test died\n");
+    THIS.DIE();
+  }
+  UNLESS{
+    print("should not print\n");
+  }
+}//EXECUTE(NULL);

@@ -2,44 +2,43 @@ PROCREATE LOOP 1;
 PROCREATE QUEUE NULL;
 
 ~ATH(LOOP) {
-	print ("Select action:\n");
-	print ("[1] Add an item to queue\n");
-	print ("[2] View queue\n");
-	print ("[3] Exit\n");
-	input CHOICE "";
-	
-	DEBATE (CHOICE == 3) {
-		LOOP.DIE();
-	} UNLESS (CHOICE == 2) {
-		PROCREATE BLAH 0;
-		PROCREATE STACK NULL;
-		REPLICATE TEMP QUEUE;
-		~ATH(BLAH) {
-			BIFURCATE TEMP[HEAD, TEMP];
-			DEBATE (TEMP) {
-				print ("~s\n", HEAD);
-				AGGREGATE [STACK, HEAD]STACK;
-			} UNLESS {
-				BLAH.DIE();
-			}
-		}
-		print ("Stack print done.\n");
-		PROCREATE OOF 0;
-		~ATH(OOF) {
-			BIFURCATE STACK[STACK, TAIL];
-			print ("I went oof.\n");
-			DEBATE (STACK) {
-				print ("~s\n", TAIL);
-			} UNLESS {
-				OOF.DIE();
-			}
-		}
-		print ("Queue print done.\n");
-	} UNLESS (CHOICE == 1){
-		input ITEM "Input string to add: ";
-		AGGREGATE [ITEM, QUEUE]QUEUE;
-	} UNLESS {
-		print ("Invalid input.");
-	}
+    print ("Select action:\n");
+    print ("[1] Add an item to queue\n");
+    print ("[2] View queue\n");
+    print ("[3] Exit\n");
+    input CHOICE "";
+    
+    DEBATE (CHOICE == 3) {
+        LOOP.DIE();
+    } UNLESS (CHOICE == 2) {
+        PROCREATE BLAH 0;
+        PROCREATE STACK NULL;
+        REPLICATE TEMP QUEUE;
+        ~ATH(BLAH) {
+            BIFURCATE TEMP[HEAD, TEMP];
+            DEBATE (TEMP) {
+                print ("~s\n", HEAD);
+                AGGREGATE [STACK, HEAD]STACK;
+            } UNLESS {
+                BLAH.DIE();
+            }
+        }
+        print ("Stack print done.\n");
+        PROCREATE OOF 0;
+        ~ATH(OOF) {
+            BIFURCATE STACK[STACK, TAIL];
+            print ("I went oof.\n");
+            DEBATE (STACK) {
+                print ("~s\n", TAIL);
+            } UNLESS {
+                OOF.DIE();
+            }
+        }
+        print ("Queue print done.\n");
+    } UNLESS (CHOICE == 1){
+        input ITEM "Input string to add: ";
+        AGGREGATE [ITEM, QUEUE]QUEUE;
+    } UNLESS {
+        print ("Invalid input.");
+    }
 }
-THIS.DIE();
