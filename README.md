@@ -156,4 +156,5 @@ It will then look for NAME in the globals of MODULE and copy it to the local sco
 
 If NAME is not found in the globals of MODULE, an error will occur and the program will fail.
 
-[notes: prevent THIS from dying without the die statement, make import copy NAME instead of pulling a reference, make import create a symbol MODULE that contains a tree of the globals]
+
+[notes: prevent THIS from dying without the die statement, make import create a symbol MODULE that contains a tree of the globals]

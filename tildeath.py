@@ -5,6 +5,7 @@ from symbol import AthSymbol, AthFunction, BuiltinSymbol, SymbolDeath
 from athast import AthAstList, CondJumpStmt, ExecuteStmt, DivulgateStmt, TildeAthLoop
 from athparser import ath_lexer, ath_parser
 
+
 __version__ = '1.4.3 Beta'
 __author__ = 'virtuNat'
 
