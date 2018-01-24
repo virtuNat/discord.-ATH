@@ -21,7 +21,7 @@ PROCREATE STACK NULL;
 				BLAH.DIE();
 			}
 		}
-	} UNLESS (CHOICE == 1){
+	} UNLESS (CHOICE == 1) {
 		input ITEM "Input string to add: ";
 		AGGREGATE [STACK, ITEM]STACK;
 	} UNLESS {

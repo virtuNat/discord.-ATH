@@ -5,10 +5,12 @@ from functools import partialmethod
 
 def isAthValue(obj):
     """True if an object is a number or string."""
-    return (isinstance(obj, int)
+    return (
+        isinstance(obj, int)
         or isinstance(obj, float)
         or isinstance(obj, complex)
-        or isinstance(obj, str))
+        or isinstance(obj, str)
+        )
 
 
 class SymbolError(Exception):
@@ -17,18 +19,6 @@ class SymbolError(Exception):
 
 class SymbolDeath(Exception):
     """Raised when a symbol dies."""
-
-
-class DivulgateBack(Exception):
-    """Raised when Divulgate is called."""
-
-
-class EndTilDeath(Exception):
-    """Raised when the THIS symbol dies."""
-
-
-class BreakUnless(Exception):
-    """Raised when an Unless clause successfuly executes."""
 
 
 class AthExpr(object):
@@ -50,6 +40,16 @@ class AthExpr(object):
         attr_str = ', '.join(attr_list)
         return '{}({})'.format(self.__class__.__name__, attr_str)
 
+    def copy(self):
+        attr_list = []
+        for slot in self.__slots__:
+            slotval = getattr(self, slot)
+            if isinstance(slotval, AthExpr):
+                attr_list.append(slotval.copy())
+                continue
+            attr_list.append(slotval)
+        return self.__class__(*attr_list)
+
 
 class AthFunction(AthExpr):
     """Function objects in ~ATH."""
@@ -60,49 +60,13 @@ class AthFunction(AthExpr):
         self.argfmt = argfmt
         self.body = body
 
-    def execute(self, fsm, args):
-        value = AthSymbol(False)
-        with fsm.push_stack(args):
-            for stmt in self.body.stmt_list:
-                try:
-                    stmt.eval(fsm)
-                except DivulgateBack:
-                    try:
-                        value = stmt.value
-                    except AttributeError:
-                        value = stmt.body.value
-                    break
-                except SymbolDeath:
-                    if not fsm.lookup_name('THIS').alive:
-                        raise EndTilDeath
-                    elif not fsm.lookup_name(self.name).alive:
-                        break
-        return value
-
-
-# class AthRefList(list):
-#     """A list of symbols can't use __eq__ to compare values in lists."""
-
-#     def __contains__(self, obj):
-#         """Force in checks to use identity comparisons."""
-#         for item in self:
-#             if item is obj:
-#                 return True
-#         return False
-
-#     def remove(self, obj):
-#         """Force removals to use identity comparisons."""
-#         idx = 0
-#         for item in self:
-#             if item is obj:
-#                 self.pop(idx)
-#                 return None
-#             idx += 1
+    def copy(self):
+        return self.__class__(self.name, self.argfmt, self.body.copy())
 
 
 class AthSymbol(AthExpr):
     """~ATH Variable data structure."""
-    __slots__ = ('alive', 'left', 'right') #, 'leftof', 'rightof')
+    __slots__ = ('alive', 'left', 'right')
 
     def __init__(self, alive=True, left=None, right=None):
         self.alive = alive
@@ -110,15 +74,6 @@ class AthSymbol(AthExpr):
         self.right = None
         self.assign_left(left)
         self.assign_right(right)
-        # self.leftof = AthRefList()
-        # self.rightof = AthRefList()
-
-    def __repr__(self):
-        """Represent this symbol."""
-        return '{}({}, {!r}, {!r})'.format(
-            self.__class__.__name__,
-            self.alive, self.left, self.right
-            )
 
     def cmpop(self, other, op):
         """Base function for comparison operators."""
@@ -226,6 +181,9 @@ class AthSymbol(AthExpr):
 
         Note that this performs the test recursively, and might be slow
         for large-scale binary symbol heaps.
+
+        Average time: O(log(n))
+        Worst-case  : O(n)
         """
         if self.left is symbol or self.right is symbol:
             # If either side is the symbol, return True.
@@ -282,11 +240,7 @@ class AthSymbol(AthExpr):
             raise TypeError(
                 'May only assign constants or symbols to left'
                 )
-        # if isinstance(self.left, AthSymbol):
-        #     self.left.leftof.remove(self)
         self.left = value
-        # if isinstance(value, AthSymbol) and self not in value.leftof:
-        #     self.left.leftof.append(self)
 
 
     def assign_right(self, value):
@@ -297,11 +251,7 @@ class AthSymbol(AthExpr):
             raise TypeError(
                 'May only assign functions or symbols to right'
                 )
-        # if isinstance(self.right, AthSymbol):
-        #     self.right.rightof.remove(self)
         self.right = value
-        # if isinstance(value, AthSymbol) and self not in value.rightof:
-        #     self.right.rightof.append(self)
 
     def kill(self):
         """THIS.DIE()"""
@@ -315,8 +265,6 @@ class BuiltinSymbol(AthSymbol):
         self.alive = alive
         self.left = None
         self.right = None
-        # self.leftof = AthRefList()
-        # self.rightof = AthRefList()
 
     def assign_left(self, value):
         echo_error('SymbolError: Builtins cannot be assigned to!')

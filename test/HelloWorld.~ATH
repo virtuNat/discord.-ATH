@@ -1,7 +1,0 @@
-PROCREATE LOOP 1;
-~ATH(LOOP) {
-	input NAME "What's your name? ";
-	print ("Hello, ~s\n!", NAME);
-	LOOP.DIE();
-}
-THIS.DIE();
