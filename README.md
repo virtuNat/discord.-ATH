@@ -1,4 +1,4 @@
-#discord.~ATH
+# discord.~ATH
 
 A ~ATH interpreter written in python.
 
