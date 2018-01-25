@@ -10,5 +10,5 @@ FABRICATE ADDONE(){
         print("\n");
         LOOP.DIE();
     }
-}
+} EXECUTE(NULL);
 THIS.DIE();
