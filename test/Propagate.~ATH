@@ -8,4 +8,4 @@ FABRICATE SCOPE(){
   EXECUTE(SCOPE);
   print("~d\n", NUMSYM);
   THIS.DIE();
-}EXECUTE(NULL);
+} EXECUTE(NULL);
