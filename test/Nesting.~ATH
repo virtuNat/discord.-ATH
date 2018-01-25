@@ -67,4 +67,4 @@
 	}
 	print("Time to end the program, mate.\n");
 	THIS.DIE();
-}EXECUTE(NULL);
+} EXECUTE(NULL);

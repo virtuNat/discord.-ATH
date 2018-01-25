@@ -1,5 +1,5 @@
 // Imports the Fibonacci function.
-import moduletest FIB;
+import ModuleTest FIB;
 PROCREATE MAIN;
 PROCREATE COUNT 1;
 // Print the first ten Fibonacchi numbers.
@@ -9,5 +9,5 @@ PROCREATE COUNT 1;
 		MAIN.DIE();
 	}
 	PROCREATE COUNT (COUNT + 1);
-}
+} EXECUTE(NULL);
 THIS.DIE();

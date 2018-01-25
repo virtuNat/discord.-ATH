@@ -9,5 +9,5 @@ PROCREATE LOOP 1;
 	print ("~s, ~s", B, C);
 
 	LOOP.DIE();
-}
+} EXECUTE(NULL);
 THIS.DIE();

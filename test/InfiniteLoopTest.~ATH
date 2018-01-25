@@ -2,4 +2,4 @@ PROCREATE LOOP 0;
 ~ATH(LOOP) {
 	print ("Hi.");
 	LOOP.DIE();
-}
+} EXECUTE(NULL);

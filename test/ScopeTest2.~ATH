@@ -15,4 +15,4 @@ FABRICATE G(J){
   EXECUTE(F, X);
   print("~d\n", X);
   THIS.DIE();
-}EXECUTE(NULL);
+} EXECUTE(NULL);

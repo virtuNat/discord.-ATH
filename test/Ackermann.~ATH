@@ -16,4 +16,4 @@ FABRICATE ACK(M, N){
     input NUM "Get the ackermann function of: ";
     print("The value of A(n, n) is ~d.\n", EXECUTE(ACK, NUM, NUM));
     THIS.DIE();
-}EXECUTE(NULL);
+} EXECUTE(NULL);

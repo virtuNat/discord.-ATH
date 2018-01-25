@@ -33,5 +33,5 @@ PROCREATE LOOP 0;
 		print ("HA! Loser can't even guess the cheat code.\n");
 	}
 	print ("\n");
-}
+} EXECUTE(NULL);
 THIS.DIE();

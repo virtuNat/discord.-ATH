@@ -17,6 +17,6 @@ REPLICATE CTR NULL;
 	print("Print ~d times.\n", 1);
 	CTR.DIE();
 	print("This should not print.");
-}
+} EXECUTE(NULL);
 print("I wish you a peaceful death, ~s.\n", TEST);
 THIS.DIE();

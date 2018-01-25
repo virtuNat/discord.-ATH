@@ -3,4 +3,4 @@
 ~ATH(THIS){
 	print("Hello World!");
 	THIS.DIE();
-}EXECUTE(NULL);
+} EXECUTE(NULL);

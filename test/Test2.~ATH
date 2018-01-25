@@ -23,5 +23,5 @@ input MAX "Count to how many? :"; // Input
     UNLESS {
         print("Next...\n");
     }
-}
+} EXECUTE(NULL);
 THIS.DIE();

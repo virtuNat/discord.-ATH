@@ -22,7 +22,7 @@ PROCREATE QUEUE NULL;
             } UNLESS {
                 BLAH.DIE();
             }
-        }
+        } EXECUTE(NULL);
         print ("Stack print done.\n");
         PROCREATE OOF 0;
         ~ATH(OOF) {
@@ -33,7 +33,7 @@ PROCREATE QUEUE NULL;
             } UNLESS {
                 OOF.DIE();
             }
-        }
+        } EXECUTE(NULL);
         print ("Queue print done.\n");
     } UNLESS (CHOICE == 1){
         input ITEM "Input string to add: ";
@@ -41,4 +41,5 @@ PROCREATE QUEUE NULL;
     } UNLESS {
         print ("Invalid input.");
     }
-}
+} EXECUTE(NULL);
+THIS.DIE();

@@ -10,4 +10,4 @@ FABRICATE FACT(PROD, NUM){
 	input NUM "Get the factorial of: ";
 	print("The factorial is ~d.\n", EXECUTE(FACT, 1, NUM));
 	THIS.DIE();
-}EXECUTE(NULL);
+} EXECUTE(NULL);
