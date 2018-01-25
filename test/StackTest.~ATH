@@ -20,12 +20,12 @@ PROCREATE STACK NULL;
 			} UNLESS {
 				BLAH.DIE();
 			}
-		}
+		} EXECUTE(NULL);
 	} UNLESS (CHOICE == 1) {
 		input ITEM "Input string to add: ";
 		AGGREGATE [STACK, ITEM]STACK;
 	} UNLESS {
 		print ("Invalid input.");
 	}
-}
+} EXECUTE(NULL);
 THIS.DIE();
