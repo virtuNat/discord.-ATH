@@ -3,5 +3,5 @@ PROCREATE LOOP NULL;
 ~ATH(LOOP) {
 	print ("Are you there.\n");
 	LOOP.DIE();
-}
+} EXECUTE(NULL);
 THIS.DIE();
