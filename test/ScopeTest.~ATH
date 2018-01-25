@@ -17,5 +17,5 @@ PROCREATE LOOP 1;
 	REPLICATE ANS EXECUTE(BAR);
 	print ("Bar: ~d\n", ANS); //7
 	LOOP.DIE();
-}
+} EXECUTE(NULL);
 THIS.DIE();
