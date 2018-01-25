@@ -36,7 +36,7 @@ FABRICATE MERGESORT (LIST) {
 			DEBATE (CURR) {
 				BLAH.DIE();
 			}
-		}
+		} EXECUTE(NULL);
 		//Current error is somewhere before this line
 		print ("Split and recursed.\n");
 		
@@ -85,7 +85,7 @@ FABRICATE MERGE (LISTS) {
 		AGGREGATE [ITEM, RESULT]RESULT;
 		REPLICATE CTR (CTR + 1);
 		REPLICATE CHECK (LEFTY && RIGHTY);
-	}
+	} EXECUTE(NULL);
 	
 	//Only one of these will be entered
 	~ATH(LEFTY) {
@@ -95,7 +95,7 @@ FABRICATE MERGE (LISTS) {
 		AGGREGATE [ITEM, RESULT]RESULT;
 		REPLICATE CTR (CTR + 1);
 		REPLICATE LEFTY TAILL;
-	}
+	} EXECUTE(NULL);
 	~ATH(RIGHTY) {
 		BIFURCATE RIGHTY[HEADR, TAILR];
 		BIFURCATE HEADR[Y, VALR];
@@ -103,7 +103,7 @@ FABRICATE MERGE (LISTS) {
 		AGGREGATE [ITEM, RESULT]RESULT;
 		REPLICATE CTR (CTR + 1);
 		REPLICATE RIGHTY TAILR;
-	}
+	} EXECUTE(NULL);
 	
 	print("Merged!\n");
 	DIVULGATE RESULT;
@@ -137,7 +137,7 @@ PROCREATE COUNT 0;
 				DEBATE (TAIL) {
 					END.DIE();
 				}
-			}
+			} EXECUTE(NULL);
 		} UNLESS {
 			print ("Queue is empty.\n");
 		}
@@ -149,5 +149,5 @@ PROCREATE COUNT 0;
 	} UNLESS {
 		print ("Invalid input.");
 	}
-}
+} EXECUTE(NULL);
 THIS.DIE();
