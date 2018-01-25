@@ -4,19 +4,20 @@ PROCREATE LOOP 0;
 	DEBATE(LOOP > 9){
 		LOOP.DIE();
 	}
-	REPLICATE LOOP (LOOP + 1);
-	print(", ")
+	PROCREATE LOOP (LOOP + 1);
+	print(", ");
 } EXECUTE(NULL);
 
 print("\n~d\n", LOOP);
 
 ~ATH(!LOOP){
 	print("~d", LOOP);
-	DEBATE(LOOP <= 0){
+	DEBATE(LOOP > 0){
 		REPLICATE LOOP (LOOP - 1);
 		print(", ");
 		LOOP.DIE();
 	}
 	REPLICATE LOOP !LOOP;
+	print("\n");
 } EXECUTE(NULL);
 THIS.DIE();

@@ -22,6 +22,7 @@ PROCREATE STACK NULL;
 			}
 		} EXECUTE(NULL);
 	} UNLESS (CHOICE == 1) {
+		REPLICATE ITEM '';
 		input ITEM "Input string to add: ";
 		AGGREGATE [STACK, ITEM]STACK;
 	} UNLESS {

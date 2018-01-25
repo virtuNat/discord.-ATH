@@ -1,10 +1,10 @@
 #!/usr/bin/env python
+import os
 import sys
 from argparse import ArgumentParser
 from symbol import AthSymbol, AthFunction, BuiltinSymbol, SymbolDeath
 from athast import AthAstList, CondJumpStmt, ExecuteStmt, DivulgateStmt, TildeAthLoop
 from athparser import ath_lexer, ath_parser
-
 
 __version__ = '1.4.3 Beta'
 __author__ = 'virtuNat'
@@ -34,8 +34,7 @@ class AthStackFrame(object):
         self.eval_stack = eval_stack
 
     def __str__(self):
-        return """Stack Frame under state {} holding {} 
-            with dynamic scope {} and pending {}""".format(
+        return '\nAthStackFrame({}, {}, {}, {})'.format(
             self.state, self.return_pt, self.scope_vars, self.eval_stack
             )
 
@@ -178,6 +177,7 @@ class TildeAthInterp(object):
                     # If THIS dies, end execution.
                     sys.exit(0)
                 elif not self.lookup_name(ctrl_name):
+                    # print(self.stack)
                     # If the AST control name dies, reraise.
                     raise
                 callback, value = None, None
@@ -272,6 +272,7 @@ class TildeAthInterp(object):
                         else:
                             self.state = self.stack[-1].state
                     continue
+                # print(node.__class__)
                 # Evalutate execution state.
                 if isinstance(node, TildeAthLoop):
                     # Do not allow entry into the loop when the variable state matches
@@ -282,6 +283,7 @@ class TildeAthInterp(object):
                     self.push_stack(1 + int(node.state))
                     self.ast = iter(node.body)
                     continue
+                # print(self.stack[-1])
                 try:
                     value = self.trampoline([node.iterate(self)])
                 except SymbolDeath:
@@ -292,6 +294,7 @@ class TildeAthInterp(object):
                             return_val = AthSymbol(False)
                             self.state = self.FXRETURN_STATE
                     else:
+                        # print(self.stack[-1])
                         # Death as continue
                         iter(self.ast)
                     continue
@@ -310,7 +313,7 @@ class TildeAthInterp(object):
     def interpret(self, fname):
         if not fname.endswith('.~ATH'):
             echo_error('IOError: script must be a ~ATH file')
-        with open(fname, 'r') as script_file:
+        with open(os.path.join('script', fname), 'r') as script_file:
             script = script_file.read()
         tokens = ath_lexer(script)
         try:
@@ -326,7 +329,7 @@ class TildeAthInterp(object):
         else:
             echo_error('RuntimeError: no ~ATH loop found in top-level script')
 
-        with open(fname[:-4]+'py', 'w') as py_file:
+        with open('ast_'+fname[:-4]+'py', 'w') as py_file:
             py_file.write('#!/usr/bin/env python\nfrom athast import *\n')
             py_file.write('from tildeath import TildeAthInterp\n\n')
             py_file.write('interp = TildeAthInterp()\n')
@@ -346,4 +349,9 @@ if __name__ == '__main__':
         )
     cmdargs = cmdparser.parse_args()
     ath_interp = TildeAthInterp()
-    ath_interp.interpret(cmdargs.script)
+    try:
+        ath_interp.interpret(cmdargs.script)
+    except FileNotFoundError:
+        raise IOError(
+            'File {} not found in script directory'.format(cmdargs.script)
+            )

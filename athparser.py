@@ -319,24 +319,21 @@ def killfunc():
     """Parses the kill function."""
     def cull_seps(graft):
         return graft[0] or graft[1]
-    argparser = RepeatParser(nameparser + OptionParser(bltinparser(',')) ^ cull_seps)
-    def breakdown(tokens):
-        name, _, _, _, args, _, _ = tokens
-        return KillStmt(name, args)
     return (
         (nameparser | (
             bltinparser('[')
-            + argparser
+            + RepeatParser(
+                nameparser + OptionParser(bltinparser(',')) ^ cull_seps
+                )
             + bltinparser(']')
-            )
+            ) ^ (lambda t: t[1])
         )
         + bltinparser('.')
         + bltinparser('DIE')
         + bltinparser('(')
-        + LazierParser(callparser)
         + bltinparser(')')
         + bltinparser(';')
-        ^ breakdown
+        ^ (lambda t: KillStmt(t[0]))
         )
 
 

@@ -7,7 +7,7 @@ PROCREATE LOOP 0;
 	input C "C: ";
 	REPLICATE R ((-B + (B ** 2 - (4 * A * C)) ** (1 / 2)) / (2 * A));
 	REPLICATE S ((-B - (B ** 2 - (4 * A * C)) ** (1 / 2)) / (2 * A));
-	print ("The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~d and ~d.", A, B, C, R, S);
+	print ("The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~.4f and ~.4f.", A, B, C, R, S);
 	LOOP.DIE();
 } EXECUTE(NULL);
 THIS.DIE();

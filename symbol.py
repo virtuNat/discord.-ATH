@@ -70,10 +70,14 @@ class AthSymbol(AthExpr):
 
     def __init__(self, alive=True, left=None, right=None):
         self.alive = alive
-        self.left = None
-        self.right = None
-        self.assign_left(left)
-        self.assign_right(right)
+        if left is None:
+            self.left = None
+        else:
+            self.assign_left(left)
+        if right is None:
+            self.right = None
+        else:
+            self.assign_right(right)
 
     def cmpop(self, other, op):
         """Base function for comparison operators."""
@@ -227,9 +231,9 @@ class AthSymbol(AthExpr):
         if ref is self:
             return self.copy()
         if isinstance(self.left, AthSymbol):
-            self.assign_left(self.left.refcopy(ref))
+            self.left = self.left.refcopy(ref)
         if isinstance(self.right, AthSymbol):
-            self.assign_right(self.right.refcopy(ref))
+            self.right = self.right.refcopy(ref)
         return self
 
     def assign_left(self, value):
@@ -273,4 +277,15 @@ class BuiltinSymbol(AthSymbol):
         echo_error('SymbolError: Builtins cannot be assigned to!')
 
     def inop(self, other, op):
+        echo_error('SymbolError: Builtins cannot be assigned to!')
+
+class NullSymbol(BuiltinSymbol):
+    __slots__ = ()
+
+    def __init__(self):
+        self.alive = False
+        self.left = None
+        self.right = None
+
+    def __setattr__(self, name, value):
         echo_error('SymbolError: Builtins cannot be assigned to!')

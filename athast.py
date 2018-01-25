@@ -9,7 +9,8 @@ import operator
 from functools import partial
 from symbol import (
     isAthValue, SymbolError, SymbolDeath,
-    AthExpr, AthSymbol, BuiltinSymbol, AthFunction,
+    AthExpr, AthSymbol, AthFunction,
+    BuiltinSymbol, NullSymbol,
     )
 
 
@@ -398,6 +399,20 @@ class ProcreateStmt(Statement):
         self.name = name
         self.expr = expr
 
+    def assign_value(self, symbol):
+        if isAthValue(self.return_val):
+            # If the result evaluates to a bare value, assign it directly.
+            symbol.assign_left(self.return_val)
+        elif isinstance(self.return_val, AthSymbol):
+            if isinstance(self.return_val, NullSymbol):
+                # If NULL is assigned, empty the left value.
+                symbol.assign_left(AthSymbol(False))
+            else:
+                # Otherwise, the value is a symbol, so point the left value to it.
+                symbol.assign_left(self.return_val.left)
+        else:
+            raise TypeError('Invalid assignment: {}'.format(self.return_val))
+
     def eval(self, fsm):
         if not self.expr:
             # If there is no expression, assign an empty living symbol.
@@ -409,21 +424,11 @@ class ProcreateStmt(Statement):
                 symbol = fsm.lookup_name(self.name.name)
             except NameError:
                 # If this symbol's name doesn't exist yet, make it.
-                symbol = AthSymbol(left=self.return_val)
+                symbol = AthSymbol()
+                self.assign_value(symbol)
                 fsm.assign_name(self.name.name, symbol)
             else:
-                if isAthValue(self.return_val):
-                    # If the result evaluates to a bare value, assign it directly.
-                    symbol.assign_left(self.return_val)
-                elif isinstance(self.return_val, AthSymbol):
-                    if isinstance(self.expr, VarExpr) and self.expr.name == 'NULL':
-                        # If NULL is assigned, empty the left value.
-                        symbol.assign_left(None)
-                    else:
-                        # Otherwise, the value is a symbol, so point the left value to it.
-                        symbol.assign_left(self.return_val.left)
-                else:
-                    raise TypeError('Invalid assignment: {}'.format(result))
+                self.assign_value(symbol)
         yield None, symbol
 
 
@@ -436,6 +441,8 @@ class BifurcateStmt(Statement):
         self.rexpr = rexpr
 
     def eval(self, fsm):
+        syml = None
+        symr = None
         symbol = fsm.lookup_name(self.name.name)
         if self.lexpr.name != 'NULL':
             if isinstance(symbol.left, AthSymbol):
@@ -443,9 +450,6 @@ class BifurcateStmt(Statement):
                     fsm.assign_name(self.lexpr.name, symbol.left)
                 else:
                     syml = symbol.left
-                    symbol.alive = syml.alive
-                    symbol.left = syml.left
-                    symbol.right = syml.right
             elif symbol.left is None:
                 fsm.assign_name(self.lexpr.name, AthSymbol(False))
             else:
@@ -455,14 +459,19 @@ class BifurcateStmt(Statement):
                 if self.rexpr.name != self.name.name:
                     fsm.assign_name(self.rexpr.name, symbol.right)
                 else:
-                    syml = symbol.right
-                    symbol.alive = syml.alive
-                    symbol.left = syml.left
-                    symbol.right = syml.right
+                    symr = symbol.right
             elif symbol.right is None:
                 fsm.assign_name(self.rexpr.name, AthSymbol(False))
             else:
                 fsm.assign_name(self.rexpr.name, AthSymbol(right=symbol.right))
+        if syml is not None:
+            symbol.alive = syml.alive
+            symbol.left = syml.left
+            symbol.right = syml.right
+        elif symr is not None:
+            symbol.alive = symr.alive
+            symbol.left = symr.left
+            symbol.right = symr.right
         yield None, AthSymbol(False)
 
 
@@ -493,12 +502,12 @@ class AggregateStmt(Statement):
             result.assign_right(rsym)
             fsm.assign_name(self.name.name, result)
         else:
-            result.assign_left(
-                lsym if isAthValue(lsym) else lsym.refcopy(result)
-                )
-            result.assign_right(
-                rsym if isinstance(rsym, AthFunction) else rsym.refcopy(result)
-                )
+            if isinstance(lsym, AthSymbol):
+                lsym = lsym.refcopy(result)
+            if isinstance(rsym, AthSymbol):
+                rsym = rsym.refcopy(result)
+            result.assign_left(lsym)
+            result.assign_right(rsym)
         yield None, result
 
 
@@ -650,22 +659,18 @@ class PrintStmt(Statement):
 
 class KillStmt(Statement):
     """Kills a ~ATH symbol."""
-    __slots__ = ('graves', 'args')
+    __slots__ = ('graves',)
 
-    def __init__(self, graves, args):
+    def __init__(self, graves):
         self.graves = graves
-        self.args = args
 
     def eval(self, fsm):
-        if self.args:
-            raise TypeError(
-                'DIE() expects 0 arguments, got: {}'.format(len(self.args))
-                )
         if isinstance(self.graves, list):
             for symbol in self.graves:
                 fsm.lookup_name(symbol.name).kill()
         else:
             fsm.lookup_name(self.graves.name).kill()
+            # print(self.graves.name)
         raise SymbolDeath
         # To ensure that this is also a function that returns a generator.
         yield None, None
@@ -749,8 +754,7 @@ class TildeAthLoop(ControlStmt):
     __slots__ = ('state', 'grave', 'body', 'coro')
 
     def __init__(self, state, grave, body, coro):
-        if not state:
-            body.ctrl_name = grave.name
+        body.ctrl_name = grave.name
         self.state = state
         self.grave = grave
         self.body = body
@@ -822,7 +826,5 @@ class InspectStack(Statement):
             index = index.left
         if len(self.args) > 1 and not isinstance(index, int):
             raise ValueError('may only call stack frame index')
-        if not index:
-            print(fsm.bltin_vars)
         print(fsm.stack[index].scope_vars)
         yield None, None

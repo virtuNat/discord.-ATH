@@ -1,6 +1,0 @@
-#!/usr/bin/env python
-from athast import *
-from athparser import TildeAthInterp
-
-ath_script = Serialize([ProcreateStmt(VarExpr('LOOP'), IntExpr(0)), TildeAthLoop(VarExpr('LOOP'), Serialize([InputStmt(VarExpr('A'), StringExpr('A: ')), InputStmt(VarExpr('B'), StringExpr('B: ')), InputStmt(VarExpr('C'), StringExpr('C: ')), ReplicateStmt(VarExpr('R'), BinaryExpr('/', BinaryExpr('+', BinaryExpr('-', IntExpr(0), VarExpr('B')), BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))), ReplicateStmt(VarExpr('S'), BinaryExpr('/', BinaryExpr('-', BinaryExpr('-', IntExpr(0), VarExpr('B')), BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))), PrintFunc([StringExpr('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~d and ~d.'), VarExpr('A'), VarExpr('B'), VarExpr('C'), VarExpr('R'), VarExpr('S')]), KillFunc(VarExpr('LOOP'), [])], LOOP)), KillFunc(VarExpr('THIS'), [])], THIS)
-TildeAthInterp().execute(ath_script)

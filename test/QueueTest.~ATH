@@ -1,4 +1,4 @@
-PROCREATE LOOP 1;
+PROCREATE LOOP;
 PROCREATE QUEUE NULL;
 
 ~ATH(LOOP) {
@@ -6,12 +6,12 @@ PROCREATE QUEUE NULL;
     print ("[1] Add an item to queue\n");
     print ("[2] View queue\n");
     print ("[3] Exit\n");
-    input CHOICE "";
-    
+    input CHOICE;
+
     DEBATE (CHOICE == 3) {
         LOOP.DIE();
     } UNLESS (CHOICE == 2) {
-        PROCREATE BLAH 0;
+        PROCREATE BLAH;
         PROCREATE STACK NULL;
         REPLICATE TEMP QUEUE;
         ~ATH(BLAH) {
@@ -24,7 +24,7 @@ PROCREATE QUEUE NULL;
             }
         } EXECUTE(NULL);
         print ("Stack print done.\n");
-        PROCREATE OOF 0;
+        PROCREATE OOF;
         ~ATH(OOF) {
             BIFURCATE STACK[STACK, TAIL];
             print ("I went oof.\n");
@@ -36,6 +36,7 @@ PROCREATE QUEUE NULL;
         } EXECUTE(NULL);
         print ("Queue print done.\n");
     } UNLESS (CHOICE == 1){
+        REPLICATE ITEM '';
         input ITEM "Input string to add: ";
         AGGREGATE [ITEM, QUEUE]QUEUE;
     } UNLESS {

@@ -18,6 +18,7 @@ input MAX "Count to how many? :"; // Input
     // User-defined Function Call
     REPLICATE CTR EXECUTE(CTR, CTR); // Fxn, Args
     DEBATE (CTR > MAX) { // Conditional
+        INSPECT();
         LOOP.DIE();
     }
     UNLESS {
