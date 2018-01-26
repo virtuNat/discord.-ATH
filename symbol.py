@@ -36,7 +36,7 @@ class AthExpr(object):
         return object.__hash__(self)
 
     def __repr__(self):
-        attr_list = tuple([repr(getattr(self, slot)) for slot in self.__slots__])
+        attr_list = [repr(getattr(self, slot)) for slot in self.__slots__]
         attr_str = ', '.join(attr_list)
         return '{}({})'.format(self.__class__.__name__, attr_str)
 
@@ -283,9 +283,9 @@ class NullSymbol(BuiltinSymbol):
     __slots__ = ()
 
     def __init__(self):
-        self.alive = False
-        self.left = None
-        self.right = None
+        super().__setattr__('alive', False)
+        super().__setattr__('left', None)
+        super().__setattr__('right', None)
 
     def __setattr__(self, name, value):
         echo_error('SymbolError: Builtins cannot be assigned to!')

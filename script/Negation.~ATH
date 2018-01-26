@@ -1,0 +1,6 @@
+PROCREATE LOOP 0;
+~ATH(!LOOP) {
+	print ("This shouldn't print.\n");
+} EXECUTE(NULL);
+print ("Yay.\n");
+THIS.DIE();

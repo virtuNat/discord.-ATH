@@ -1,0 +1,37 @@
+//Testing string comparisons
+
+PROCREATE LOOP 0;
+~ATH(LOOP) {
+	print ("Which of the following is not a French word?\n");
+	print ("[A] sale\n");
+	print ("[B] mode\n");
+	print ("[C] grand\n");
+	print ("[D] chat\n");
+	print ("[E] A, B, C, and D are all French words\n");
+	print ("[F] A, B, C, and D are all not French words\n");
+	input CHOICE "";
+	
+	ENUMERATE CHOICE CHARS;
+	BIFURCATE CHARS[HEAD, TAIL];
+	
+	/*
+		I'm kind of annoyed we can't have ignoreCase comparisons
+		But I guess that's part of the pain
+	*/
+	DEBATE (!TAIL) {
+		DEBATE ((CHOICE >= "A" && CHOICE <= "F") || (CHOICE <= "f" && CHOICE >= "a")){
+			print ("Wrong! Try again, idiot.\n");
+		} UNLESS {
+			print ("Are you blind? That's not even a choice.\n");
+		}
+	} UNLESS (CHOICE == "THE CHEAT CODE" || CHOICE == "the cheat code") {
+		print ("Damn, you caught me. It's a trick question.\n");
+	} UNLESS (CHOICE == "DIE" || CHOICE == "die") {
+		print ("Hmph. Ninny.\n");
+		LOOP.DIE();
+	} UNLESS {
+		print ("HA! Loser can't even guess the cheat code.\n");
+	}
+	print ("\n");
+} EXECUTE(NULL);
+THIS.DIE();

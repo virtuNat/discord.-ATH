@@ -2,11 +2,11 @@
 import os
 import sys
 from argparse import ArgumentParser
-from symbol import AthSymbol, AthFunction, BuiltinSymbol, SymbolDeath
+from symbol import AthSymbol, NullSymbol, AthFunction, BuiltinSymbol, SymbolDeath
 from athast import AthAstList, CondJumpStmt, ExecuteStmt, DivulgateStmt, TildeAthLoop
 from athparser import ath_lexer, ath_parser
 
-__version__ = '1.4.3 Beta'
+__version__ = '1.4.3 Dev Build'
 __author__ = 'virtuNat'
 
 
@@ -75,7 +75,7 @@ class TildeAthInterp(object):
         self.modules = {}
         self.bltin_vars = {
             'THIS': BuiltinSymbol(),
-            'NULL': BuiltinSymbol(False),
+            'NULL': NullSymbol(),
             'DIE': BuiltinSymbol(),
             'ATH': BuiltinSymbol(),
             'print': BuiltinSymbol(),

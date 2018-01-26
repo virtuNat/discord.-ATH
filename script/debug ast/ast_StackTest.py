@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+from athast import *
+from tildeath import TildeAthInterp
+
+interp = TildeAthInterp()
+interp.ast = AthAstList([ProcreateStmt(VarExpr('LOOP'), None), ProcreateStmt(VarExpr('STACK'), None), ProcreateStmt(VarExpr('FLAG'), None), TildeAthLoop(False, VarExpr('LOOP'), AthAstList([PrintStmt([StringExpr('Select action:\\n')]), PrintStmt([StringExpr('[1] Add an item to stack\\n')]), PrintStmt([StringExpr('[2] View stack\\n')]), PrintStmt([StringExpr('[3] Exit\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(3)), 2), KillStmt(VarExpr('LOOP')), CondJumpStmt(None, 14), CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), 3), ReplicateStmt(VarExpr('TEMP'), VarExpr('STACK')), TildeAthLoop(False, VarExpr('TEMP'), AthAstList([BifurcateStmt(VarExpr('TEMP'), VarExpr('HEAD'), VarExpr('TEMP')), PrintStmt([StringExpr('~s\\n'), VarExpr('HEAD')])], 'TEMP'), ExecuteStmt([VarExpr('NULL')])), CondJumpStmt(None, 10), CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(1)), 8), ReplicateStmt(VarExpr('ITEM'), StringExpr('')), InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), CondJumpStmt(VarExpr('FLAG'), 3), AggregateStmt(VarExpr('ITEM'), VarExpr('NULL'), VarExpr('STACK')), KillStmt(VarExpr('FLAG')), CondJumpStmt(None, 3), AggregateStmt(VarExpr('ITEM'), VarExpr('STACK'), VarExpr('STACK')), CondJumpStmt(None, 1), PrintStmt([StringExpr('Invalid input.')])], 'LOOP'), ExecuteStmt([VarExpr('NULL')])), KillStmt(VarExpr('THIS'))], 'THIS')
+interp.execute()

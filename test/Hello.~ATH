@@ -1,6 +1,0 @@
-// hello.~ATH
-
-~ATH(THIS){
-	print("Hello World!");
-	THIS.DIE();
-} EXECUTE(NULL);

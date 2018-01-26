@@ -381,13 +381,16 @@ class ReplicateStmt(Statement):
         self.expr = expr
 
     def eval(self, fsm):
-        yield self.expr, None
-        if isinstance(self.expr, VarExpr):
-            symbol = self.return_val.copy()
-        elif isinstance(self.return_val, AthSymbol):
-            symbol = self.return_val
-        elif isAthValue(self.return_val):
-            symbol = AthSymbol(left=self.return_val)
+        if self.expr:
+            yield self.expr, None
+            if isinstance(self.return_val, NullSymbol):
+                symbol = AthSymbol(False)
+            elif isinstance(self.return_val, AthSymbol):
+                symbol = self.return_val.copy()
+            elif isAthValue(self.return_val):
+                symbol = AthSymbol(left=self.return_val)
+        else:
+            symbol = AthSymbol()
         fsm.assign_name(self.name.name, symbol)
         yield None, symbol
 
@@ -405,8 +408,10 @@ class ProcreateStmt(Statement):
             symbol.assign_left(self.return_val)
         elif isinstance(self.return_val, AthSymbol):
             if isinstance(self.return_val, NullSymbol):
-                # If NULL is assigned, empty the left value.
-                symbol.assign_left(AthSymbol(False))
+                # If NULL is assigned, kill the symbol and empty it.
+                symbol.alive = False
+                symbol.left = None
+                symbol.right = None
             else:
                 # Otherwise, the value is a symbol, so point the left value to it.
                 symbol.assign_left(self.return_val.left)

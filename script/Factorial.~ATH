@@ -1,0 +1,13 @@
+// factorial.~ATH
+FABRICATE FACT(PROD, NUM){
+	DEBATE(NUM > 1){
+		DIVULGATE EXECUTE(FACT, PROD * NUM, NUM - 1);
+	}
+	DIVULGATE PROD;
+}
+
+~ATH(THIS){
+	input NUM "Get the factorial of: ";
+	print("The factorial is ~d.\n", EXECUTE(FACT, 1, NUM));
+	THIS.DIE();
+} EXECUTE(NULL);

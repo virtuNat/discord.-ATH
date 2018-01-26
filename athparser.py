@@ -203,7 +203,7 @@ def replistmt():
     return (
         bltinparser('REPLICATE')
         + nameparser
-        + (exprgrpparser() | exprvalparser())
+        + OptionParser(exprgrpparser() | exprvalparser())
         + bltinparser(';')
         ^ breakdown
         )

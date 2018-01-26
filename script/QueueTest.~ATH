@@ -1,0 +1,48 @@
+PROCREATE LOOP;
+PROCREATE QUEUE;
+PROCREATE FLAG;
+~ATH(LOOP) {
+    print ("Select action:\n");
+    print ("[1] Add an item to queue\n");
+    print ("[2] View queue\n");
+    print ("[3] Exit\n");
+    input CHOICE;
+
+    DEBATE (CHOICE == 3) {
+        LOOP.DIE();
+    } UNLESS (CHOICE == 2) {
+        DEBATE(!FLAG){
+            PROCREATE STACK;
+            REPLICATE TEMP QUEUE;
+            // Reversing
+            BIFURCATE TEMP[HEAD, TEMP];
+            AGGREGATE [HEAD, NULL]STACK;
+            ~ATH(TEMP) {
+                BIFURCATE TEMP[HEAD, TEMP];
+                AGGREGATE [HEAD, STACK]STACK;
+            } EXECUTE(NULL);
+            // Printing
+            ~ATH(STACK) {
+                BIFURCATE STACK[HEAD, STACK];
+                print ("~s\n", HEAD);
+            } EXECUTE(NULL);
+            print ("Queue print done.\n");
+        }
+        UNLESS{
+            print ("Queue is empty.\n");
+        }
+    } UNLESS (CHOICE == 1){
+        REPLICATE ITEM '';
+        input ITEM "Input string to add: ";
+        DEBATE(FLAG){
+            AGGREGATE [ITEM, NULL]QUEUE;
+            FLAG.DIE();
+        }
+        UNLESS{
+            AGGREGATE [ITEM, QUEUE]QUEUE;
+        }
+    } UNLESS {
+        print ("Invalid input.");
+    }
+} EXECUTE(NULL);
+THIS.DIE();

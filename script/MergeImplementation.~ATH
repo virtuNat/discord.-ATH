@@ -1,0 +1,143 @@
+FABRICATE REVERSE(STRUCT){
+	// Take a treelist of symbols and return a reversed list.
+	REPLICATE QUEUE;
+	REPLICATE STACK STRUCT;
+
+	BIFURCATE STACK[HEAD, STACK];
+	AGGREGATE [HEAD, NULL]QUEUE;
+	~ATH(STACK){
+		BIFURCATE STACK[HEAD, STACK];
+		AGGREGATE [HEAD, QUEUE]QUEUE;
+	}EXECUTE(NULL);
+	DIVULGATE QUEUE;
+}
+
+FABRICATE MERGESORT(STRUCT, LEN){
+	DEBATE(LEN < 2){
+		DIVULGATE STRUCT;
+	}
+	// Define sublist lengths.
+	REPLICATE LENL (LEN /_ 2);
+	REPLICATE LENR (LEN - LENL);
+	// Initialize sublists.
+	REPLICATE TEMPL;
+	REPLICATE TEMPR STRUCT;
+	// Splitter counter.
+	REPLICATE IDX 1;
+	// Instantiate with NULL ending.
+	BIFURCATE TEMPR[HEAD, TEMPR];
+	AGGREGATE [HEAD, NULL]TEMPL;
+	~ATH(IDX){
+		DEBATE(IDX >= LENL){
+			IDX.DIE();
+		}
+		// Tick right reference down LENL times.
+		BIFURCATE TEMPR[HEAD, TEMPR];
+		// Build reverse stack for TEMPL.
+		AGGREGATE [HEAD, TEMPL]TEMPL;
+		PROCREATE IDX (IDX + 1);
+	}EXECUTE(NULL);
+	REPLICATE TEMPL EXECUTE(REVERSE, TEMPL);
+	// Sort the sublists.
+	REPLICATE TEMPL EXECUTE(MERGESORT, TEMPL, LENL);
+	REPLICATE TEMPR EXECUTE(MERGESORT, TEMPR, LENR);
+	// Initialie the new list.
+	REPLICATE MERGED;
+	REPLICATE FLAG;
+	REPLICATE LOOP;
+	~ATH(LOOP){
+		DEBATE(LENL > 0 && LENR > 0){
+			// Take the next item, but don't replace reference yet.
+			BIFURCATE TEMPL[HEADL, NEXTL];
+			BIFURCATE TEMPR[HEADR, NEXTR];
+			DEBATE(HEADL > HEADR){
+				// If the right element is less, assign that.
+				DEBATE(FLAG){
+					AGGREGATE [HEADR, NULL]MERGED;
+					FLAG.DIE();
+				}
+				UNLESS{
+					AGGREGATE [HEADR, MERGED]MERGED;
+				}
+				PROCREATE LENR (LENR - 1);
+				// Replace the reference.
+				BIFURCATE NEXTR[L, R];
+				AGGREGATE [L, R]TEMPR;
+			}
+			UNLESS{
+				// Otherwise assign left for sort stability.
+				DEBATE(FLAG){
+					AGGREGATE [HEADL, NULL]MERGED;
+					FLAG.DIE();
+				}
+				UNLESS{
+					AGGREGATE [HEADL, MERGED]MERGED;
+				}
+				PROCREATE LENL (LENL - 1);
+				// Replace the reference.
+				BIFURCATE NEXTL[L, R];
+				AGGREGATE [L, R]TEMPL;
+			}
+		}
+		UNLESS(LENL > 0){
+			// Exhaust left if it remains.
+			BIFURCATE TEMPL[HEADL, TEMPL];
+			AGGREGATE [HEADL, MERGED]MERGED;
+			PROCREATE LENL (LENL - 1);
+		}
+		UNLESS(LENR > 0){
+			// Exhaust right if it remains.
+			BIFURCATE TEMPR[HEADR, TEMPR];
+			AGGREGATE [HEADR, MERGED]MERGED;
+			PROCREATE LENR (LENR - 1);
+		}
+		UNLESS{
+			// Only exit the loop if both sublists are exhausted.
+			LOOP.DIE();
+		}
+	}EXECUTE(NULL);
+	// The result is revesed, so reverse it.
+	DIVULGATE EXECUTE(REVERSE, MERGED);
+}
+
+PROCREATE LLEN 0;
+~ATH(THIS){
+	print ("Select action:\n");
+	print ("[1] Add an integer to the list\n");
+	print ("[2] Sort and print list\n");
+	print ("[3] Exit\n");
+	input CHOICE "";
+
+	DEBATE(CHOICE == 3){
+		THIS.DIE();
+	}
+	UNLESS(CHOICE == 2){
+		DEBATE(LIST){
+			REPLICATE SORTED EXECUTE(MERGESORT, LIST, LLEN);
+			BIFURCATE SORTED[L, R];
+			AGGREGATE [L, R]LIST;
+			REPLICATE TEMP LIST;
+			~ATH(TEMP){
+				BIFURCATE TEMP[HEAD, TEMP];
+				print("~s\n", HEAD);
+			}EXECUTE(NULL);
+		}
+		UNLESS{
+			print("List is empty, oops.\n");
+		}
+	}
+	UNLESS(CHOICE == 1){
+		REPLICATE ITEM "";
+		input ITEM "Input string to add: ";
+		DEBATE(LLEN == 0){
+			AGGREGATE [ITEM, NULL]LIST;
+		}
+		UNLESS{
+			AGGREGATE [ITEM, LIST]LIST;
+		}
+		PROCREATE LLEN (LLEN + 1);
+	}
+	UNLESS{
+		print("Invalid choice, try again.\n");
+	}
+}EXECUTE(NULL);

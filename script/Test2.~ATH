@@ -1,0 +1,28 @@
+// Commented code
+/* Unsure how we'll go about imports, ignore for now
+import "math" m; // import python lib to m
+import LOOPTOOLS; // import ~ATH file
+import blah LOOP; // import blah to LOOP
+*/
+
+PROCREATE LOOP; // Variable Declaration w/o assignment
+PROCREATE CTR 1; // Var Dec w/ assignment, to CTR's left
+FABRICATE CTR (COUNT) { // Func Dec, assigns to CTR's right
+    DIVULGATE COUNT + 1; // Operator exp
+}
+
+BIFURCATE CTR[ctr, cnt]; // Split CTR to int and fxn
+input MAX "Count to how many? :"; // Input
+~ATH (LOOP) { // ~ATH loop
+    print("Count: ~d\n", CTR); // Output
+    // User-defined Function Call
+    REPLICATE CTR EXECUTE(CTR, CTR); // Fxn, Args
+    DEBATE (CTR > MAX) { // Conditional
+        INSPECT();
+        LOOP.DIE();
+    }
+    UNLESS {
+        print("Next...\n");
+    }
+} EXECUTE(NULL);
+THIS.DIE();

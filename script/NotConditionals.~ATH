@@ -1,0 +1,63 @@
+//Testing logic for killing the controlling var in nested loops using the same var
+
+PROCREATE LOOP 0;
+~ATH(LOOP) {
+	input RATE "On a scale of A to AAAAA, how do you rate your suffering? ";
+	ENUMERATE RATE RATE;
+	
+	PROCREATE A 0;
+	PROCREATE B 0;
+	PROCREATE C 0;
+	PROCREATE D 0;
+	PROCREATE E 0;
+	PROCREATE F 0;
+	
+	BIFURCATE RATE[RATE, END];
+	~ATH(END) {
+		A.DIE();
+		BIFURCATE END[RATE, END];
+		
+		~ATH(END) {
+			B.DIE();
+			BIFURCATE END[RATE, END];
+			
+			~ATH(END) {
+				C.DIE();
+				BIFURCATE END[RATE, END];
+				
+				~ATH(END) {
+					D.DIE();
+					BIFURCATE END[RATE, END];
+					
+					~ATH(END) {
+						E.DIE();
+						BIFURCATE END[RATE, END];
+						
+						~ATH(END) {
+							F.DIE();
+							BIFURCATE END[RATE, END];
+						} EXECUTE(NULL);
+					} EXECUTE(NULL);
+				} EXECUTE(NULL);
+			} EXECUTE(NULL);
+		} EXECUTE(NULL);
+	} EXECUTE(NULL);
+	
+	DEBATE (A) {
+		print ("Aw, you wee bab. Do you want me to kiss your booboos away?");
+	} UNLESS (B) {
+		print ("Fortify!");
+	} UNLESS (C) {
+		print (":wackyZany:");
+	} UNLESS (D) {
+		print ("Have you tried mixing coffee and energy drinks yet.");
+	} UNLESS (E) {
+		print ("Same.");
+	} UNLESS {
+		print ("You're overreacting. Calm your shit.");
+	}
+	print("\n");
+	INSPECT(-1);
+	LOOP.DIE();
+} EXECUTE(NULL);
+THIS.DIE();

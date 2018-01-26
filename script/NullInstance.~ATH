@@ -1,0 +1,7 @@
+//Checking the livingness of a PROCREATE-ed object initialised with NULL
+PROCREATE LOOP NULL;
+~ATH(LOOP) {
+	print ("Are you there.\n");
+	LOOP.DIE();
+} EXECUTE(NULL);
+THIS.DIE();
