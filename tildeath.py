@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 import os
 import sys
+from pathlib import Path
 from argparse import ArgumentParser
 from symbol import AthSymbol, NullSymbol, AthFunction, BuiltinSymbol, SymbolDeath
 from athast import AthAstList, CondJumpStmt, ExecuteStmt, DivulgateStmt, TildeAthLoop
-from athparser import ath_lexer, ath_parser
+from athparser import ath_parser
 
 __version__ = '1.4.3 Dev Build'
 __author__ = 'virtuNat'
@@ -77,7 +78,7 @@ class TildeAthInterp(object):
             'THIS': BuiltinSymbol(),
             'NULL': NullSymbol(),
             'DIE': BuiltinSymbol(),
-            'ATH': BuiltinSymbol(),
+            '~ATH': BuiltinSymbol(),
             'print': BuiltinSymbol(),
             'input': BuiltinSymbol(),
             'import': BuiltinSymbol(),
@@ -169,6 +170,7 @@ class TildeAthInterp(object):
             eval_stack[-1].return_val = return_val
         while True:
             # Execution must continue from the expression on top of the stack.
+            # print(eval_stack)
             try:
                 # Evaluate the expression at the top of the stack.
                 callback, value = next(eval_stack[-1].eval_gen)
@@ -277,7 +279,7 @@ class TildeAthInterp(object):
                 if isinstance(node, TildeAthLoop):
                     # Do not allow entry into the loop when the variable state matches
                     # failure condition.
-                    if self.lookup_name(node.grave.name).alive == node.state:
+                    if self.lookup_name(node.body.ctrl_name).alive == node.state:
                         continue
                     # Add stack frame and replace ast reference.
                     self.push_stack(1 + int(node.state))
@@ -315,12 +317,7 @@ class TildeAthInterp(object):
             echo_error('IOError: script must be a ~ATH file')
         with open(os.path.join('script', fname), 'r') as script_file:
             script = script_file.read()
-        tokens = ath_lexer(script)
-        try:
-            self.ast = ath_parser(tokens, 0).value
-        except SyntaxError:
-            echo_error('RuntimeError: the parser could not understand the script')
-        self.ast.flatten()
+            self.ast = ath_parser(script)
 
         for stmt in self.ast:
             if isinstance(stmt, TildeAthLoop):
@@ -335,23 +332,52 @@ class TildeAthInterp(object):
             py_file.write('interp = TildeAthInterp()\n')
             py_file.write('interp.ast = ' + repr(self.ast))
             py_file.write('\ninterp.execute()\n')
+
+        self.bltin_vars['THIS'].left = fname
+        self.bltin_vars['THIS'].right = AthFunction(fname[:-5], [], self.ast)
         self.execute()
+
+
+def parse_all():
+    print('Writing ~ATH scripts to local python ast script...')
+    for pathname in Path('./script').glob('*.~ATH'):
+        print('Processing:', str(pathname))
+        with open(pathname, 'r') as athfile:
+            ast = ath_parser(athfile.read())
+        with open('ast_'+os.path.basename(pathname)[:-4]+'py', 'w') as astfile:
+            astfile.write('#!/usr/bin/env python\nfrom athast import *\n')
+            astfile.write('from tildeath import TildeAthInterp\n\n')
+            astfile.write('interp = TildeAthInterp()\n')
+            astfile.write('interp.ast = ' + repr(ast))
+            astfile.write('\ninterp.execute()\n')
+    print('Done!')
 
 
 if __name__ == '__main__':
     cmdparser = ArgumentParser(
-        description='A fanmade ~ATH interpreter.',
+        description='a fanmande ~ATH interpreter by virtuNat',
         )
-    cmdparser.add_argument(
-        'script',
-        help='The ~ATH file to run.',
-        metavar='scr_name',
+    cmdgroup = cmdparser.add_mutually_exclusive_group()
+    cmdgroup.add_argument(
+        '-e', '--execute',
+        help='parse and run athfname.~ATH in the script directory',
+        metavar='athfname',
+        )
+    cmdgroup.add_argument(
+        '-a', '--parse_all',
+        help='parse all ~ATH files in the script directory',
+        action='store_true',
         )
     cmdargs = cmdparser.parse_args()
-    ath_interp = TildeAthInterp()
-    try:
-        ath_interp.interpret(cmdargs.script)
-    except FileNotFoundError:
-        raise IOError(
-            'File {} not found in script directory'.format(cmdargs.script)
-            )
+    if cmdargs.parse_all:
+        parse_all()
+    elif cmdargs.execute:
+        ath_interp = TildeAthInterp()
+        try:
+            ath_interp.interpret(cmdargs.execute)
+        except FileNotFoundError:
+            raise IOError(
+                'File {} not found in script directory'.format(cmdargs.execute)
+                )
+    else:
+        print('usage: tildeath.py [-h] [-e athfname | -a]')

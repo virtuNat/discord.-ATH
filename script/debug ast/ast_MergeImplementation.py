@@ -3,5 +3,129 @@ from athast import *
 from tildeath import TildeAthInterp
 
 interp = TildeAthInterp()
-interp.ast = AthAstList([FabricateStmt(AthFunction('REVERSE', ['STRUCT'], AthAstList([ReplicateStmt(VarExpr('QUEUE'), None), ReplicateStmt(VarExpr('STACK'), VarExpr('STRUCT')), BifurcateStmt(VarExpr('STACK'), VarExpr('HEAD'), VarExpr('STACK')), AggregateStmt(VarExpr('HEAD'), VarExpr('NULL'), VarExpr('QUEUE')), TildeAthLoop(False, VarExpr('STACK'), AthAstList([BifurcateStmt(VarExpr('STACK'), VarExpr('HEAD'), VarExpr('STACK')), AggregateStmt(VarExpr('HEAD'), VarExpr('QUEUE'), VarExpr('QUEUE'))], 'STACK'), ExecuteStmt([VarExpr('NULL')])), DivulgateStmt(VarExpr('QUEUE'))], 'REVERSE'))), FabricateStmt(AthFunction('MERGESORT', ['STRUCT', 'LEN'], AthAstList([CondJumpStmt(BinaryExpr('<', VarExpr('LEN'), IntExpr(2)), 1), DivulgateStmt(VarExpr('STRUCT')), ReplicateStmt(VarExpr('LENL'), BinaryExpr('/_', VarExpr('LEN'), IntExpr(2))), ReplicateStmt(VarExpr('LENR'), BinaryExpr('-', VarExpr('LEN'), VarExpr('LENL'))), ReplicateStmt(VarExpr('TEMPL'), None), ReplicateStmt(VarExpr('TEMPR'), VarExpr('STRUCT')), ReplicateStmt(VarExpr('IDX'), IntExpr(1)), BifurcateStmt(VarExpr('TEMPR'), VarExpr('HEAD'), VarExpr('TEMPR')), AggregateStmt(VarExpr('HEAD'), VarExpr('NULL'), VarExpr('TEMPL')), TildeAthLoop(False, VarExpr('IDX'), AthAstList([CondJumpStmt(BinaryExpr('>=', VarExpr('IDX'), VarExpr('LENL')), 1), KillStmt(VarExpr('IDX')), BifurcateStmt(VarExpr('TEMPR'), VarExpr('HEAD'), VarExpr('TEMPR')), AggregateStmt(VarExpr('HEAD'), VarExpr('TEMPL'), VarExpr('TEMPL')), ProcreateStmt(VarExpr('IDX'), BinaryExpr('+', VarExpr('IDX'), IntExpr(1)))], 'IDX'), ExecuteStmt([VarExpr('NULL')])), ReplicateStmt(VarExpr('TEMPL'), ExecuteStmt([VarExpr('REVERSE'), VarExpr('TEMPL')])), ReplicateStmt(VarExpr('TEMPL'), ExecuteStmt([VarExpr('MERGESORT'), VarExpr('TEMPL'), VarExpr('LENL')])), ReplicateStmt(VarExpr('TEMPR'), ExecuteStmt([VarExpr('MERGESORT'), VarExpr('TEMPR'), VarExpr('LENR')])), ReplicateStmt(VarExpr('MERGED'), None), ReplicateStmt(VarExpr('FLAG'), None), ReplicateStmt(VarExpr('LOOP'), None), TildeAthLoop(False, VarExpr('LOOP'), AthAstList([CondJumpStmt(BinaryExpr('&&', BinaryExpr('>', VarExpr('LENL'), IntExpr(0)), BinaryExpr('>', VarExpr('LENR'), IntExpr(0))), 21), BifurcateStmt(VarExpr('TEMPL'), VarExpr('HEADL'), VarExpr('NEXTL')), BifurcateStmt(VarExpr('TEMPR'), VarExpr('HEADR'), VarExpr('NEXTR')), CondJumpStmt(BinaryExpr('>', VarExpr('HEADL'), VarExpr('HEADR')), 9), CondJumpStmt(VarExpr('FLAG'), 3), AggregateStmt(VarExpr('HEADR'), VarExpr('NULL'), VarExpr('MERGED')), KillStmt(VarExpr('FLAG')), CondJumpStmt(None, 1), AggregateStmt(VarExpr('HEADR'), VarExpr('MERGED'), VarExpr('MERGED')), ProcreateStmt(VarExpr('LENR'), BinaryExpr('-', VarExpr('LENR'), IntExpr(1))), BifurcateStmt(VarExpr('NEXTR'), VarExpr('L'), VarExpr('R')), AggregateStmt(VarExpr('L'), VarExpr('R'), VarExpr('TEMPR')), CondJumpStmt(None, 20), CondJumpStmt(VarExpr('FLAG'), 3), AggregateStmt(VarExpr('HEADL'), VarExpr('NULL'), VarExpr('MERGED')), KillStmt(VarExpr('FLAG')), CondJumpStmt(None, 1), AggregateStmt(VarExpr('HEADL'), VarExpr('MERGED'), VarExpr('MERGED')), ProcreateStmt(VarExpr('LENL'), BinaryExpr('-', VarExpr('LENL'), IntExpr(1))), BifurcateStmt(VarExpr('NEXTL'), VarExpr('L'), VarExpr('R')), AggregateStmt(VarExpr('L'), VarExpr('R'), VarExpr('TEMPL')), CondJumpStmt(None, 11), CondJumpStmt(BinaryExpr('>', VarExpr('LENL'), IntExpr(0)), 4), BifurcateStmt(VarExpr('TEMPL'), VarExpr('HEADL'), VarExpr('TEMPL')), AggregateStmt(VarExpr('HEADL'), VarExpr('MERGED'), VarExpr('MERGED')), ProcreateStmt(VarExpr('LENL'), BinaryExpr('-', VarExpr('LENL'), IntExpr(1))), CondJumpStmt(None, 6), CondJumpStmt(BinaryExpr('>', VarExpr('LENR'), IntExpr(0)), 4), BifurcateStmt(VarExpr('TEMPR'), VarExpr('HEADR'), VarExpr('TEMPR')), AggregateStmt(VarExpr('HEADR'), VarExpr('MERGED'), VarExpr('MERGED')), ProcreateStmt(VarExpr('LENR'), BinaryExpr('-', VarExpr('LENR'), IntExpr(1))), CondJumpStmt(None, 1), KillStmt(VarExpr('LOOP'))], 'LOOP'), ExecuteStmt([VarExpr('NULL')])), DivulgateStmt(ExecuteStmt([VarExpr('REVERSE'), VarExpr('MERGED')]))], 'MERGESORT'))), ProcreateStmt(VarExpr('LLEN'), IntExpr(0)), TildeAthLoop(False, VarExpr('THIS'), AthAstList([PrintStmt([StringExpr('Select action:\\n')]), PrintStmt([StringExpr('[1] Add an integer to the list\\n')]), PrintStmt([StringExpr('[2] Sort and print list\\n')]), PrintStmt([StringExpr('[3] Exit\\n')]), InputStmt(VarExpr('CHOICE'), StringExpr('')), CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(3)), 2), KillStmt(VarExpr('THIS')), CondJumpStmt(None, 20), CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), 9), CondJumpStmt(VarExpr('LIST'), 6), ReplicateStmt(VarExpr('SORTED'), ExecuteStmt([VarExpr('MERGESORT'), VarExpr('LIST'), VarExpr('LLEN')])), BifurcateStmt(VarExpr('SORTED'), VarExpr('L'), VarExpr('R')), AggregateStmt(VarExpr('L'), VarExpr('R'), VarExpr('LIST')), ReplicateStmt(VarExpr('TEMP'), VarExpr('LIST')), TildeAthLoop(False, VarExpr('TEMP'), AthAstList([BifurcateStmt(VarExpr('TEMP'), VarExpr('HEAD'), VarExpr('TEMP')), PrintStmt([StringExpr('~s\\n'), VarExpr('HEAD')])], 'TEMP'), ExecuteStmt([VarExpr('NULL')])), CondJumpStmt(None, 12), PrintStmt([StringExpr('List is empty, oops.\\n')]), CondJumpStmt(None, 10), CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(1)), 8), ReplicateStmt(VarExpr('ITEM'), StringExpr('')), InputStmt(VarExpr('ITEM'), StringExpr('Input string to add: ')), CondJumpStmt(BinaryExpr('==', VarExpr('LLEN'), IntExpr(0)), 2), AggregateStmt(VarExpr('ITEM'), VarExpr('NULL'), VarExpr('LIST')), CondJumpStmt(None, 1), AggregateStmt(VarExpr('ITEM'), VarExpr('LIST'), VarExpr('LIST')), ProcreateStmt(VarExpr('LLEN'), BinaryExpr('+', VarExpr('LLEN'), IntExpr(1))), CondJumpStmt(None, 1), PrintStmt([StringExpr('Invalid choice, try again.\\n')])], 'THIS'), ExecuteStmt([VarExpr('NULL')]))], 'THIS')
+interp.ast = AthAstList([
+    FabricateStmt(AthFunction('REVERSE', ['STRUCT'], AthAstList([
+        ReplicateStmt('QUEUE', None),
+        ReplicateStmt('STACK', VarExpr('STRUCT')),
+        BifurcateStmt('STACK', 'HEAD', 'STACK'),
+        AggregateStmt('QUEUE', VarExpr('HEAD'), VarExpr('NULL')),
+        TildeAthLoop(False, AthAstList([
+            BifurcateStmt('STACK', 'HEAD', 'STACK'),
+            AggregateStmt('QUEUE', VarExpr('HEAD'), VarExpr('QUEUE'))
+            ], 'STACK'),
+        ExecuteStmt([VarExpr('NULL')])
+        ),
+        DivulgateStmt(VarExpr('QUEUE'))
+        ], 'REVERSE')
+    )),
+    FabricateStmt(AthFunction('MERGESORT', ['STRUCT', 'LEN'], AthAstList([
+        CondJumpStmt(BinaryExpr('<', VarExpr('LEN'), IntExpr(2)), 1),
+        DivulgateStmt(VarExpr('STRUCT')),
+        ReplicateStmt('LENL', BinaryExpr('/_', VarExpr('LEN'), IntExpr(2))),
+        ReplicateStmt('LENR', BinaryExpr('-', VarExpr('LEN'), VarExpr('LENL'))),
+        ReplicateStmt('TEMPL', None),
+        ReplicateStmt('TEMPR', VarExpr('STRUCT')),
+        ReplicateStmt('IDX', IntExpr(1)),
+        BifurcateStmt('TEMPR', 'HEAD', 'TEMPR'),
+        AggregateStmt('TEMPL', VarExpr('HEAD'), VarExpr('NULL')),
+        TildeAthLoop(False, AthAstList([
+            CondJumpStmt(BinaryExpr('>=', VarExpr('IDX'), VarExpr('LENL')), 1),
+            KillStmt(VarExpr('IDX')),
+            BifurcateStmt('TEMPR', 'HEAD', 'TEMPR'),
+            AggregateStmt('TEMPL', VarExpr('HEAD'), VarExpr('TEMPL')),
+            ProcreateStmt('IDX', BinaryExpr('+', VarExpr('IDX'), IntExpr(1)))
+            ], 'IDX'),
+        ExecuteStmt([VarExpr('NULL')])
+        ),
+        ReplicateStmt('TEMPL', ExecuteStmt([VarExpr('REVERSE'), VarExpr('TEMPL')])),
+        CondJumpStmt(BinaryExpr('>', VarExpr('LENL'), IntExpr(1)), 1),
+        ReplicateStmt('TEMPL', ExecuteStmt([VarExpr('MERGESORT'), VarExpr('TEMPL'), VarExpr('LENL')])),
+        CondJumpStmt(BinaryExpr('>', VarExpr('LENR'), IntExpr(1)), 1),
+        ReplicateStmt('TEMPR', ExecuteStmt([VarExpr('MERGESORT'), VarExpr('TEMPR'), VarExpr('LENR')])),
+        ReplicateStmt('MERGED', None),
+        ReplicateStmt('FLAG', None),
+        ReplicateStmt('LOOP', None),
+        TildeAthLoop(False, AthAstList([
+            CondJumpStmt(BinaryExpr('&&', BinaryExpr('>', VarExpr('LENL'), IntExpr(0)), BinaryExpr('>', VarExpr('LENR'), IntExpr(0))), 21),
+            BifurcateStmt('TEMPL', 'HEADL', 'NEXTL'),
+            BifurcateStmt('TEMPR', 'HEADR', 'NEXTR'),
+            CondJumpStmt(BinaryExpr('>', VarExpr('HEADL'), VarExpr('HEADR')), 9),
+            CondJumpStmt(VarExpr('FLAG'), 3),
+            AggregateStmt('MERGED', VarExpr('HEADR'), VarExpr('NULL')),
+            KillStmt(VarExpr('FLAG')),
+            CondJumpStmt(None, 1),
+            AggregateStmt('MERGED', VarExpr('HEADR'), VarExpr('MERGED')),
+            ProcreateStmt('LENR', BinaryExpr('-', VarExpr('LENR'), IntExpr(1))),
+            BifurcateStmt('NEXTR', 'L', 'R'),
+            AggregateStmt('TEMPR', VarExpr('L'), VarExpr('R')),
+            CondJumpStmt(None, 20),
+            CondJumpStmt(VarExpr('FLAG'), 3),
+            AggregateStmt('MERGED', VarExpr('HEADL'), VarExpr('NULL')),
+            KillStmt(VarExpr('FLAG')),
+            CondJumpStmt(None, 1),
+            AggregateStmt('MERGED', VarExpr('HEADL'), VarExpr('MERGED')),
+            ProcreateStmt('LENL', BinaryExpr('-', VarExpr('LENL'), IntExpr(1))),
+            BifurcateStmt('NEXTL', 'L', 'R'),
+            AggregateStmt('TEMPL', VarExpr('L'), VarExpr('R')),
+            CondJumpStmt(None, 11),
+            CondJumpStmt(BinaryExpr('>', VarExpr('LENL'), IntExpr(0)), 4),
+            BifurcateStmt('TEMPL', 'HEADL', 'TEMPL'),
+            AggregateStmt('MERGED', VarExpr('HEADL'), VarExpr('MERGED')),
+            ProcreateStmt('LENL', BinaryExpr('-', VarExpr('LENL'), IntExpr(1))),
+            CondJumpStmt(None, 6),
+            CondJumpStmt(BinaryExpr('>', VarExpr('LENR'), IntExpr(0)), 4),
+            BifurcateStmt('TEMPR', 'HEADR', 'TEMPR'),
+            AggregateStmt('MERGED', VarExpr('HEADR'), VarExpr('MERGED')),
+            ProcreateStmt('LENR', BinaryExpr('-', VarExpr('LENR'), IntExpr(1))),
+            CondJumpStmt(None, 1),
+            KillStmt(VarExpr('LOOP'))
+            ], 'LOOP'),
+        ExecuteStmt([VarExpr('NULL')])
+        ),
+        DivulgateStmt(ExecuteStmt([VarExpr('REVERSE'), VarExpr('MERGED')]))
+        ], 'MERGESORT')
+    )),
+    ProcreateStmt('LLEN', IntExpr(0)),
+    TildeAthLoop(False, AthAstList([
+        PrintStmt([StringExpr('Select action:\\n')]),
+        PrintStmt([StringExpr('[1] Add an integer to the list\\n')]),
+        PrintStmt([StringExpr('[2] Sort and print list\\n')]),
+        PrintStmt([StringExpr('[3] Exit\\n')]),
+        InputStmt('CHOICE', StringExpr('')),
+        CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(3)), 2),
+        KillStmt(VarExpr('THIS')),
+        CondJumpStmt(None, 22),
+        CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), 11),
+        CondJumpStmt(VarExpr('LIST'), 8),
+        ReplicateStmt('SORTED', ExecuteStmt([VarExpr('MERGESORT'), VarExpr('LIST'), VarExpr('LLEN')])),
+        BifurcateStmt('SORTED', 'L', 'R'),
+        AggregateStmt('LIST', VarExpr('L'), VarExpr('R')),
+        ReplicateStmt('TEMP', VarExpr('LIST')),
+        PrintStmt([StringExpr('The items in sorted ascending order are:\\n[')]),
+        TildeAthLoop(False, AthAstList([
+            BifurcateStmt('TEMP', 'HEAD', 'TEMP'),
+            PrintStmt([StringExpr('~s'), VarExpr('HEAD')]),
+            CondJumpStmt(VarExpr('TEMP'), 1),
+            PrintStmt([StringExpr(', ')])
+            ], 'TEMP'),
+        ExecuteStmt([VarExpr('NULL')])
+        ),
+        PrintStmt([StringExpr(']\\n')]),
+        CondJumpStmt(None, 12),
+        PrintStmt([StringExpr('List is empty, oops.\\n')]),
+        CondJumpStmt(None, 10),
+        CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(1)), 8),
+        ReplicateStmt('ITEM', StringExpr('')),
+        InputStmt('ITEM', StringExpr('Input string to add: ')),
+        CondJumpStmt(BinaryExpr('==', VarExpr('LLEN'), IntExpr(0)), 2),
+        AggregateStmt('LIST', VarExpr('ITEM'), VarExpr('NULL')),
+        CondJumpStmt(None, 1),
+        AggregateStmt('LIST', VarExpr('ITEM'), VarExpr('LIST')),
+        ProcreateStmt('LLEN', BinaryExpr('+', VarExpr('LLEN'), IntExpr(1))),
+        CondJumpStmt(None, 1),
+        PrintStmt([StringExpr('Invalid choice, try again.\\n')])
+        ], 'THIS'),
+    ExecuteStmt([VarExpr('NULL')])
+    )
+    ], 'THIS')
 interp.execute()

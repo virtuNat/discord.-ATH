@@ -1,0 +1,11 @@
+PROCREATE FOO;
+PROCREATE BAR;
+~ATH (FOO) {
+     ~ATH (BAR) {
+          print ("Oof.\n");
+          [FOO, BAR].DIE();
+     } EXECUTE (NULL);
+     // [THIS, FOO, BAR].DIE();
+     print ("Well hello there.\n");
+} EXECUTE (NULL);
+THIS.DIE();

@@ -265,10 +265,16 @@ class AthSymbol(AthExpr):
 class BuiltinSymbol(AthSymbol):
     __slots__ = ()
 
-    def __init__(self, alive=True):
+    def __init__(self, alive=True, left=None, right=None):
         self.alive = alive
-        self.left = None
-        self.right = None
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        return '{}({}, {!r}, {!r})'.format(
+            self.__class__.__name__,
+            self.alive, self.left, self.right,
+            )
 
     def assign_left(self, value):
         echo_error('SymbolError: Builtins cannot be assigned to!')
@@ -279,6 +285,7 @@ class BuiltinSymbol(AthSymbol):
     def inop(self, other, op):
         echo_error('SymbolError: Builtins cannot be assigned to!')
 
+
 class NullSymbol(BuiltinSymbol):
     __slots__ = ()
 
@@ -286,6 +293,9 @@ class NullSymbol(BuiltinSymbol):
         super().__setattr__('alive', False)
         super().__setattr__('left', None)
         super().__setattr__('right', None)
+
+    def __repr__(self):
+        return super().__repr__()
 
     def __setattr__(self, name, value):
         echo_error('SymbolError: Builtins cannot be assigned to!')

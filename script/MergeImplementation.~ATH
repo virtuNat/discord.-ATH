@@ -39,9 +39,13 @@ FABRICATE MERGESORT(STRUCT, LEN){
 	}EXECUTE(NULL);
 	REPLICATE TEMPL EXECUTE(REVERSE, TEMPL);
 	// Sort the sublists.
-	REPLICATE TEMPL EXECUTE(MERGESORT, TEMPL, LENL);
-	REPLICATE TEMPR EXECUTE(MERGESORT, TEMPR, LENR);
-	// Initialie the new list.
+	DEBATE(LENL > 1){
+		REPLICATE TEMPL EXECUTE(MERGESORT, TEMPL, LENL);
+	}
+	DEBATE(LENR > 1){
+		REPLICATE TEMPR EXECUTE(MERGESORT, TEMPR, LENR);
+	}
+	// Initialize the new list.
 	REPLICATE MERGED;
 	REPLICATE FLAG;
 	REPLICATE LOOP;
@@ -96,7 +100,7 @@ FABRICATE MERGESORT(STRUCT, LEN){
 			LOOP.DIE();
 		}
 	}EXECUTE(NULL);
-	// The result is revesed, so reverse it.
+	// The result is reversed, so reverse it.
 	DIVULGATE EXECUTE(REVERSE, MERGED);
 }
 
@@ -117,10 +121,15 @@ PROCREATE LLEN 0;
 			BIFURCATE SORTED[L, R];
 			AGGREGATE [L, R]LIST;
 			REPLICATE TEMP LIST;
+			print("The items in sorted ascending order are:\n[");
 			~ATH(TEMP){
 				BIFURCATE TEMP[HEAD, TEMP];
-				print("~s\n", HEAD);
+				print("~s", HEAD);
+				DEBATE(TEMP){
+					print(", ");
+				}
 			}EXECUTE(NULL);
+			print("]\n");
 		}
 		UNLESS{
 			print("List is empty, oops.\n");

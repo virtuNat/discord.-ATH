@@ -1,6 +1,8 @@
 // hello.~ATH
 
 ~ATH(THIS){
-	print("Hello World!");
+	print("Hello World!\n");
+	print("This is the script ~s!\n", THIS);
+	// EXECUTE(THIS); // <-- Don't do that, causes infinite loop.
 	THIS.DIE();
 } EXECUTE(NULL);

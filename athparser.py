@@ -13,6 +13,7 @@ from grafter import (
     OptionParser, RepeatParser,
     LazierParser, ScriptParser,
     )
+from symbol import AthFunction
 from athast import (
     IntExpr, FloatExpr, StringExpr, VarExpr,
     UnaryExpr, BinaryExpr,
@@ -199,11 +200,11 @@ def replistmt():
     """Parses the assignment statement."""
     def breakdown(tokens):
         _, name, expr, _ = tokens
-        return ReplicateStmt(name, expr)
+        return ReplicateStmt(name.name, expr)
     return (
         bltinparser('REPLICATE')
         + nameparser
-        + OptionParser(exprgrpparser() | exprvalparser())
+        + OptionParser(exprparser())
         + bltinparser(';')
         ^ breakdown
         )
@@ -213,7 +214,7 @@ def procrstmt():
     """Parses value declarations."""
     def breakdown(tokens):
         _, name, expr, _ = tokens
-        return ProcreateStmt(name, expr)
+        return ProcreateStmt(name.name, expr)
     return (
         bltinparser('PROCREATE')
         + nameparser
@@ -227,7 +228,7 @@ def bfctstmt():
     """Parses the bifurcate statement."""
     def breakdown(tokens):
         _, name, _, lname, _, rname, _, _ = tokens
-        return BifurcateStmt(name, lname, rname)
+        return BifurcateStmt(name.name, lname.name, rname.name)
     return (
         bltinparser('BIFURCATE')
         + nameparser
@@ -245,7 +246,7 @@ def aggrstmt():
     """Parses the aggregate statement."""
     def breakdown(tokens):
         _, _, lname, _, rname, _, name, _ = tokens
-        return AggregateStmt(lname, rname, name)
+        return AggregateStmt(name.name, lname, rname)
     return (
         bltinparser('AGGREGATE')
         + bltinparser('[')
@@ -277,7 +278,7 @@ def importstmt():
     """Parses the import statement."""
     def breakdown(tokens):
         _, module, alias, _ = tokens
-        return ImportStmt(module, alias)
+        return ImportStmt(module.name, alias.name)
     return (
         bltinparser('import')
         + nameparser
@@ -291,7 +292,10 @@ def inputstmt():
     """Parses the input statement."""
     def breakdown(tokens):
         _, name, prompt, _ = tokens
-        return InputStmt(name, prompt)
+        return InputStmt(
+            name.name if name else None,
+            prompt if prompt is not None else StringExpr('')
+            )
     return (
         bltinparser('input')
         + nameparser
@@ -318,16 +322,21 @@ def printfunc():
 def killfunc():
     """Parses the kill function."""
     def cull_seps(graft):
-        return graft[0] or graft[1]
+        return graft[0].name or graft[1]
+    def breakdown(tokens):
+        if isinstance(tokens, VarExpr):
+            return tokens.name
+        else:
+            return tokens[1]
     return (
-        (nameparser | (
+        ((nameparser | (
             bltinparser('[')
             + RepeatParser(
                 nameparser + OptionParser(bltinparser(',')) ^ cull_seps
                 )
             + bltinparser(']')
-            ) ^ (lambda t: t[1])
-        )
+            )
+        ) ^ breakdown)
         + bltinparser('.')
         + bltinparser('DIE')
         + bltinparser('(')
@@ -367,11 +376,16 @@ def fabristmt():
     """Parses function declarations."""
     def cull_seps(graft):
         return graft[0] or graft[1]
-    argparser = RepeatParser(nameparser + OptionParser(bltinparser(',')) ^ cull_seps)
+    argparser = RepeatParser(
+        nameparser + OptionParser(bltinparser(',')) ^ cull_seps
+        )
 
     def breakdown(tokens):
         _, name, _, args, _, _, body, _ = tokens
-        return FabricateStmt(name, args, body)
+        body.ctrl_name = name.name
+        return FabricateStmt(
+            AthFunction(name.name, [arg.name for arg in args], body)
+            )
 
     return (
         bltinparser('FABRICATE')
@@ -391,7 +405,8 @@ def tildeath():
     """Parses ~ATH loops."""
     def breakdown(tokens):
         _, _, state, grave, _, _, body, _, coro = tokens
-        return TildeAthLoop(bool(state), grave, body, coro)
+        body.ctrl_name = grave.name
+        return TildeAthLoop(bool(state), body, coro)
     return (
         bltinparser('~ATH')
         + bltinparser('(')
@@ -502,4 +517,18 @@ def stmtparser():
         | condistmt() # conditionals
         | inspstmt() # Debug, remove
         ) ^ AthAstList
-ath_parser = ScriptParser(stmtparser())
+
+def ath_parser(script):
+    """Parses a given script and returns an AthAstList object."""
+    try:
+        ast = ScriptParser(stmtparser())(ath_lexer(script), 0).value
+    except SyntaxError:
+        print('your doing it WRONG u dumb HOMO TOOL!')
+        raise
+    ast.flatten()
+    for stmt in ast.stmt_list:
+        if isinstance(stmt, TildeAthLoop):
+            break
+    else:
+        raise SyntaxError('no ~ATH loop found in top-level script')
+    return ast

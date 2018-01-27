@@ -83,6 +83,9 @@ class VarExpr(PrimitiveExpr):
     def __init__(self, name):
         self.name = name
 
+    def __hash__(self):
+        return hash(self.name)
+
     def eval(self, fsm):
         yield None, fsm.lookup_name(self.name)
 
@@ -150,8 +153,12 @@ class UnaryExpr(EvalExpr):
         '!': bool_not,
     }
 
-    def __init__(self, args):
-        self.op, self.expr = args
+    def __init__(self, args, expr=None):
+        if isinstance(args, tuple):
+            self.op, self.expr = args
+        else:
+            self.op = args
+            self.expr = expr
 
     def eval(self, fsm):
         yield self.expr, None
@@ -223,6 +230,9 @@ class Statement(AstExpr):
     """Superclass to all statements."""
     __slots__ = ()
 
+    def __repr__(self, level=0):
+        return (' ' * 4 * level) + super().__repr__()
+
 
 class ControlStmt(Statement):
     """Superclass to all control flow statements."""
@@ -239,26 +249,19 @@ class AthAstList(ControlStmt):
 
     def __init__(self, stmt_list, ctrl_name=None):
         self.stmt_list = stmt_list
+        self.ctrl_name = ctrl_name or 'THIS'
         self.index = 0
-        if not ctrl_name:
-            super().__setattr__('ctrl_name', 'THIS')
-        else:
-            self.ctrl_name = ctrl_name
 
-    def __setattr__(self, name, value):
-        if name == 'ctrl_name':
-            super().__setattr__(name, value)
-            for stmt in self.stmt_list:
-                if isinstance(stmt, DebateStmt):
-                    stmt.body.ctrl_name = value
-                    for alt in stmt.unlesses:
-                        alt.body.ctrl_name = value
-        else:
-            super().__setattr__(name, value)
-
-    def __repr__(self):
-        return '{}({}, {!r})'.format(
-            self.__class__.__name__, self.stmt_list, self.ctrl_name
+    def __repr__(self, level=0):
+        return (
+            self.__class__.__name__
+            + '([\n'
+            + ',\n'.join(
+                stmt.__repr__(level+1)
+                for stmt in self.stmt_list
+                )
+            + '\n' + (' ' * 4 * (level+1))
+            + '], {!r})'.format(self.ctrl_name)
             )
 
     def __getitem__(self, itemidx):
@@ -292,7 +295,7 @@ class AthAstList(ControlStmt):
 
     def copy(self):
         return self.__class__(
-            [stmt.copy() for stmt in self.stmt_list], 
+            [stmt.copy() for stmt in self.stmt_list],
             self.ctrl_name
             )
 
@@ -391,7 +394,7 @@ class ReplicateStmt(Statement):
                 symbol = AthSymbol(left=self.return_val)
         else:
             symbol = AthSymbol()
-        fsm.assign_name(self.name.name, symbol)
+        fsm.assign_name(self.name, symbol)
         yield None, symbol
 
 
@@ -422,16 +425,16 @@ class ProcreateStmt(Statement):
         if not self.expr:
             # If there is no expression, assign an empty living symbol.
             symbol = AthSymbol()
-            fsm.assign_name(self.name.name, symbol)
+            fsm.assign_name(self.name, symbol)
         else:
             yield self.expr, None
             try:
-                symbol = fsm.lookup_name(self.name.name)
+                symbol = fsm.lookup_name(self.name)
             except NameError:
                 # If this symbol's name doesn't exist yet, make it.
                 symbol = AthSymbol()
                 self.assign_value(symbol)
-                fsm.assign_name(self.name.name, symbol)
+                fsm.assign_name(self.name, symbol)
             else:
                 self.assign_value(symbol)
         yield None, symbol
@@ -448,27 +451,27 @@ class BifurcateStmt(Statement):
     def eval(self, fsm):
         syml = None
         symr = None
-        symbol = fsm.lookup_name(self.name.name)
-        if self.lexpr.name != 'NULL':
+        symbol = fsm.lookup_name(self.name)
+        if self.lexpr != 'NULL':
             if isinstance(symbol.left, AthSymbol):
-                if self.lexpr.name != self.name.name:
-                    fsm.assign_name(self.lexpr.name, symbol.left)
+                if self.lexpr != self.name:
+                    fsm.assign_name(self.lexpr, symbol.left)
                 else:
                     syml = symbol.left
             elif symbol.left is None:
-                fsm.assign_name(self.lexpr.name, AthSymbol(False))
+                fsm.assign_name(self.lexpr, AthSymbol(False))
             else:
-                fsm.assign_name(self.lexpr.name, AthSymbol(left=symbol.left))
-        if self.rexpr.name != 'NULL':
+                fsm.assign_name(self.lexpr, AthSymbol(left=symbol.left))
+        if self.rexpr != 'NULL':
             if isinstance(symbol.right, AthSymbol):
-                if self.rexpr.name != self.name.name:
-                    fsm.assign_name(self.rexpr.name, symbol.right)
+                if self.rexpr != self.name:
+                    fsm.assign_name(self.rexpr, symbol.right)
                 else:
                     symr = symbol.right
             elif symbol.right is None:
-                fsm.assign_name(self.rexpr.name, AthSymbol(False))
+                fsm.assign_name(self.rexpr, AthSymbol(False))
             else:
-                fsm.assign_name(self.rexpr.name, AthSymbol(right=symbol.right))
+                fsm.assign_name(self.rexpr, AthSymbol(right=symbol.right))
         if syml is not None:
             symbol.alive = syml.alive
             symbol.left = syml.left
@@ -481,12 +484,12 @@ class BifurcateStmt(Statement):
 
 
 class AggregateStmt(Statement):
-    __slots__ = ('lexpr', 'rexpr', 'name')
+    __slots__ = ('name', 'lexpr', 'rexpr')
 
-    def __init__(self, lexpr, rexpr, name):
+    def __init__(self, name, lexpr, rexpr):
+        self.name = name
         self.lexpr = lexpr
         self.rexpr = rexpr
-        self.name = name
 
     def eval(self, fsm):
         if isinstance(self.lexpr, VarExpr) and self.lexpr.name == 'NULL':
@@ -500,12 +503,12 @@ class AggregateStmt(Statement):
             yield self.rexpr, None
             rsym = self.return_val
         try:
-            result = fsm.lookup_name(self.name.name)
+            result = fsm.lookup_name(self.name)
         except NameError:
             result = AthSymbol()
             result.assign_left(lsym)
             result.assign_right(rsym)
-            fsm.assign_name(self.name.name, result)
+            fsm.assign_name(self.name, result)
         else:
             if isinstance(lsym, AthSymbol):
                 lsym = lsym.refcopy(result)
@@ -549,25 +552,25 @@ class ImportStmt(Statement):
 
     def eval(self, fsm):
         try:
-            module_vars = fsm.modules[self.module.name]
+            module_vars = fsm.modules[self.module]
         except KeyError:
             module = fsm.__class__()
             try:
-                module.interpret(self.module.name + '.~ATH')
+                module.interpret(self.module + '.~ATH')
             except SystemExit as exitexec:
                 if exitexec.args[0]:
                     raise exitexec
             module_vars = module.stack[0].scope_vars
-            fsm.modules[self.module.name] = module_vars
+            fsm.modules[self.module] = module_vars
         try:
-            symbol = module_vars[self.alias.name]
+            symbol = module_vars[self.alias]
         except KeyError:
             raise NameError(
                 'symbol {} not found in module {}'.format(
-                    self.alias.name, self.module.name
+                    self.alias, self.module
                     )
                 )
-        fsm.assign_name(self.alias.name, symbol.copy())
+        fsm.assign_name(self.alias, symbol.copy())
         yield None, symbol
 
 
@@ -576,7 +579,7 @@ class InputStmt(Statement):
 
     def __init__(self, name, prompt):
         self.name = name
-        self.prompt = prompt if prompt is not None else StringExpr('')
+        self.prompt = prompt
 
     def eval(self, fsm):
         yield self.prompt, None
@@ -597,10 +600,10 @@ class InputStmt(Statement):
             except ValueError:
                 pass
         try:
-            symbol = fsm.lookup_name(self.name.name)
+            symbol = fsm.lookup_name(self.name)
         except NameError:
             symbol = AthSymbol(left=value)
-            fsm.assign_name(self.name.name, symbol)
+            fsm.assign_name(self.name, symbol)
         else:
             symbol.left = value
         yield None, symbol
@@ -672,9 +675,9 @@ class KillStmt(Statement):
     def eval(self, fsm):
         if isinstance(self.graves, list):
             for symbol in self.graves:
-                fsm.lookup_name(symbol.name).kill()
+                fsm.lookup_name(symbol).kill()
         else:
-            fsm.lookup_name(self.graves.name).kill()
+            fsm.lookup_name(self.graves).kill()
             # print(self.graves.name)
         raise SymbolDeath
         # To ensure that this is also a function that returns a generator.
@@ -738,10 +741,20 @@ class DivulgateStmt(ControlStmt):
 class FabricateStmt(Statement):
     __slots__ = ('func',)
 
-    def __init__(self, name, argfmt, body):
-        body.ctrl_name = name.name
-        self.func = AthFunction(
-            name.name, [arg.name for arg in argfmt], body
+    def __init__(self, func):
+        self.func = func
+
+    def __repr__(self, level=0):
+        return (
+            (' ' * 4 * level)
+            + '{}({}({!r}, {!r}, '.format(
+                self.__class__.__name__,
+                self.func.__class__.__name__,
+                self.func.name,
+                self.func.argfmt,
+                )
+            + self.func.body.__repr__(level)
+            + '\n' + (' ' * 4 * level) + '))'
             )
 
     def eval(self, fsm):
@@ -756,14 +769,25 @@ class FabricateStmt(Statement):
 
 
 class TildeAthLoop(ControlStmt):
-    __slots__ = ('state', 'grave', 'body', 'coro')
+    __slots__ = ('state', 'body', 'coro')
 
-    def __init__(self, state, grave, body, coro):
-        body.ctrl_name = grave.name
+    def __init__(self, state, body, coro):
         self.state = state
-        self.grave = grave
         self.body = body
         self.coro = coro
+
+    def __repr__(self, level=0):
+        return (
+            (' ' * 4 * level)
+            + '{}({}, '.format(
+                self.__class__.__name__,
+                self.state,
+                )
+            + self.body.__repr__(level)
+            + ',\n'
+            + self.coro.__repr__(level)
+            + '\n' + (' ' * 4 * level) + ')'
+            )
 
 
 class DebateStmt(ControlStmt):
