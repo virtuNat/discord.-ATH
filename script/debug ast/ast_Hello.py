@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     TildeAthLoop(False, AthAstList([
         PrintStmt([StringExpr('Hello World!\\n')]),
         PrintStmt([StringExpr('This is the script ~s!\\n'), VarExpr('THIS')]),
-        KillStmt(VarExpr('THIS'))
+        KillStmt(['THIS'])
         ], 'THIS'),
     ExecuteStmt([VarExpr('NULL')])
     )
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('Hello.~ATH', ast)
+interp.execute(ast)

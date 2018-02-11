@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     ProcreateStmt('LOOP', None),
     ProcreateStmt('STACK', None),
     ProcreateStmt('FLAG', None),
@@ -14,7 +14,7 @@ interp.ast = AthAstList([
         PrintStmt([StringExpr('[3] Exit\\n')]),
         InputStmt('CHOICE', StringExpr('')),
         CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(3)), 2),
-        KillStmt(VarExpr('LOOP')),
+        KillStmt(['LOOP']),
         CondJumpStmt(None, 14),
         CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), 3),
         ReplicateStmt('TEMP', VarExpr('STACK')),
@@ -30,7 +30,7 @@ interp.ast = AthAstList([
         InputStmt('ITEM', StringExpr('Input string to add: ')),
         CondJumpStmt(VarExpr('FLAG'), 3),
         AggregateStmt('STACK', VarExpr('ITEM'), VarExpr('NULL')),
-        KillStmt(VarExpr('FLAG')),
+        KillStmt(['FLAG']),
         CondJumpStmt(None, 3),
         AggregateStmt('STACK', VarExpr('ITEM'), VarExpr('STACK')),
         CondJumpStmt(None, 1),
@@ -38,6 +38,8 @@ interp.ast = AthAstList([
         ], 'LOOP'),
     ExecuteStmt([VarExpr('NULL')])
     ),
-    KillStmt(VarExpr('THIS'))
+    KillStmt(['THIS'])
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('StackTest.~ATH', ast)
+interp.execute(ast)

@@ -40,16 +40,6 @@ class AthExpr(object):
         attr_str = ', '.join(attr_list)
         return '{}({})'.format(self.__class__.__name__, attr_str)
 
-    def copy(self):
-        attr_list = []
-        for slot in self.__slots__:
-            slotval = getattr(self, slot)
-            if isinstance(slotval, AthExpr):
-                attr_list.append(slotval.copy())
-                continue
-            attr_list.append(slotval)
-        return self.__class__(*attr_list)
-
 
 class AthFunction(AthExpr):
     """Function objects in ~ATH."""
@@ -59,9 +49,6 @@ class AthFunction(AthExpr):
         self.name = name
         self.argfmt = argfmt
         self.body = body
-
-    def copy(self):
-        return self.__class__(self.name, self.argfmt, self.body.copy())
 
 
 class AthSymbol(AthExpr):
@@ -78,6 +65,16 @@ class AthSymbol(AthExpr):
             self.right = None
         else:
             self.assign_right(right)
+
+    def __repr__(self):
+        if isinstance(self.right, AthFunction):
+            rstr = '<AthFunction {}>'.format(self.right.name)
+        else:
+            rstr = repr(self.right)
+        return '{}({}, {!r}, {})'.format(
+            self.__class__.__name__,
+            self.alive, self.left, rstr,
+            )
 
     def cmpop(self, other, op):
         """Base function for comparison operators."""
@@ -277,13 +274,19 @@ class BuiltinSymbol(AthSymbol):
             )
 
     def assign_left(self, value):
-        echo_error('SymbolError: Builtins cannot be assigned to!')
+        raise SymbolError('Builtins cannot be assigned to!')
 
     def assign_right(self, value):
-        echo_error('SymbolError: Builtins cannot be assigned to!')
+        raise SymbolError('Builtins cannot be assigned to!')
 
-    def inop(self, other, op):
-        echo_error('SymbolError: Builtins cannot be assigned to!')
+
+class ThisSymbol(BuiltinSymbol):
+    __slots__ = ()
+
+    def __init__(self, fname, ast):
+        self.alive = True
+        self.left = fname
+        self.right = AthFunction(fname[:-5], [], ast)
 
 
 class NullSymbol(BuiltinSymbol):
@@ -294,8 +297,7 @@ class NullSymbol(BuiltinSymbol):
         super().__setattr__('left', None)
         super().__setattr__('right', None)
 
-    def __repr__(self):
-        return super().__repr__()
-
     def __setattr__(self, name, value):
-        echo_error('SymbolError: Builtins cannot be assigned to!')
+        raise SymbolError('Builtins cannot be assigned to!')
+
+NULL = NullSymbol()

@@ -8,7 +8,7 @@ from functools import partial, reduce
 
 from lexer import Lexer
 from grafter import (
-    ItemParser, TagsParser,
+    ItemParser, TagsParser, Graft,
     SelectParser, StrictParser,
     OptionParser, RepeatParser,
     LazierParser, ScriptParser,
@@ -23,8 +23,28 @@ from athast import (
     BifurcateStmt, AggregateStmt, EnumerateStmt,
     ProcreateStmt, PropagateStmt, ReplicateStmt,
     FabricateStmt, ExecuteStmt, DivulgateStmt,
-    DebateStmt, UnlessStmt, TildeAthLoop,
+    TildeAthLoop, CondJumpStmt,
     )
+
+
+class StmtParser(RepeatParser):
+    """RepeatParser that accomodates for flattened statements."""
+    __slots__ = ()
+
+    def __repr__(self):
+        return '{}({!r})'.format(self.__class__.__name__, self.graft)
+
+    def __call__(self, tokens, index=0):
+        stmt_list = []
+        graft = self.graft(tokens, index)
+        while graft:
+            if isinstance(graft.value, list):
+                stmt_list.extend(graft.value)
+            else:
+                stmt_list.append(graft.value)
+            index = graft.index
+            graft = self.graft(tokens, index)
+        return Graft(stmt_list, index)
 
 
 ath_lexer = Lexer([
@@ -307,15 +327,13 @@ def inputstmt():
 
 def printfunc():
     """Parses the print function."""
-    def breakdown(tokens):
-        return PrintStmt(tokens[2])
     return (
         bltinparser('print')
         + bltinparser('(')
         + callparser()
         + bltinparser(')')
         + bltinparser(';')
-        ^ breakdown
+        ^ (lambda t: PrintStmt(t[2]))
         )
 
 
@@ -324,10 +342,7 @@ def killfunc():
     def cull_seps(graft):
         return graft[0].name or graft[1]
     def breakdown(tokens):
-        if isinstance(tokens, VarExpr):
-            return tokens.name
-        else:
-            return tokens[1]
+        return [tokens.name] if isinstance(tokens, VarExpr) else tokens[1]
     return (
         ((nameparser | (
             bltinparser('[')
@@ -348,27 +363,23 @@ def killfunc():
 
 def execfunc():
     """Parses the execution statement as a statement."""
-    def breakdown(tokens):
-        return ExecuteStmt(tokens[2])
     return (
         bltinparser('EXECUTE')
         + bltinparser('(')
         + callparser()
         + bltinparser(')')
         + bltinparser(';')
-        ^ breakdown
+        ^ (lambda t: ExecuteStmt(t[2]))
         )
 
 
 def divlgstmt():
     """Parses the return statement."""
-    def breakdown(tokens):
-        return DivulgateStmt(tokens[1])
     return (
         bltinparser('DIVULGATE')
         + exprparser()
         + bltinparser(';')
-        ^ breakdown
+        ^ (lambda t: DivulgateStmt(t[1]))
         )
 
 
@@ -376,22 +387,19 @@ def fabristmt():
     """Parses function declarations."""
     def cull_seps(graft):
         return graft[0] or graft[1]
-    argparser = RepeatParser(
-        nameparser + OptionParser(bltinparser(',')) ^ cull_seps
-        )
-
     def breakdown(tokens):
         _, name, _, args, _, _, body, _ = tokens
         body.ctrl_name = name.name
         return FabricateStmt(
             AthFunction(name.name, [arg.name for arg in args], body)
             )
-
     return (
         bltinparser('FABRICATE')
         + nameparser
         + bltinparser('(')
-        + OptionParser(argparser)
+        + OptionParser(RepeatParser(
+            nameparser + OptionParser(bltinparser(',')) ^ cull_seps
+            ))
         + bltinparser(')')
         + bltinparser('{')
         + LazierParser(funcstmts)
@@ -425,18 +433,42 @@ def condistmt(fabri=False):
     """Parses conditional statements."""
     def brkunless(tokens):
         _, condexpr, _, body, _ = tokens
-        if condexpr:
-            condexpr = condexpr[1]
-        return UnlessStmt(condexpr, body)
+        return (condexpr and condexpr[1], body)
     def breakdown(tokens):
         _, _, condexpr, _, _, body, _, unlesses = tokens
-        for idx, unless in enumerate(unlesses):
-            if not unless.clause and idx < len(unlesses) - 1:
-                print('Invalid DEBATE/UNLESS format')
-                raise SyntaxError
-        return DebateStmt(condexpr, body, unlesses)
+        # Create list of flattened statements.
+        stmt_list = [CondJumpStmt(condexpr, len(body) + int(bool(unlesses)))]
+        stmt_list.extend(body.stmt_list)
+        if unlesses:
+            # The offset created when due to the last UNLESS's lack of jumps.
+            # The last UNLESS or a lone DEBATE will not jump off the end,
+            # and if the last UNLESS has no clause, there will be no
+            # conditional jump at the head of its body.
+            jumpoffset = -2 - int(unlesses[-1][0] is not None)
+            # Manual enumerate counter.
+            idx = 0
+            for unless in unlesses:
+                # Check if this is a clauseless unless that isn't the last unless.
+                if not unless[0] and idx < len(unlesses) - 1:
+                    print('Invalid DEBATE/UNLESS format')
+                    raise SyntaxError
+                # Calculate jump length.
+                bodylen = sum(
+                    map(lambda u: len(u[1]) + 2, unlesses[idx:]),
+                    jumpoffset
+                    )
+                # Add the jump that allows execution to jump to the end.
+                stmt_list.append(CondJumpStmt(None, bodylen))
+                # Add the jump at the head of this unless.
+                if unless[0]:
+                    bodylen = len(unless[1]) + 3 + jumpoffset
+                    stmt_list.append(CondJumpStmt(unless[0], bodylen))
+                # Add the body.
+                stmt_list.extend(unless[1].stmt_list)
+                # Increment enumerate counter.
+                idx += 1
+        return stmt_list
     stmts = funcstmts if fabri else stmtparser
-
     return (
         bltinparser('DEBATE')
         + bltinparser('(')
@@ -476,9 +508,23 @@ def inspstmt():
         )
 
 
+def thread_ast(astlist):
+    """Threads all unconditional jumps."""
+    ast = AthAstList(tuple(astlist))
+    for stmt in reversed(ast):
+        if isinstance(stmt, CondJumpStmt) and not stmt.clause:
+            try:
+                target = ast.stmt_list[ast.index + stmt.height + 1]
+            except IndexError:
+                continue
+            if isinstance(target, CondJumpStmt) and not target.clause:
+                stmt.height += target.height + 1
+    return ast
+
+
 def funcstmts():
     """Parses the set of statements used in functions."""
-    return RepeatParser(
+    return StmtParser(
         replistmt() # assignment
         # | propastmt() # reference
         | procrstmt() # val dec
@@ -495,12 +541,12 @@ def funcstmts():
         | tildeath() # cond loop
         | condistmt(True) # conditionals
         | inspstmt() # Debug, remove
-        ) ^ AthAstList
+        ) ^ thread_ast
 
 
 def stmtparser():
     """Parses the set of statements used top-level."""
-    return RepeatParser(
+    return StmtParser(
         replistmt() # assignment
         # | propastmt() # reference
         | procrstmt() # val dec
@@ -516,7 +562,7 @@ def stmtparser():
         | tildeath() # cond loop
         | condistmt() # conditionals
         | inspstmt() # Debug, remove
-        ) ^ AthAstList
+        ) ^ thread_ast
 
 def ath_parser(script):
     """Parses a given script and returns an AthAstList object."""
@@ -525,7 +571,6 @@ def ath_parser(script):
     except SyntaxError:
         print('your doing it WRONG u dumb HOMO TOOL!')
         raise
-    ast.flatten()
     for stmt in ast.stmt_list:
         if isinstance(stmt, TildeAthLoop):
             break

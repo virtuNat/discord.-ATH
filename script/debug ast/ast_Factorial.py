@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     FabricateStmt(AthFunction('FACT', ['PROD', 'NUM'], AthAstList([
         CondJumpStmt(BinaryExpr('>', VarExpr('NUM'), IntExpr(1)), 1),
         DivulgateStmt(ExecuteStmt([VarExpr('FACT'), BinaryExpr('*', VarExpr('PROD'), VarExpr('NUM')), BinaryExpr('-', VarExpr('NUM'), IntExpr(1))])),
@@ -13,9 +13,11 @@ interp.ast = AthAstList([
     TildeAthLoop(False, AthAstList([
         InputStmt('NUM', StringExpr('Get the factorial of: ')),
         PrintStmt([StringExpr('The factorial is ~d.\\n'), ExecuteStmt([VarExpr('FACT'), IntExpr(1), VarExpr('NUM')])]),
-        KillStmt(VarExpr('THIS'))
+        KillStmt(['THIS'])
         ], 'THIS'),
     ExecuteStmt([VarExpr('NULL')])
     )
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('Factorial.~ATH', ast)
+interp.execute(ast)

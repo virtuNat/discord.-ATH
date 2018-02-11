@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     ProcreateStmt('LOOP', IntExpr(0)),
     ProcreateStmt('A', IntExpr(0)),
     FabricateStmt(AthFunction('ADDONE', [], AthAstList([
@@ -16,10 +16,12 @@ interp.ast = AthAstList([
         PrintStmt([StringExpr('~s '), VarExpr('A')]),
         CondJumpStmt(BinaryExpr('==', VarExpr('A'), IntExpr(256)), 2),
         PrintStmt([StringExpr('\\n')]),
-        KillStmt(VarExpr('LOOP'))
+        KillStmt(['LOOP'])
         ], 'LOOP'),
     ExecuteStmt([VarExpr('NULL')])
     ),
-    KillStmt(VarExpr('THIS'))
+    KillStmt(['THIS'])
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('AddOneFunc.~ATH', ast)
+interp.execute(ast)

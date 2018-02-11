@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     ProcreateStmt('LOOP', IntExpr(0)),
     TildeAthLoop(False, AthAstList([
         InputStmt('RATE', StringExpr('On a scale of A to AAAAA, how do you rate your suffering? ')),
@@ -16,22 +16,22 @@ interp.ast = AthAstList([
         ProcreateStmt('F', IntExpr(0)),
         BifurcateStmt('RATE', 'RATE', 'END'),
         TildeAthLoop(False, AthAstList([
-            KillStmt(VarExpr('A')),
+            KillStmt(['A']),
             BifurcateStmt('END', 'RATE', 'END'),
             TildeAthLoop(False, AthAstList([
-                KillStmt(VarExpr('B')),
+                KillStmt(['B']),
                 BifurcateStmt('END', 'RATE', 'END'),
                 TildeAthLoop(False, AthAstList([
-                    KillStmt(VarExpr('C')),
+                    KillStmt(['C']),
                     BifurcateStmt('END', 'RATE', 'END'),
                     TildeAthLoop(False, AthAstList([
-                        KillStmt(VarExpr('D')),
+                        KillStmt(['D']),
                         BifurcateStmt('END', 'RATE', 'END'),
                         TildeAthLoop(False, AthAstList([
-                            KillStmt(VarExpr('E')),
+                            KillStmt(['E']),
                             BifurcateStmt('END', 'RATE', 'END'),
                             TildeAthLoop(False, AthAstList([
-                                KillStmt(VarExpr('F')),
+                                KillStmt(['F']),
                                 BifurcateStmt('END', 'RATE', 'END')
                                 ], 'END'),
                             ExecuteStmt([VarExpr('NULL')])
@@ -69,10 +69,12 @@ interp.ast = AthAstList([
         PrintStmt([StringExpr("You're overreacting. Calm your shit.")]),
         PrintStmt([StringExpr('\\n')]),
         InspectStack([UnaryExpr('-', IntExpr(1))]),
-        KillStmt(VarExpr('LOOP'))
+        KillStmt(['LOOP'])
         ], 'LOOP'),
     ExecuteStmt([VarExpr('NULL')])
     ),
-    KillStmt(VarExpr('THIS'))
+    KillStmt(['THIS'])
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('NotConditionals.~ATH', ast)
+interp.execute(ast)

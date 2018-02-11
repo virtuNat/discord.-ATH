@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     PrintStmt([StringExpr('Welcome to ~ATH.\\n')]),
     InputStmt('TEST', StringExpr('Input name: ')),
     PrintStmt([StringExpr('Thank you, ~s for inputting.\\n'), VarExpr('TEST')]),
@@ -14,12 +14,14 @@ interp.ast = AthAstList([
     ReplicateStmt('CTR', VarExpr('NULL')),
     TildeAthLoop(False, AthAstList([
         PrintStmt([StringExpr('Print ~d times.\\n'), IntExpr(1)]),
-        KillStmt(VarExpr('CTR')),
+        KillStmt(['CTR']),
         PrintStmt([StringExpr('This should not print.')])
         ], 'CTR'),
     ExecuteStmt([VarExpr('NULL')])
     ),
     PrintStmt([StringExpr('I wish you a peaceful death, ~s.\\n'), VarExpr('TEST')]),
-    KillStmt(VarExpr('THIS'))
+    KillStmt(['THIS'])
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('Test.~ATH', ast)
+interp.execute(ast)

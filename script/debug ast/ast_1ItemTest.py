@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     ProcreateStmt('LOOP', IntExpr(0)),
     TildeAthLoop(False, AthAstList([
         PrintStmt([StringExpr('Which of the following is not a French word?\\n')]),
@@ -27,13 +27,15 @@ interp.ast = AthAstList([
         CondJumpStmt(None, 5),
         CondJumpStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('DIE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('die'))), 3),
         PrintStmt([StringExpr('Hmph. Ninny.\\n')]),
-        KillStmt(VarExpr('LOOP')),
+        KillStmt(['LOOP']),
         CondJumpStmt(None, 1),
         PrintStmt([StringExpr("HA! Loser can't even guess the cheat code.\\n")]),
         PrintStmt([StringExpr('\\n')])
         ], 'LOOP'),
     ExecuteStmt([VarExpr('NULL')])
     ),
-    KillStmt(VarExpr('THIS'))
+    KillStmt(['THIS'])
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('1ItemTest.~ATH', ast)
+interp.execute(ast)

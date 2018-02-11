@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     FabricateStmt(AthFunction('REVERSE', ['STRUCT'], AthAstList([
         ReplicateStmt('QUEUE', None),
         ReplicateStmt('STACK', VarExpr('STRUCT')),
@@ -30,7 +30,7 @@ interp.ast = AthAstList([
         AggregateStmt('TEMPL', VarExpr('HEAD'), VarExpr('NULL')),
         TildeAthLoop(False, AthAstList([
             CondJumpStmt(BinaryExpr('>=', VarExpr('IDX'), VarExpr('LENL')), 1),
-            KillStmt(VarExpr('IDX')),
+            KillStmt(['IDX']),
             BifurcateStmt('TEMPR', 'HEAD', 'TEMPR'),
             AggregateStmt('TEMPL', VarExpr('HEAD'), VarExpr('TEMPL')),
             ProcreateStmt('IDX', BinaryExpr('+', VarExpr('IDX'), IntExpr(1)))
@@ -52,7 +52,7 @@ interp.ast = AthAstList([
             CondJumpStmt(BinaryExpr('>', VarExpr('HEADL'), VarExpr('HEADR')), 9),
             CondJumpStmt(VarExpr('FLAG'), 3),
             AggregateStmt('MERGED', VarExpr('HEADR'), VarExpr('NULL')),
-            KillStmt(VarExpr('FLAG')),
+            KillStmt(['FLAG']),
             CondJumpStmt(None, 1),
             AggregateStmt('MERGED', VarExpr('HEADR'), VarExpr('MERGED')),
             ProcreateStmt('LENR', BinaryExpr('-', VarExpr('LENR'), IntExpr(1))),
@@ -61,7 +61,7 @@ interp.ast = AthAstList([
             CondJumpStmt(None, 20),
             CondJumpStmt(VarExpr('FLAG'), 3),
             AggregateStmt('MERGED', VarExpr('HEADL'), VarExpr('NULL')),
-            KillStmt(VarExpr('FLAG')),
+            KillStmt(['FLAG']),
             CondJumpStmt(None, 1),
             AggregateStmt('MERGED', VarExpr('HEADL'), VarExpr('MERGED')),
             ProcreateStmt('LENL', BinaryExpr('-', VarExpr('LENL'), IntExpr(1))),
@@ -78,7 +78,7 @@ interp.ast = AthAstList([
             AggregateStmt('MERGED', VarExpr('HEADR'), VarExpr('MERGED')),
             ProcreateStmt('LENR', BinaryExpr('-', VarExpr('LENR'), IntExpr(1))),
             CondJumpStmt(None, 1),
-            KillStmt(VarExpr('LOOP'))
+            KillStmt(['LOOP'])
             ], 'LOOP'),
         ExecuteStmt([VarExpr('NULL')])
         ),
@@ -86,6 +86,7 @@ interp.ast = AthAstList([
         ], 'MERGESORT')
     )),
     ProcreateStmt('LLEN', IntExpr(0)),
+    ProcreateStmt('LIST', None),
     TildeAthLoop(False, AthAstList([
         PrintStmt([StringExpr('Select action:\\n')]),
         PrintStmt([StringExpr('[1] Add an integer to the list\\n')]),
@@ -93,10 +94,11 @@ interp.ast = AthAstList([
         PrintStmt([StringExpr('[3] Exit\\n')]),
         InputStmt('CHOICE', StringExpr('')),
         CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(3)), 2),
-        KillStmt(VarExpr('THIS')),
-        CondJumpStmt(None, 22),
-        CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), 11),
-        CondJumpStmt(VarExpr('LIST'), 8),
+        KillStmt(['THIS']),
+        CondJumpStmt(None, 23),
+        CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), 12),
+        BifurcateStmt('LIST', 'L', 'R'),
+        CondJumpStmt(VarExpr('L'), 8),
         ReplicateStmt('SORTED', ExecuteStmt([VarExpr('MERGESORT'), VarExpr('LIST'), VarExpr('LLEN')])),
         BifurcateStmt('SORTED', 'L', 'R'),
         AggregateStmt('LIST', VarExpr('L'), VarExpr('R')),
@@ -128,4 +130,6 @@ interp.ast = AthAstList([
     ExecuteStmt([VarExpr('NULL')])
     )
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('MergeImplementation.~ATH', ast)
+interp.execute(ast)

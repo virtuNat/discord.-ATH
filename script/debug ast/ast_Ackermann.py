@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     FabricateStmt(AthFunction('ACK', ['M', 'N'], AthAstList([
         CondJumpStmt(BinaryExpr('==', VarExpr('M'), IntExpr(0)), 2),
         DivulgateStmt(BinaryExpr('+', VarExpr('N'), IntExpr(1))),
@@ -17,9 +17,11 @@ interp.ast = AthAstList([
     TildeAthLoop(False, AthAstList([
         InputStmt('NUM', StringExpr('Get the ackermann function of: ')),
         PrintStmt([StringExpr('The value of A(n, n) is ~d.\\n'), ExecuteStmt([VarExpr('ACK'), VarExpr('NUM'), VarExpr('NUM')])]),
-        KillStmt(VarExpr('THIS'))
+        KillStmt(['THIS'])
         ], 'THIS'),
     ExecuteStmt([VarExpr('NULL')])
     )
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('Ackermann.~ATH', ast)
+interp.execute(ast)

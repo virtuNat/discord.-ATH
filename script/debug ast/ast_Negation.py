@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     ProcreateStmt('LOOP', IntExpr(0)),
     TildeAthLoop(True, AthAstList([
         PrintStmt([StringExpr("This shouldn't print.\\n")])
@@ -11,6 +11,8 @@ interp.ast = AthAstList([
     ExecuteStmt([VarExpr('NULL')])
     ),
     PrintStmt([StringExpr('Yay.\\n')]),
-    KillStmt(VarExpr('THIS'))
+    KillStmt(['THIS'])
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('Negation.~ATH', ast)
+interp.execute(ast)

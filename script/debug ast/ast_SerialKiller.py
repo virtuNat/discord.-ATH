@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     ProcreateStmt('FOO', None),
     ProcreateStmt('BAR', None),
     TildeAthLoop(False, AthAstList([
@@ -17,6 +17,8 @@ interp.ast = AthAstList([
         ], 'FOO'),
     ExecuteStmt([VarExpr('NULL')])
     ),
-    KillStmt('THIS')
+    KillStmt(['THIS'])
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('SerialKiller.~ATH', ast)
+interp.execute(ast)

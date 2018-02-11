@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     ProcreateStmt('LOOP', VarExpr('NULL')),
     TildeAthLoop(False, AthAstList([
         PrintStmt([StringExpr('Are you there.\\n')]),
-        KillStmt(VarExpr('LOOP'))
+        KillStmt(['LOOP'])
         ], 'LOOP'),
     ExecuteStmt([VarExpr('NULL')])
     ),
-    KillStmt(VarExpr('THIS'))
+    KillStmt(['THIS'])
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('NullInstance.~ATH', ast)
+interp.execute(ast)

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     TildeAthLoop(False, AthAstList([
         InputStmt('NUM', StringExpr('Enter a number: ')),
         CondJumpStmt(BinaryExpr('<', VarExpr('NUM'), IntExpr(8)), 40),
@@ -61,9 +61,11 @@ interp.ast = AthAstList([
         PrintStmt([StringExpr('Congrats, your number is 8.\\n')]),
         PrintStmt([StringExpr('Look at how achieved you are.\\n')]),
         PrintStmt([StringExpr('Time to end the program, mate.\\n')]),
-        KillStmt(VarExpr('THIS'))
+        KillStmt(['THIS'])
         ], 'THIS'),
     ExecuteStmt([VarExpr('NULL')])
     )
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('Nesting.~ATH', ast)
+interp.execute(ast)

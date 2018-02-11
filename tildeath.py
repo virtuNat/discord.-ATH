@@ -3,11 +3,16 @@ import os
 import sys
 from pathlib import Path
 from argparse import ArgumentParser
-from symbol import AthSymbol, NullSymbol, AthFunction, BuiltinSymbol, SymbolDeath
-from athast import AthAstList, CondJumpStmt, ExecuteStmt, DivulgateStmt, TildeAthLoop
+from symbol import (
+    SymbolDeath, AthFunction, AthSymbol, 
+    BuiltinSymbol, ThisSymbol, NULL,
+    )
+from athast import (
+    CondJumpStmt, ExecuteStmt, DivulgateStmt, TildeAthLoop
+    )
 from athparser import ath_parser
 
-__version__ = '1.4.3 Dev Build'
+__version__ = '1.4.4 Test Build'
 __author__ = 'virtuNat'
 
 
@@ -16,54 +21,69 @@ def echo_error(msg):
     sys.exit(1)
 
 
+def write_astfile(fname, ast):
+    with open('ast_'+fname[:-4]+'py', 'w') as astfile:
+        astfile.write(
+            TildeAthInterp.REPRESENTATION.format(ast, fname, fname[:-5])
+            )
+
+
+def parse_all():
+    print('Writing ~ATH scripts to local python ast script...')
+    for pathname in Path('./script').glob('*.~ATH'):
+        fname = os.path.basename(pathname)
+        print('Processing:', fname)
+        with open(pathname, 'r') as athfile:
+            ast = ath_parser(athfile.read())
+        write_astfile(fname, ast)
+    print('Done!')
+
+
 class AthStackFrame(object):
     """Keeps a record of all symbols declared in a given scope.
     ~ATH implements dynamic scope, so be wary when coding in it!
 
     It also keeps AST execution and evaluation state, so that the
-    execution and evaluation trampolines know where to continue.
+    execution and evaluation loops know where to continue from.
     """
-    __slots__ = ('scope_vars', 'return_pt', 'state', 'eval_stack')
+    __slots__ = ('scope_vars', 'ast', 'state', 'eval_stack')
 
-    def __init__(self, scope_vars=None, return_pt=None, state=0, eval_stack=[]):
+    def __init__(self, scope_vars=None, ast=None, state=0, eval_stack=[]):
         if not scope_vars:
             self.scope_vars = {}
         else:
             self.scope_vars = scope_vars
-        self.return_pt = return_pt
+        self.ast = ast
         self.state = state
         self.eval_stack = eval_stack
 
     def __str__(self):
-        return '\nAthStackFrame({}, {}, {}, {})'.format(
-            self.state, self.return_pt, self.scope_vars, self.eval_stack
+        item = self.ast[self.ast.index-1]
+        if isinstance(item, TildeAthLoop):
+            itemstr = repr(item.__class__.__name__)
+        else:
+            itemstr = repr(item)
+        return (
+            '<~ATH StackFrame>\n'
+            'Scope: {},\n'
+            'Return Node: {},\n'
+            'State: {},\n'
+            'Evaluation: {},\n'
+            ).format(
+            self.scope_vars,
+            itemstr,
+            self.state,
+            self.eval_stack,
             )
 
     def __repr__(self):
-        return '{}({}, {}, {}, {})'.format(
-            self.__class__.__name__,
-            self.scope_vars,
-            self.return_pt.__class__.__name__,
-            self.state,
-            [item.__class__.__name__ for item in self.eval_stack],
+        return '\nAthStackFrame({}, {}, {}, {})'.format(
+            self.state, self.ast, self.scope_vars, self.eval_stack
             )
-
-    def __getitem__(self, name):
-        return self.scope_vars[name]
-
-    def __setitem__(self, name, value=None):
-        if value is None:
-            value = AthSymbol(False)
-        try:
-            symbol = self.scope_vars[name]
-        except KeyError:
-            pass
-        finally:
-            self.scope_vars[name] = value
 
 
 class TildeAthInterp(object):
-    """This is supposed to be a Finite State Machine"""
+    """Runs the finite state machine governing ~ATH program behavior."""
     __slots__ = ('modules', 'bltin_vars', 'stack', 'ast', 'state')
     # Execution state final variables.
     TOPLEVEL_STATE = 0 # Toplevel imperative execution
@@ -71,12 +91,22 @@ class TildeAthInterp(object):
     TILALIVE_STATE = 2 # Looping in continuable life-checking loops
     FUNCEXEC_STATE = 3 # Inside a function body
     FXRETURN_STATE = 4 # Returning from a function
+    # Base string for AST representation that can be run in python.
+    REPRESENTATION = (
+        '#!/usr/bin/env python\n'
+        'from athast import *\n'
+        'from symbol import ThisSymbol\n'
+        'from tildeath import TildeAthInterp\n\n'
+        'ast = {!r}\n'
+        'interp = TildeAthInterp()\n'
+        'interp.bltin_vars[\'THIS\'] = ThisSymbol({!r}, ast)\n'
+        'interp.execute(ast)\n'
+        )
 
     def __init__(self):
         self.modules = {}
         self.bltin_vars = {
-            'THIS': BuiltinSymbol(),
-            'NULL': NullSymbol(),
+            'NULL': NULL,
             'DIE': BuiltinSymbol(),
             '~ATH': BuiltinSymbol(),
             'print': BuiltinSymbol(),
@@ -99,11 +129,14 @@ class TildeAthInterp(object):
         # Current execution state.
         self.state = 0
 
-    def push_stack(self, state, init_dict={}):
+    def push_stack(self, ast, state, init_dict={}, eval_stack=[]):
         """Adds one stack frame and handles most of the internal state changes."""
-        self.stack[-1].return_pt = self.ast
+        self.stack[-1].eval_stack = eval_stack
         self.stack[-1].state = self.state
-        self.stack.append(AthStackFrame(init_dict, None, state))
+        self.stack.append(AthStackFrame(init_dict, ast, state))
+        ast_iterator = iter(ast)
+        self.ast = ast_iterator
+        self.stack[-1].ast = ast_iterator
         self.state = state
         stacklen = len(self.stack)
         if stacklen == 1000:
@@ -117,34 +150,33 @@ class TildeAthInterp(object):
             print('stop making the stack not STOP from getting any taller!!!')
 
     def pop_stack(self, state=None):
-        """Removes one stack frame."""
+        """Removes one stack frame and resets internal execution state."""
         self.stack.pop()
         self.state = self.stack[-1].state if state is None else state
-        self.ast = self.stack[-1].return_pt
+        self.ast = self.stack[-1].ast
 
     def lookup_name(self, name):
         """Dynamic scope lookup."""
         for frame in reversed(self.stack):
             try:
-                return frame[name]
+                return frame.scope_vars[name]
             except KeyError:
                 continue
         try:
             return self.bltin_vars[name]
-        except KeyError:
-            raise NameError('Symbol {} not found'.format(name))
+        except KeyError as keyerr:
+            raise NameError('Symbol {} not found'.format(name)) from keyerr
 
     def assign_name(self, name, value):
         """Dynamic scope assignment."""
         try:
-            self.stack[-1][name] = value
+            self.stack[-1].scope_vars[name] = value
         except IndexError:
             raise RuntimeError('All the stack frames died, what the fuck happened?')
 
-    def is_tail_call(self, eval_stack):
+    def is_tail_call(self, eval_len):
         """Returns True if the currently evaluated AST node is a tail call."""
-        eval_len = len(eval_stack)
-        if eval_len == 2 and isinstance(eval_stack[0], DivulgateStmt):
+        if eval_len == 2 and isinstance(self.ast[self.ast.index-1], DivulgateStmt):
             # Top expression in a return statement is a function call
             return True
         if eval_len == 1 and self.state == self.FUNCEXEC_STATE:
@@ -163,153 +195,138 @@ class TildeAthInterp(object):
 
     def trampoline(self, eval_stack, return_val=None):
         """Evaluation trampoline that models recursive AST node calls."""
-        ctrl_name = self.ast.ctrl_name
         # If return_val is not None, a value was returned from a function.
-        if return_val is not None:
-            # Pass the return value to the caller.
-            eval_stack[-1].return_val = return_val
+        value = return_val
         while True:
             # Execution must continue from the expression on top of the stack.
-            # print(eval_stack)
             try:
                 # Evaluate the expression at the top of the stack.
-                callback, value = next(eval_stack[-1].eval_gen)
-            except SymbolDeath:
-                if not self.lookup_name('THIS'):
+                node, value = eval_stack[-1].send(value)
+            except IndexError:
+                # If there are no more expressions, move on.
+                return value
+            except SymbolDeath as death_exc:
+                if 'THIS' in death_exc.args[0]:
                     # If THIS dies, end execution.
                     sys.exit(0)
-                elif not self.lookup_name(ctrl_name):
-                    # print(self.stack)
-                    # If the AST control name dies, reraise.
-                    raise
-                callback, value = None, None
-            # print(value if value is not None else '')
-            if callback:
-                # If there's a callback, see if it's a function call.
-                if not isinstance(callback, AthFunction):
+                elif self.ast.ctrl_name in death_exc.args[0]:
+                    # If the AST control name dies, evaluate state.
+                    if self.state == self.TILALIVE_STATE:
+                        # Death as continue
+                        iter(self.ast)
+                    elif self.state == self.FUNCEXEC_STATE:
+                        # Death as end function
+                        self.pop_stack()
+                        eval_stack = self.stack[-1].eval_stack
+                        value = AthSymbol(False)
+                        continue
+                    else:
+                        # Death as break  
+                        self.pop_stack()
+                    return AthSymbol(False)
+                node, value = None, None
+            if node:
+                # If there's a node, see if it's a function call.
+                if not isinstance(node, AthFunction):
                     # Push evaluation stack if it's not a function.
-                    eval_stack.append(callback.iterate(self))
+                    eval_stack.append(node.eval(self))
                     continue
-                # If it is a tail call, don't push the stack.
-                if self.is_tail_call(eval_stack):
+                if self.is_tail_call(len(eval_stack)):
+                    # If it is a tail call, don't push the stack.
                     self.stack[-1].scope_vars = value
-                    self.stack[-1].eval_stack = []
-                    return iter(callback.body)
-                # If the callback is a function, move to function state.
-                eval_stack.pop()
-                self.stack[-1].eval_stack = eval_stack
-                self.push_stack(self.FUNCEXEC_STATE, value)
-                return iter(callback.body)
-            # If there's no callback, this expression is done.
+                    self.stack[-1].eval_stack.clear()
+                    ast = iter(node.body)
+                    self.stack[-1].ast = ast
+                    self.ast = ast
+                else:
+                    # If the node is a function, move to function state.
+                    eval_stack.pop()
+                    self.push_stack(node.body, self.FUNCEXEC_STATE, value, eval_stack)
+                return None
+            # If there's no node, this expression is done.
             eval_stack.pop()
-            try:
-                # Use the return value in the next expression.
-                eval_stack[-1].return_val = value
-            except IndexError:
-                # If there are no more statements, move on.
-                self.stack[-1].eval_stack = []
-                return value
 
-    def execute(self):
+    def execute(self, ast):
         """Executes an interpreter given an ast attribute."""
+        # Initialize unbound loop counter.
         count = 0
+        # Initialize AST iterator references.
+        self.ast = iter(ast)
+        self.stack[0].ast = self.ast
         try:
             while True:
-                if self.state == self.TOPLEVEL_STATE:
-                    try:
-                        node = next(self.ast)
-                    except StopIteration:
-                        # Reset AST iteration state.
+                while self.state == self.FXRETURN_STATE:
+                    # If returning from a function:
+                    frame = self.stack[-1]
+                    if not frame.eval_stack:
+                        # Nothing left to evaluate, use frame state and proceed.
+                        self.state = frame.state
+                        del frame
+                        break
+                    # Continue the paused execution with the returned value.
+                    return_val = self.trampoline(frame.eval_stack, return_val)
+                    if isinstance(node, DivulgateStmt) and return_val is not None:
+                        # Another return, move back one stack frame again.
+                        self.pop_stack(self.FXRETURN_STATE)
+                        node = self.ast[self.ast.index-1]
+                        continue
+                    # Not a return, use frame state and proceed.
+                    self.state = frame.state
+                    del frame
+                # Get the next statement AST node.
+                try:
+                    node = next(self.ast)
+                except StopIteration:
+                    # Evaluate what to do after reaching the end based on state.
+                    if self.state == self.TOPLEVEL_STATE:
+                        # Reset AST iteration state if exiting toplevel.
                         iter(self.ast)
                         # Prevent infinite iteration from toplevel.
-                        if count == 1025:
+                        if count >= 1025:
                             echo_error(
                                 'UnboundATHLoopError: THIS.DIE() not called'
                                 )
                         count += 1
-                        continue
-                elif self.state == self.TILDEATH_STATE:
-                    try:
-                        node = next(self.ast)
-                    except StopIteration:
+                    elif self.state == self.TILDEATH_STATE:
+                        # Breakable exit-on-death loops.
                         if not self.lookup_name(self.ast.ctrl_name):
                             # If the control name died, kill the loop.
                             self.pop_stack()
                         else:
                             # Reset AST iteration state when continuing loop.
                             iter(self.ast)
-                        continue
-                elif self.state == self.TILALIVE_STATE:
-                    try:
-                        node = next(self.ast)
-                    except StopIteration:
+                    elif self.state == self.TILALIVE_STATE:
+                        # Continuable exit-on-life loops.
                         if self.lookup_name(self.ast.ctrl_name):
                             # If the control name lives, kill the loop.
                             self.pop_stack()
                         else:
                             # Reset AST iteration state when continuing loop.
                             iter(self.ast)
-                        continue
-                elif self.state == self.FUNCEXEC_STATE:
-                    try:
-                        node = next(self.ast)
-                    except StopIteration:
+                    elif self.state == self.FUNCEXEC_STATE:
+                        # If the function exits without a return, return NULL.
                         self.pop_stack(self.FXRETURN_STATE)
                         return_val = AthSymbol(False)
-                        continue
-                elif self.state == self.FXRETURN_STATE:
-                    if not self.stack[-1].eval_stack:
-                        self.state = self.stack[-1].state
-                        continue
-                    try:
-                        value = self.trampoline(self.stack[-1].eval_stack, return_val)
-                    except SymbolDeath:
-                        self.state = self.stack[-1].state
-                    else:
-                        if isinstance(value, AthAstList):
-                            self.ast = value
-                        elif isinstance(self.ast[self.ast.index-1], DivulgateStmt):
-                            self.pop_stack(self.FXRETURN_STATE)
-                            return_val = value
-                        else:
-                            self.state = self.stack[-1].state
                     continue
-                # print(node.__class__)
-                # Evalutate execution state.
                 if isinstance(node, TildeAthLoop):
                     # Do not allow entry into the loop when the variable state matches
                     # failure condition.
                     if self.lookup_name(node.body.ctrl_name).alive == node.state:
                         continue
                     # Add stack frame and replace ast reference.
-                    self.push_stack(1 + int(node.state))
-                    self.ast = iter(node.body)
+                    self.push_stack(node.body, 1 + int(node.state))
                     continue
-                # print(self.stack[-1])
-                try:
-                    value = self.trampoline([node.iterate(self)])
-                except SymbolDeath:
-                    if self.state != self.TILALIVE_STATE:
-                        # Death as break
-                        self.pop_stack()
-                        if self.state == self.FUNCEXEC_STATE:
-                            return_val = AthSymbol(False)
-                            self.state = self.FXRETURN_STATE
-                    else:
-                        # print(self.stack[-1])
-                        # Death as continue
-                        iter(self.ast)
-                    continue
-                if isinstance(value, AthAstList):
-                    self.ast = value
-                elif isinstance(node, DivulgateStmt):
+                # Evaluate the AST node's set of expressions and logic.
+                return_val = self.trampoline([node.eval(self)])
+                if isinstance(node, DivulgateStmt) and return_val is not None:
+                    # Return from a function.
                     self.pop_stack(self.FXRETURN_STATE)
-                    return_val = value
+                    node = self.ast[self.ast.index-1]
         except KeyboardInterrupt:
             print('\n'.join(repr(frame.scope_vars) for frame in self.stack))
             raise
         except Exception:
-            print('dude its ESCAPING TO THE SIDE, stop it!!!!')
+            print('\ndude its ESCAPING TO THE SIDE, stop it!!!!')
             raise
 
     def interpret(self, fname):
@@ -317,40 +334,11 @@ class TildeAthInterp(object):
             echo_error('IOError: script must be a ~ATH file')
         with open(os.path.join('script', fname), 'r') as script_file:
             script = script_file.read()
-            self.ast = ath_parser(script)
-
-        for stmt in self.ast:
-            if isinstance(stmt, TildeAthLoop):
-                self.ast.index = 0
-                break
-        else:
-            echo_error('RuntimeError: no ~ATH loop found in top-level script')
-
-        with open('ast_'+fname[:-4]+'py', 'w') as py_file:
-            py_file.write('#!/usr/bin/env python\nfrom athast import *\n')
-            py_file.write('from tildeath import TildeAthInterp\n\n')
-            py_file.write('interp = TildeAthInterp()\n')
-            py_file.write('interp.ast = ' + repr(self.ast))
-            py_file.write('\ninterp.execute()\n')
-
-        self.bltin_vars['THIS'].left = fname
-        self.bltin_vars['THIS'].right = AthFunction(fname[:-5], [], self.ast)
-        self.execute()
-
-
-def parse_all():
-    print('Writing ~ATH scripts to local python ast script...')
-    for pathname in Path('./script').glob('*.~ATH'):
-        print('Processing:', str(pathname))
-        with open(pathname, 'r') as athfile:
-            ast = ath_parser(athfile.read())
-        with open('ast_'+os.path.basename(pathname)[:-4]+'py', 'w') as astfile:
-            astfile.write('#!/usr/bin/env python\nfrom athast import *\n')
-            astfile.write('from tildeath import TildeAthInterp\n\n')
-            astfile.write('interp = TildeAthInterp()\n')
-            astfile.write('interp.ast = ' + repr(ast))
-            astfile.write('\ninterp.execute()\n')
-    print('Done!')
+            ast = ath_parser(script)
+        write_astfile(fname, self.ast)
+        # Initialize THIS.
+        self.bltin_vars['THIS'] = ThisSymbol(fname, ast)
+        self.execute(ast)
 
 
 if __name__ == '__main__':

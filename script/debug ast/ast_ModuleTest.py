@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 from athast import *
+from symbol import ThisSymbol
 from tildeath import TildeAthInterp
 
-interp = TildeAthInterp()
-interp.ast = AthAstList([
+ast = AthAstList([
     FabricateStmt(AthFunction('FIB', ['LENGTH'], AthAstList([
         ProcreateStmt('N1', IntExpr(0)),
         ProcreateStmt('N2', IntExpr(0)),
@@ -11,7 +11,7 @@ interp.ast = AthAstList([
         ProcreateStmt('LOOP', None),
         TildeAthLoop(False, AthAstList([
             CondJumpStmt(BinaryExpr('<=', VarExpr('LENGTH'), IntExpr(1)), 1),
-            KillStmt(VarExpr('LOOP')),
+            KillStmt(['LOOP']),
             ProcreateStmt('N1', VarExpr('N2')),
             ProcreateStmt('N2', VarExpr('N3')),
             ProcreateStmt('N3', BinaryExpr('+', VarExpr('N1'), VarExpr('N2'))),
@@ -23,9 +23,11 @@ interp.ast = AthAstList([
         ], 'FIB')
     )),
     TildeAthLoop(False, AthAstList([
-        KillStmt(VarExpr('THIS'))
+        KillStmt(['THIS'])
         ], 'THIS'),
     ExecuteStmt([VarExpr('NULL')])
     )
     ], 'THIS')
-interp.execute()
+interp = TildeAthInterp()
+interp.bltin_vars['THIS'] = ThisSymbol('ModuleTest.~ATH', ast)
+interp.execute(ast)
