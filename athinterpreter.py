@@ -103,7 +103,6 @@ class TildeAthInterp(object):
             node.set_argv(ret_value)
         while True:
             # print(node.stmt, node.argv)
-            print(eval_state)
             try:
                 arg = node.get_arg()
             except IndexError:
@@ -121,16 +120,21 @@ class TildeAthInterp(object):
                         else:
                             pass
                 else:
-                    if eval_state:
+                    if len(eval_state) > 2:
                         eval_state.pop()
+                        node = eval_state[-1]
                         continue
-                    print('End!')
                     return ret_value
             else:
                 if isinstance(arg, LiteralToken):
                     node.set_argv(arg.value)
                 elif isinstance(arg, IdentifierToken):
-                    node.set_argv(self.get_symbol(arg.name))
+                    if node.stmt.name == 'DIE':
+                        node.set_args((arg.name for arg in node.stmt.args))
+                    elif node.stmt.name == 'EXECUTE' and node.stmt.args[0].name == 'DIE':
+                        node.set_args((arg.name for arg in node.stmt.args[1:]))
+                    else:
+                        node.set_argv(self.get_symbol(arg.name))
                 elif isinstance(arg, AthTokenStatement):
                     pass
                 elif isinstance(arg, AthStatement):

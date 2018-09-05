@@ -99,6 +99,9 @@ class AthExecutor(object):
     def set_argv(self, arg):
         self.argv.append(arg)
 
+    def set_args(self, args):
+        self.argv.extend(args)
+
     def execute(self, env):
         return self.stmt.func(env, *self.argv)
 
