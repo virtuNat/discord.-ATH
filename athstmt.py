@@ -1,19 +1,117 @@
+import operator
+from functools import partial
 from athsymbol import (
-    AthExpr, AthSymbol, BuiltinSymbol, AthBuiltinFunction,
+    isAthValue, AthExpr, AthSymbol,
+    BuiltinSymbol, AthBuiltinFunction,
+    SymbolError,
     )
 from athbuiltins_default import ath_builtins
 
 
-def unary_operator_dispatch(env, opr, val):
-    pass
+def cmp_opr(lval, rval, op):
+    if isAthValue(lval):
+        lval = AthSymbol(bool(lval), left=lval)
+    return op(lval, rval)
 
 
-def binary_operator_dispatch(env, opr, lft, rht):
-    pass
+def bool_not(val):
+    if isAthValue(val):
+        val = AthSymbol(bool(val), left=val)
+    return AthSymbol(not val, val.left, val.right)
 
 
-def condijump_statement(env, expr, jlen):
-    pass
+def bool_opr(lval, rval, op):
+    if isAthValue(lval):
+        lval = AthSymbol(bool(lval), left=lval)
+    if isAthValue(rval):
+        rval = AthSymbol(bool(rval), left=rval)
+    if op == '&&':
+        return lval and rval
+    elif op == '||':
+        return lval or rval
+    elif op == '^^':
+        return (
+            lval if lval and not rval else
+            rval if rval and not lval else
+            AthSymbol(False)
+            )
+    raise SyntaxError('Invalid comparison operator: {}', op)
+
+
+def symbol_opr(lval, rval, op):
+    if not (isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol)):
+        raise TypeError('May only perform living assertions on symbols')
+    try:
+        if op == '!=!':
+            value = lval is rval
+        elif op == '?=!':
+            value = lval.left.alive and rval.left.alive
+        elif op == '!=?':
+            value = lval.right.alive and rval.right.alive
+        elif op == '~=!':
+            value = not (lval.left.alive or rval.left.alive)
+        elif op == '!=~':
+            value = not (lval.right.alive or rval.right.alive)
+        elif op == '~=~':
+            value = lval is not rval
+        else:
+            raise SyntaxError('Invalid comparison operator: {}', op)
+    except AttributeError:
+        raise SymbolError('The relevant side(s) must be symbols')
+    return AthSymbol(value)
+
+
+unops = {
+    '+': operator.pos,
+    '-': operator.neg,
+    '~': operator.inv,
+    '!': bool_not,
+}
+
+
+biops = {
+    '**': operator.pow,
+    '*': operator.mul,
+    '/': operator.truediv,
+    '/_': operator.floordiv,
+    '%': operator.mod,
+    '+': operator.add,
+    '-': operator.sub,
+    '<<': operator.lshift,
+    '>>': operator.rshift,
+    '&': operator.and_,
+    '|': operator.or_,
+    '^': operator.xor,
+    '<': partial(cmp_opr, op=operator.lt),
+    '<=': partial(cmp_opr, op=operator.le),
+    '>': partial(cmp_opr, op=operator.gt),
+    '>=': partial(cmp_opr, op=operator.ge),
+    '==': partial(cmp_opr, op=operator.eq),
+    '~=': partial(cmp_opr, op=operator.ne),
+    '&&': partial(bool_opr, op='&&'),
+    '||': partial(bool_opr, op='||'),
+    '^^': partial(bool_opr, op='^^'),
+    '!=!': partial(symbol_opr, op='!=!'),
+    '?=!': partial(symbol_opr, op='?=!'),
+    '!=?': partial(symbol_opr, op='!=?'),
+    '~=!': partial(symbol_opr, op='~=!'),
+    '!=~': partial(symbol_opr, op='!=~'),
+    '~=~': partial(symbol_opr, op='~=~'),
+}
+
+
+def unopr_expression(env, opr, val):
+    return unops[opr](val)
+
+
+def biopr_expression(env, opr, lft, rht):
+    return biops[opr](lft, rht)
+
+
+def on_dead_jump(env, expr, jlen):
+    if not expr:
+        env.stack[-1].iter_nodes.index += jlen
+    return AthSymbol(False)
 
 
 class AthCustomFunction(AthExpr):
@@ -174,7 +272,7 @@ class UnaryExpr(AthStatement):
         super().__init__(
             args,
             self.__class__.__name__,
-            AthBuiltinFunction(self.__class__.__name__, unary_operator_dispatch, 2)
+            AthBuiltinFunction(self.__class__.__name__, unopr_expression, 2)
             )
 
 
@@ -185,7 +283,7 @@ class BnaryExpr(AthStatement):
         super().__init__(
             args,
             self.__class__.__name__,
-            AthBuiltinFunction(self.__class__.__name__, binary_operator_dispatch, 3)
+            AthBuiltinFunction(self.__class__.__name__, biopr_expression, 3)
             )
 
 
@@ -196,7 +294,7 @@ class CondiJump(AthStatement):
         super().__init__(
             args,
             self.__class__.__name__,
-            AthBuiltinFunction(self.__class__.__name__, condijump_statement, 2)
+            AthBuiltinFunction(self.__class__.__name__, on_dead_jump, 2)
             )
 
 
