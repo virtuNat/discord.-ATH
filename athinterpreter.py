@@ -129,10 +129,8 @@ class TildeAthInterp(object):
                 if isinstance(arg, LiteralToken):
                     node.set_argv(arg.value)
                 elif isinstance(arg, IdentifierToken):
-                    if node.stmt.name == 'DIE':
-                        node.set_args((arg.name for arg in node.stmt.args))
-                    elif node.stmt.name == 'EXECUTE' and node.stmt.args[0].name == 'DIE':
-                        node.set_args((arg.name for arg in node.stmt.args[1:]))
+                    if node.is_name_arg():
+                        node.set_argv(arg.name)
                     else:
                         node.set_argv(self.get_symbol(arg.name))
                 elif isinstance(arg, AthTokenStatement):

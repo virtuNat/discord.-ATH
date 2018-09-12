@@ -2,7 +2,7 @@ import operator
 from functools import partial
 from athsymbol import (
     isAthValue, AthExpr, AthSymbol,
-    BuiltinSymbol, AthBuiltinFunction,
+    BuiltinSymbol, AthBuiltinFunction, AthCustomFunction,
     SymbolError,
     )
 from athbuiltins_default import ath_builtins
@@ -114,18 +114,6 @@ def on_dead_jump(env, expr, jlen):
     return AthSymbol(False)
 
 
-class AthCustomFunction(AthExpr):
-    __slots__ = ('name', 'argfmt', 'body')
-
-    def __init__(self, name, argfmt, body):
-        self.name = name
-        self.argfmt = argfmt
-        self.body = body
-
-    def __str__(self):
-        return '<~ATH Custom Function {}>'.format(self.name)
-
-
 class ThisSymbol(BuiltinSymbol):
     __slots__ = ()
 
@@ -186,6 +174,9 @@ class AthExecutor(object):
 
     def is_ready(self):
         return len(self.argv) == len(self.stmt.args)
+
+    def is_name_arg(self):
+        return self.stmt.bitmask < 0 or self.stmt.bitmask & (1 << len(self.argv))
 
     def get_arg(self):
         return self.stmt.args[len(self.argv)]

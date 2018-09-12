@@ -36,34 +36,36 @@ class AthExpr(object):
         return '{}({})'.format(self.__class__.__name__, attr_str)
 
 
-class AthBuiltinFunction(AthExpr):
-    """~ATH Builtin Function Wrappers."""
-    __slots__ = ('name', 'func', 'argsmin', 'argsmax')
+class AthFunction(AthExpr):
+    """Base Class for Ath Function Types."""
 
-    def __init__(self, name, func, argsmin, argsmax=None):
+
+class AthBuiltinFunction(AthFunction):
+    """~ATH Builtin Function Wrappers."""
+    __slots__ = ('name', 'func', 'bitmask')
+
+    def __init__(self, name, func, bitmask):
         self.name = name
         self.func = func
-        self.argsmin = argsmin
-        self.argsmax = argsmin if argsmax is None else argsmax
+        self.bitmask = bitmask
 
     def __repr__(self):
         return '<~ATH Builtin Function {}>'.format(self.name)
 
-    def pprint(self, level=0):
-        return '{}({!r}, {}, {}, {})'.format(
-            self.__class__.__name__,
-            self.name,
-            self.func.__name__,
-            self.argsmin,
-            self.argsmax,
-            )
-
     def __call__(self, env, *args):
-        alen = len(args)
-        if self.argsmin <= alen and (self.argsmax < 0 or alen <= self.argsmax):
-            return self.func(env, *args)
-        else:
-            raise TypeError
+        return self.func(env, *args)
+
+
+class AthCustomFunction(AthFunction):
+    __slots__ = ('name', 'argfmt', 'body')
+
+    def __init__(self, name, argfmt, body):
+        self.name = name
+        self.argfmt = argfmt
+        self.body = body
+
+    def __str__(self):
+        return '<~ATH Custom Function {}>'.format(self.name)
 
 
 class AthSymbol(AthExpr):
@@ -206,15 +208,12 @@ class AthSymbol(AthExpr):
             return True
         elif isinstance(self.left, AthSymbol):
             if isinstance(self.right, AthSymbol):
-                # If both values are symbols, return True
-                # if at least one value contains the symbol
-                return (
-                    self.left.__contains__(symbol) or 
-                    self.right.__contains__(symbol)
-                    )
+                t = self.right.__contains__(symbol)
             else:
-                # If only left is a symbol, check that one
-                return self.left.__contains__(symbol)
+                t = False
+            # If both values are symbols, return True
+            # if at least one value contains the symbol
+            return t or self.left.__contains__(symbol)
         elif isinstance(self.right, AthSymbol):
             # If only right is a symbol, check that one
             return self.right.__contains__(symbol)
@@ -285,8 +284,8 @@ class BuiltinSymbol(AthSymbol):
         self.right = right
 
     @classmethod
-    def from_builtin(cls, name, func, argsmin, argsmax=None):
-        return cls(True, name, AthBuiltinFunction(name, func, argsmin, argsmax))
+    def from_builtin(cls, name, func, bitmask):
+        return cls(True, name, AthBuiltinFunction(name, func, bitmask))
 
     def __repr__(self):
         return '{}({}, {!r}, {!r})'.format(
