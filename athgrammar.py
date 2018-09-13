@@ -119,6 +119,7 @@ ath_lexer = Lexer([
     (r'~', 'OPERATOR'), # Bitwise not
     # Literals and Identifiers
     (r'([\'"])[^\1]*?\1', 'LITERAL_STR'),
+    (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?[jJ]', 'LITERAL_IMG'),
     (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?', 'LITERAL_FLT'),
     (r'\d+', 'LITERAL_INT'),
     (r'[a-zA-Z]\w*', 'IDENTIFIER'),
@@ -128,6 +129,7 @@ ath_lexer = Lexer([
 
 
 # Value/variable token primitives
+imgparser = TagsParser('LITERAL_IMG') ^ partial(LiteralToken, vtype=complex)
 fltparser = TagsParser('LITERAL_FLT') ^ partial(LiteralToken, vtype=float)
 intparser = TagsParser('LITERAL_INT') ^ partial(LiteralToken, vtype=int)
 strparser = TagsParser('LITERAL_STR') ^ (lambda s: LiteralToken(s[1:-1]))
@@ -139,6 +141,22 @@ oprparser = lambda t: ItemParser(t, 'OPERATOR')
 
 
 # Expresssions
+def cplxexpr():
+    def breakdown(tokens):
+        real, oper, imag = tokens
+        if oper == '+':
+            val = real.value + imag.value
+        else:
+            val = real.value - imag.value
+        return LiteralToken(val, complex)
+    return (
+        (fltparser | intparser)
+        + (oprparser('+') | oprparser('-'))
+        + imgparser
+        ^ breakdown
+        )
+
+
 def execexpr():
     """Parses the execution statement as an expression."""
     def breakdown(tokens):
@@ -159,6 +177,7 @@ def exprvalparser():
         LazierParser(execexpr)
         | LazierParser(unaryexprparser)
         | idnparser
+        | imgparser
         | fltparser
         | intparser
         | strparser

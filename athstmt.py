@@ -101,11 +101,17 @@ biops = {
 
 
 def unopr_expression(env, opr, val):
-    return unops[opr](val)
+    ans = unops[opr](val)
+    if isAthValue(ans):
+        return AthSymbol(left=ans)
+    return ans
 
 
 def biopr_expression(env, opr, lft, rht):
-    return biops[opr](lft, rht)
+    ans = biops[opr](lft, rht)
+    if isAthValue(ans):
+        return AthSymbol(left=ans)
+    return ans
 
 
 def on_dead_jump(env, expr, jlen):
@@ -176,7 +182,8 @@ class AthExecutor(object):
         return len(self.argv) == len(self.stmt.args)
 
     def is_name_arg(self):
-        return self.stmt.bitmask < 0 or self.stmt.bitmask & (1 << len(self.argv))
+        bitmask = self.stmt.func.bitmask
+        return bitmask < 0 or bitmask & (1 << len(self.argv))
 
     def get_arg(self):
         return self.stmt.args[len(self.argv)]
@@ -263,7 +270,7 @@ class UnaryExpr(AthStatement):
         super().__init__(
             args,
             self.__class__.__name__,
-            AthBuiltinFunction(self.__class__.__name__, unopr_expression, 2)
+            AthBuiltinFunction(self.__class__.__name__, unopr_expression, 0)
             )
 
 
@@ -274,7 +281,7 @@ class BnaryExpr(AthStatement):
         super().__init__(
             args,
             self.__class__.__name__,
-            AthBuiltinFunction(self.__class__.__name__, biopr_expression, 3)
+            AthBuiltinFunction(self.__class__.__name__, biopr_expression, 0)
             )
 
 
@@ -285,7 +292,7 @@ class CondiJump(AthStatement):
         super().__init__(
             args,
             self.__class__.__name__,
-            AthBuiltinFunction(self.__class__.__name__, on_dead_jump, 2)
+            AthBuiltinFunction(self.__class__.__name__, on_dead_jump, 0)
             )
 
 

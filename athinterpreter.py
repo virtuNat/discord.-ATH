@@ -56,7 +56,7 @@ class AthStackFrame(object):
 
 class TildeAthInterp(object):
     """Runs the finite state machine governing ~ATH program behavior."""
-    __slots__ = ('modules', 'stack', 'nodes', 'exec_state')
+    __slots__ = ('modules', 'stack', 'nodes', 'exec_state', 'ast')
     # Execution state final variables.
     TOPLEVEL_STATE = 0 # Toplevel imperative execution
     TILDEATH_STATE = 1 # Looping in breakable death-checking loops
@@ -78,6 +78,7 @@ class TildeAthInterp(object):
         self.nodes = None
         # Current execution state.
         self.exec_state = 0
+        self.ast = None
 
     def get_symbol(self, token):
         for frame in reversed(self.stack):
@@ -102,7 +103,7 @@ class TildeAthInterp(object):
         if ret_value is not None:
             node.set_argv(ret_value)
         while True:
-            # print(node.stmt, node.argv)
+            # print(eval_state)
             try:
                 arg = node.get_arg()
             except IndexError:
@@ -118,15 +119,22 @@ class TildeAthInterp(object):
                         elif state == self.FUNCEXEC_STATE:
                             pass
                         else:
-                            pass
+                            self.stack.pop()
+                            self.ast = self.stack[-1].iter_nodes
+                            eval_state.clear()
+                            return AthSymbol(False)
                 else:
-                    if len(eval_state) > 2:
+                    if len(eval_state) > 1:
                         eval_state.pop()
                         node = eval_state[-1]
+                        node.set_argv(ret_value)
                         continue
+                    eval_state.clear()
                     return ret_value
             else:
-                if isinstance(arg, LiteralToken):
+                if isinstance(arg, str):
+                    node.set_argv(arg)
+                elif isinstance(arg, LiteralToken):
                     node.set_argv(arg.value)
                 elif isinstance(arg, IdentifierToken):
                     if node.is_name_arg():
@@ -137,6 +145,7 @@ class TildeAthInterp(object):
                     pass
                 elif isinstance(arg, AthStatement):
                     eval_state.append(arg.prepare())
+                    node = eval_state[-1]
 
 
     def eval_return(self, ret_value=None):
@@ -157,10 +166,10 @@ class TildeAthInterp(object):
             try:
                 ath_builtins['THIS'] = ThisSymbol(fname, stmts)
                 self.stack.append(AthStackFrame(iter_nodes=stmts.iter_nodes()))
-                ast = self.stack[-1].iter_nodes
+                self.ast = self.stack[-1].iter_nodes
                 while True:
                     try:
-                        node = next(ast)
+                        node = next(self.ast)
                     except StopIteration:
                         state = self.stack[-1].exec_state
                         if state == self.TOPLEVEL_STATE:
@@ -171,20 +180,20 @@ class TildeAthInterp(object):
                                     'UnboundedLoopError: THIS.DIE() never called'
                                     )
                             else:
-                                ast.reset()
+                                self.ast.reset()
                         elif state == self.FUNCEXEC_STATE:
                             self.stack.pop()
                             self.eval_return(AthSymbol(False))
-                            ast = self.stack[-1].iter_nodes
+                            self.ast = self.stack[-1].iter_nodes
                         else:
-                            if (self.get_symbol(ast.pendant).alive
+                            if (self.get_symbol(self.ast.pendant).alive
                                 == bool(state - self.TILDEATH_STATE)
                                 ):
                                 self.stack.pop()
-                                ast = self.stack[-1].iter_nodes
+                                self.ast = self.stack[-1].iter_nodes
                             else:
                                 sys.exit(0)
-                                ast.reset()
+                                self.ast.reset()
                         continue
                     # print(repr(node))
                     if isinstance(node, TildeAthLoop):
@@ -194,7 +203,7 @@ class TildeAthInterp(object):
                             iter_nodes=node.body.iter_nodes(),
                             exec_state=self.TILDEATH_STATE + int(node.state),
                             ))
-                        ast = self.stack[-1].iter_nodes
+                        self.ast = self.stack[-1].iter_nodes
                         continue
                     self.stack[-1].eval_state.append(node.prepare())
                     ret_value = self.eval_stmt()
@@ -204,7 +213,7 @@ class TildeAthInterp(object):
                         self.stack.pop()
                         self.eval_return(ret_value)
             except KeyboardInterrupt:
-                break # override
+                raise # override
                 self.stack.clear()
                 continue
             except Exception as exc:

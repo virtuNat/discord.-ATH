@@ -29,9 +29,9 @@ ath_builtins = AthBuiltinsDict(NULL=NULL)
 
 def pull_name(arg):
     if isinstance(arg, str):
-        return sym
+        return arg
     elif isinstance(arg, AthSymbol) and isinstance(arg.left, str):
-        return sym.left
+        return arg.left
     raise TypeError('cannot pull grave from non-string')
 
 def import_statement(env, module, symbol):
@@ -136,7 +136,7 @@ def input_statement(env, dst, ech=None):
         sym = env.get_symbol(dst)
     except NameError:
         sym = AthSymbol(left=value)
-        env.set_symbol(self.name, sym)
+        env.set_symbol(dst, sym)
     else:
         sym.left = value
     return sym
@@ -274,25 +274,25 @@ def bifurcate_statement(env, src, lft, rht):
     syml = None
     symr = None
     if lft != 'NULL':
-        if isinstance(symbol.left, AthSymbol):
+        if isinstance(syms.left, AthSymbol):
             if lft != src:
-                env.set_symbol(lft, symbol.left)
+                env.set_symbol(lft, syms.left)
             else:
-                syml = symbol.left
-        elif symbol.left is None:
+                syml = syms.left
+        elif syms.left is None:
             env.set_symbol(lft, AthSymbol(False))
         else:
-            env.set_symbol(lft, AthSymbol(left=symbol.left))
+            env.set_symbol(lft, AthSymbol(left=syms.left))
     if rht != 'NULL':
-        if isinstance(symbol.right, AthSymbol):
+        if isinstance(syms.right, AthSymbol):
             if rht != src:
-                env.set_symbol(rht, symbol.right)
+                env.set_symbol(rht, syms.right)
             else:
-                symr = symbol.right
-        elif symbol.right is None:
+                symr = syms.right
+        elif syms.right is None:
             env.set_symbol(rht, AthSymbol(False))
         else:
-            env.set_symbol(rht, AthSymbol(right=symbol.right))
+            env.set_symbol(rht, AthSymbol(right=syms.right))
     if syml is not None:
         syms.copyfrom(syml)
     elif symr is not None:
