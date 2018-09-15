@@ -1,18 +1,14 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('LOOP', IntExpr(0)),
-    TildeAthLoop(True, AthAstList([
-        PrintStmt([StringExpr("This shouldn't print.\\n")])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    PrintStmt([StringExpr('Yay.\\n')]),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('Negation.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), LiteralToken(0, int)]),
+    TildeAthLoop(True, AthStatementList([
+        AthTokenStatement('print', [LiteralToken("This shouldn't print.\\n", str)]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('print', [LiteralToken('Yay.\\n', str)]),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+TildeAthInterp().exec_stmts('Negation.~ATH', stmts)

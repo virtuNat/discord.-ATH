@@ -1,33 +1,27 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    FabricateStmt(AthFunction('FIB', ['LENGTH'], AthAstList([
-        ProcreateStmt('N1', IntExpr(0)),
-        ProcreateStmt('N2', IntExpr(0)),
-        ProcreateStmt('N3', IntExpr(1)),
-        ProcreateStmt('LOOP', None),
-        TildeAthLoop(False, AthAstList([
-            CondJumpStmt(BinaryExpr('<=', VarExpr('LENGTH'), IntExpr(1)), 1),
-            KillStmt(['LOOP']),
-            ProcreateStmt('N1', VarExpr('N2')),
-            ProcreateStmt('N2', VarExpr('N3')),
-            ProcreateStmt('N3', BinaryExpr('+', VarExpr('N1'), VarExpr('N2'))),
-            ReplicateStmt('LENGTH', BinaryExpr('-', VarExpr('LENGTH'), IntExpr(1)))
-            ], 'LOOP'),
-        ExecuteStmt([VarExpr('NULL')])
-        ),
-        DivulgateStmt(VarExpr('N3'))
-        ], 'FIB')
-    )),
-    TildeAthLoop(False, AthAstList([
-        KillStmt(['THIS'])
-        ], 'THIS'),
-    ExecuteStmt([VarExpr('NULL')])
-    )
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('ModuleTest.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('FABRICATE', [AthCustomFunction('FIB', ['LENGTH'], AthStatementList([
+        AthTokenStatement('PROCREATE', [IdentifierToken('N1'), LiteralToken(0, int)]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('N2'), LiteralToken(0, int)]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('N3'), LiteralToken(1, int)]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), None]),
+        TildeAthLoop(False, AthStatementList([
+            CondiJump([BnaryExpr(['<=', IdentifierToken('LENGTH'), LiteralToken(1, int)]), 1]),
+            AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+            AthTokenStatement('PROCREATE', [IdentifierToken('N1'), IdentifierToken('N2')]),
+            AthTokenStatement('PROCREATE', [IdentifierToken('N2'), IdentifierToken('N3')]),
+            AthTokenStatement('PROCREATE', [IdentifierToken('N3'), BnaryExpr(['+', IdentifierToken('N1'), IdentifierToken('N2')])]),
+            AthTokenStatement('REPLICATE', [IdentifierToken('LENGTH'), BnaryExpr(['-', IdentifierToken('LENGTH'), LiteralToken(1, int)])]),
+            ], pendant='LOOP'),
+            AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+        AthTokenStatement('DIVULGATE', [IdentifierToken('N3')])
+        ], pendant='FIB'))]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('DIE', [IdentifierToken('THIS')]),
+        ], pendant='THIS'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')]))
+    ], pendant='THIS')
+TildeAthInterp().exec_stmts('ModuleTest.~ATH', stmts)

@@ -1,0 +1,28 @@
+PROCREATE X 10;
+PROCREATE Y 11;
+PROCREATE Z 12;
+
+FABRICATE F(){
+  REPLICATE Y 2;
+  PROCREATE X Z + 1;
+  PROCREATE Z Y + 2;
+}
+
+FABRICATE G(){
+  REPLICATE Z 5;
+  FABRICATE H(){
+    REPLICATE X Z + 1;
+    PROCREATE Y X + 1;
+    EXECUTE(F);
+    EXECUTE(NULL); // Prevent stack frame replacement
+  }
+  EXECUTE(H);
+  EXECUTE(NULL); // Prevent stack frame replacement
+}
+
+~ATH(G){
+  EXECUTE(G);
+  print("~d, ~d, ~d", X, Y, Z);
+  G.DIE();
+}EXECUTE(NULL);
+THIS.DIE();

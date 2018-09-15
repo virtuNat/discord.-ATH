@@ -1,27 +1,22 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    PrintStmt([StringExpr('Welcome to ~ATH.\\n')]),
-    InputStmt('TEST', StringExpr('Input name: ')),
-    PrintStmt([StringExpr('Thank you, ~s for inputting.\\n'), VarExpr('TEST')]),
-    ProcreateStmt('CTR', IntExpr(5)),
-    ReplicateStmt('CT2', VarExpr('CTR')),
-    BifurcateStmt('CTR', 'CT3', 'CT2'),
-    AggregateStmt('CT2', VarExpr('CTR'), VarExpr('CT3')),
-    ReplicateStmt('CTR', VarExpr('NULL')),
-    TildeAthLoop(False, AthAstList([
-        PrintStmt([StringExpr('Print ~d times.\\n'), IntExpr(1)]),
-        KillStmt(['CTR']),
-        PrintStmt([StringExpr('This should not print.')])
-        ], 'CTR'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    PrintStmt([StringExpr('I wish you a peaceful death, ~s.\\n'), VarExpr('TEST')]),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('Test.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('print', [LiteralToken('Welcome to ~ATH.\\n', str)]),
+    AthTokenStatement('input', [IdentifierToken('TEST'), LiteralToken('Input name: ', str)]),
+    AthTokenStatement('print', [LiteralToken('Thank you, ~s for inputting.\\n', str), IdentifierToken('TEST')]),
+    AthTokenStatement('PROCREATE', [IdentifierToken('CTR'), LiteralToken(5, int)]),
+    AthTokenStatement('REPLICATE', [IdentifierToken('CT2'), IdentifierToken('CTR')]),
+    AthTokenStatement('BIFURCATE', [IdentifierToken('CTR'), IdentifierToken('CT3'), IdentifierToken('CT2')]),
+    AthTokenStatement('AGGREGATE', [IdentifierToken('CT2'), IdentifierToken('CTR'), IdentifierToken('CT3')]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('print', [LiteralToken('Print ~d times.\\n', str), LiteralToken(1, int)]),
+        AthTokenStatement('DIE', [IdentifierToken('CTR')]),
+        AthTokenStatement('print', [LiteralToken('This should not print.', str)]),
+        ], pendant='CTR'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('print', [LiteralToken('I wish you a peaceful death, ~s.\\n', str), IdentifierToken('TEST')]),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+TildeAthInterp().exec_stmts('Test.~ATH', stmts)

@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 from argparse import ArgumentParser
-from athsymbol import AthSymbol, SymbolDeath
+from athsymbol import AthSymbol, SymbolDeath, AthCustomFunction
 from athstmt import(
 	ath_builtins, ThisSymbol,
     LiteralToken, IdentifierToken, 
@@ -46,7 +46,7 @@ class AthStackFrame(object):
 
     def __repr__(self):
         return '\nAthStackFrame({}, {}, {}, {})'.format(
-            self.scope_vars, self.ast, self.exec_state, self.eval_state
+            self.scope_vars, self.iter_nodes, self.exec_state, self.eval_state
             )
 
     def get_current(self):
@@ -116,13 +116,15 @@ class TildeAthInterp(object):
                         state = self.stack[-1].exec_state
                         if state == self.TILALIVE_STATE:
                             self.stack[-1].iter_nodes.reset()
-                        elif state == self.FUNCEXEC_STATE:
-                            pass
                         else:
                             self.stack.pop()
                             self.ast = self.stack[-1].iter_nodes
-                            eval_state.clear()
-                            return AthSymbol(False)
+                            if state == self.FUNCEXEC_STATE:
+                                eval_state = self.stack[-1].eval_state
+                                ret_val = AthSymbol(False)
+                                continue
+                    eval_state.clear()
+                    return AthSymbol(False)
                 else:
                     if len(eval_state) > 1:
                         eval_state.pop()
@@ -132,7 +134,9 @@ class TildeAthInterp(object):
                     eval_state.clear()
                     return ret_value
             else:
-                if isinstance(arg, str):
+                if arg is None:
+                    node.set_argv(None)
+                elif isinstance(arg, (int, str, AthCustomFunction)):
                     node.set_argv(arg)
                 elif isinstance(arg, LiteralToken):
                     node.set_argv(arg.value)
@@ -142,7 +146,8 @@ class TildeAthInterp(object):
                     else:
                         node.set_argv(self.get_symbol(arg.name))
                 elif isinstance(arg, AthTokenStatement):
-                    pass
+                    if arg.name == 'EXECUTE': # Function call
+                        pass
                 elif isinstance(arg, AthStatement):
                     eval_state.append(arg.prepare())
                     node = eval_state[-1]
@@ -192,7 +197,6 @@ class TildeAthInterp(object):
                                 self.stack.pop()
                                 self.ast = self.stack[-1].iter_nodes
                             else:
-                                sys.exit(0)
                                 self.ast.reset()
                         continue
                     # print(repr(node))

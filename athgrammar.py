@@ -121,6 +121,7 @@ ath_lexer = Lexer([
     (r'([\'"])[^\1]*?\1', 'LITERAL_STR'),
     (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?[jJ]', 'LITERAL_IMG'),
     (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?', 'LITERAL_FLT'),
+    (r'\d+[jJ]', 'LITERAL_IMG'),
     (r'\d+', 'LITERAL_INT'),
     (r'[a-zA-Z]\w*', 'IDENTIFIER'),
     # Literally only used in DIE calls
@@ -141,22 +142,6 @@ oprparser = lambda t: ItemParser(t, 'OPERATOR')
 
 
 # Expresssions
-def cplxexpr():
-    def breakdown(tokens):
-        real, oper, imag = tokens
-        if oper == '+':
-            val = real.value + imag.value
-        else:
-            val = real.value - imag.value
-        return LiteralToken(val, complex)
-    return (
-        (fltparser | intparser)
-        + (oprparser('+') | oprparser('-'))
-        + imgparser
-        ^ breakdown
-        )
-
-
 def execexpr():
     """Parses the execution statement as an expression."""
     def breakdown(tokens):

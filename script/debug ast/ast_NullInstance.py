@@ -1,18 +1,14 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('LOOP', VarExpr('NULL')),
-    TildeAthLoop(False, AthAstList([
-        PrintStmt([StringExpr('Are you there.\\n')]),
-        KillStmt(['LOOP'])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('NullInstance.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), IdentifierToken('NULL')]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('print', [LiteralToken('Are you there.\\n', str)]),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+TildeAthInterp().exec_stmts('NullInstance.~ATH', stmts)

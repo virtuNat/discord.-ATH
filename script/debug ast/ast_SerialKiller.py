@@ -1,24 +1,19 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('FOO', None),
-    ProcreateStmt('BAR', None),
-    TildeAthLoop(False, AthAstList([
-        TildeAthLoop(False, AthAstList([
-            PrintStmt([StringExpr('Oof.\\n')]),
-            KillStmt(['FOO', 'BAR'])
-            ], 'BAR'),
-        ExecuteStmt([VarExpr('NULL')])
-        ),
-        PrintStmt([StringExpr('Well hello there.\\n')])
-        ], 'FOO'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('SerialKiller.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('FOO'), None]),
+    AthTokenStatement('PROCREATE', [IdentifierToken('BAR'), None]),
+    TildeAthLoop(False, AthStatementList([
+        TildeAthLoop(False, AthStatementList([
+            AthTokenStatement('print', [LiteralToken('Oof.\\n', str)]),
+            AthTokenStatement('DIE', [IdentifierToken('FOO'), IdentifierToken('BAR')]),
+            ], pendant='BAR'),
+            AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+        AthTokenStatement('print', [LiteralToken('Well hello there.\\n', str)]),
+        ], pendant='FOO'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+TildeAthInterp().exec_stmts('SerialKiller.~ATH', stmts)

@@ -1,17 +1,13 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    TildeAthLoop(False, AthAstList([
-        PrintStmt([StringExpr('Hello World!\\n')]),
-        PrintStmt([StringExpr('This is the script ~s!\\n'), VarExpr('THIS')]),
-        KillStmt(['THIS'])
-        ], 'THIS'),
-    ExecuteStmt([VarExpr('NULL')])
-    )
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('Hello.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('print', [LiteralToken('Hello World!\\n', str)]),
+        AthTokenStatement('print', [LiteralToken('This is the script ~s!\\n', str), IdentifierToken('THIS')]),
+        AthTokenStatement('DIE', [IdentifierToken('THIS')]),
+        ], pendant='THIS'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')]))
+    ], pendant='THIS')
+TildeAthInterp().exec_stmts('hello.~ATH', stmts)

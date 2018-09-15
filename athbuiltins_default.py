@@ -208,7 +208,7 @@ def replicate_statement(env, dst, src=None):
         elif isinstance(src, AthSymbol):
             # If a symbol is replicated, copy it.
             sym = src.copy()
-        elif isAthValue(value):
+        elif isAthValue(src):
             # If a value is replicated, set it to left.
             sym = AthSymbol(left=src)
         else:
@@ -258,7 +258,7 @@ def enumerate_statement(env, src, dst):
     if not isinstance(val, str):
         raise TypeError('ENUMERATE only takes strings')
 
-    charlist = [AthSymbol(left=char) for char in string]
+    charlist = [AthSymbol(left=char) for char in val]
     for i in range(len(charlist) - 1):
         charlist[i].assign_right(charlist[i + 1])
     charlist[-1].assign_right(AthSymbol(False))

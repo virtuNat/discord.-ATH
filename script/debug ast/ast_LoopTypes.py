@@ -1,33 +1,28 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('LOOP', IntExpr(0)),
-    TildeAthLoop(False, AthAstList([
-        PrintStmt([StringExpr('~d'), VarExpr('LOOP')]),
-        CondJumpStmt(BinaryExpr('>', VarExpr('LOOP'), IntExpr(9)), 1),
-        KillStmt(['LOOP']),
-        ProcreateStmt('LOOP', BinaryExpr('+', VarExpr('LOOP'), IntExpr(1))),
-        PrintStmt([StringExpr(', ')])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    PrintStmt([StringExpr('\\n~d\\n'), VarExpr('LOOP')]),
-    TildeAthLoop(True, AthAstList([
-        PrintStmt([StringExpr('~d'), VarExpr('LOOP')]),
-        CondJumpStmt(BinaryExpr('>', VarExpr('LOOP'), IntExpr(0)), 3),
-        ReplicateStmt('LOOP', BinaryExpr('-', VarExpr('LOOP'), IntExpr(1))),
-        PrintStmt([StringExpr(', ')]),
-        KillStmt(['LOOP']),
-        ReplicateStmt('LOOP', UnaryExpr('!', VarExpr('LOOP'))),
-        PrintStmt([StringExpr('\\n')])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('LoopTypes.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), LiteralToken(0, int)]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('print', [LiteralToken('~d', str), IdentifierToken('LOOP')]),
+        CondiJump([BnaryExpr(['>', IdentifierToken('LOOP'), LiteralToken(9, int)]), 1]),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), BnaryExpr(['+', IdentifierToken('LOOP'), LiteralToken(1, int)])]),
+        AthTokenStatement('print', [LiteralToken(', ', str)]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('print', [LiteralToken('\\n~d\\n', str), IdentifierToken('LOOP')]),
+    TildeAthLoop(True, AthStatementList([
+        AthTokenStatement('print', [LiteralToken('~d', str), IdentifierToken('LOOP')]),
+        CondiJump([BnaryExpr(['>', IdentifierToken('LOOP'), LiteralToken(0, int)]), 3]),
+        AthTokenStatement('REPLICATE', [IdentifierToken('LOOP'), BnaryExpr(['-', IdentifierToken('LOOP'), LiteralToken(1, int)])]),
+        AthTokenStatement('print', [LiteralToken(', ', str)]),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        AthTokenStatement('REPLICATE', [IdentifierToken('LOOP'), UnaryExpr(['!', IdentifierToken('LOOP')])]),
+        AthTokenStatement('print', [LiteralToken('\\n', str)]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+TildeAthInterp().exec_stmts('LoopTypes.~ATH', stmts)

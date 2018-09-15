@@ -1,23 +1,19 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('LOOP', IntExpr(0)),
-    TildeAthLoop(False, AthAstList([
-        InputStmt('A', StringExpr('A: ')),
-        InputStmt('B', StringExpr('B: ')),
-        InputStmt('C', StringExpr('C: ')),
-        ReplicateStmt('R', BinaryExpr('/', BinaryExpr('+', UnaryExpr('-', VarExpr('B')), BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))),
-        ReplicateStmt('S', BinaryExpr('/', BinaryExpr('-', UnaryExpr('-', VarExpr('B')), BinaryExpr('**', BinaryExpr('-', BinaryExpr('**', VarExpr('B'), IntExpr(2)), BinaryExpr('*', BinaryExpr('*', IntExpr(4), VarExpr('A')), VarExpr('C'))), BinaryExpr('/', IntExpr(1), IntExpr(2)))), BinaryExpr('*', IntExpr(2), VarExpr('A')))),
-        PrintStmt([StringExpr('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~.4f and ~.4f.'), VarExpr('A'), VarExpr('B'), VarExpr('C'), VarExpr('R'), VarExpr('S')]),
-        KillStmt(['LOOP'])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('GetRoots.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), LiteralToken(0, int)]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('input', [IdentifierToken('A'), LiteralToken('A: ', str)]),
+        AthTokenStatement('input', [IdentifierToken('B'), LiteralToken('B: ', str)]),
+        AthTokenStatement('input', [IdentifierToken('C'), LiteralToken('C: ', str)]),
+        AthTokenStatement('REPLICATE', [IdentifierToken('R'), BnaryExpr(['/', UnaryExpr(['-', IdentifierToken('B')]), BnaryExpr(['*', LiteralToken(2, int), IdentifierToken('A')])])]),
+        AthTokenStatement('REPLICATE', [IdentifierToken('I'), BnaryExpr(['/', BnaryExpr(['**', BnaryExpr(['-', BnaryExpr(['**', IdentifierToken('B'), LiteralToken(2, int)]), BnaryExpr(['*', BnaryExpr(['*', LiteralToken(4, int), IdentifierToken('A')]), IdentifierToken('C')])]), LiteralToken(0.5, float)]), BnaryExpr(['*', LiteralToken(2, int), IdentifierToken('A')])])]),
+        AthTokenStatement('print', [LiteralToken('The roots of the quadratic equation ~dx^2 + ~dx + ~d are ~.4f and ~.4f.', str), IdentifierToken('A'), IdentifierToken('B'), IdentifierToken('C'), BnaryExpr(['+', IdentifierToken('R'), IdentifierToken('I')]), BnaryExpr(['-', IdentifierToken('R'), IdentifierToken('I')])]),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+TildeAthInterp().exec_stmts('GetRoots.~ATH', stmts)
