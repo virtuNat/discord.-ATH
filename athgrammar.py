@@ -4,6 +4,7 @@ This contains the token regex list used by the lexer and all
 the parser builders used to build the parser that creates the
 abstract syntax tree.
 """
+import sys
 from functools import partial, reduce
 
 from lexer import Lexer
@@ -65,10 +66,18 @@ ath_lexer = Lexer([
     # Separators
     (r';', 'DELIMITER'), # Statement separator
     (r',', 'DELIMITER'), # Group operator
+    # Boolean operators
+    (r'\bl&', 'OPERATOR'), # Boolean AND
+    (r'\bl\|', 'OPERATOR'), # Boolean OR
+    (r'\bl\^', 'OPERATOR'), # Boolean XOR
+    # Bitwise operators
+    (r'\bb&', 'OPERATOR'), # Bitwise and
+    (r'\bb\|', 'OPERATOR'), # Bitwise or
+    (r'\bb\^', 'OPERATOR'), # Bitwise xor
     # Arithmetic operators
     (r'\+', 'OPERATOR'), # Add, UnaryPos
     (r'-', 'OPERATOR'), # Sub, UnaryInv
-    (r'\*\*', 'OPERATOR'), # Pow
+    (r'\^', 'OPERATOR'), # Pow
     (r'\*', 'OPERATOR'), # Mul
     (r'/_', 'OPERATOR'), # FloorDiv
     (r'/', 'OPERATOR'), # TrueDiv
@@ -90,11 +99,6 @@ ath_lexer = Lexer([
     (r'>', 'OPERATOR'), # Greater than
     (r'~=', 'OPERATOR'), # Not equal to
     (r'==', 'OPERATOR'), # Equal to
-    # Boolean operators
-    (r'&&', 'OPERATOR'), # Boolean AND
-    (r'\|\|', 'OPERATOR'), # Boolean OR
-    (r'\^\^', 'OPERATOR'), # Boolean XOR
-    (r'!', 'OPERATOR'), # Boolean NOT
     # Statement keywords
     (r'DIE', 'KEYWORD'), # Kill symbol
     (r'~ATH', 'KEYWORD'), # Loop
@@ -112,10 +116,8 @@ ath_lexer = Lexer([
     (r'DIVULGATE', 'KEYWORD'), # Return a symbol
     (r'DEBATE', 'KEYWORD'), # Conditional Consequent
     (r'UNLESS', 'KEYWORD'), # Conditional Alternative
-    # Bitwise operators
-    (r'&', 'OPERATOR'), # Bitwise and
-    (r'\|', 'OPERATOR'), # Bitwise or
-    (r'\^', 'OPERATOR'), # Bitwise xor
+    # Inverters
+    (r'!', 'OPERATOR'), # Boolean NOT
     (r'~', 'OPERATOR'), # Bitwise not
     # Literals and Identifiers
     (r'([\'"])[^\1]*?\1', 'LITERAL_STR'),
@@ -128,7 +130,6 @@ ath_lexer = Lexer([
     (r'\.', 'DELIMITER'),
 ])
 
-
 # Value/variable token primitives
 imgparser = TagsParser('LITERAL_IMG') ^ partial(LiteralToken, vtype=complex)
 fltparser = TagsParser('LITERAL_FLT') ^ partial(LiteralToken, vtype=float)
@@ -139,7 +140,6 @@ varparser = TagsParser('IDENTIFIER') ^ IdentifierToken
 kwdparser = lambda t: ItemParser(t, 'KEYWORD')
 dlmparser = lambda t: ItemParser(t, 'DELIMITER')
 oprparser = lambda t: ItemParser(t, 'OPERATOR')
-
 
 # Expresssions
 def execexpr():
@@ -155,7 +155,6 @@ def execexpr():
         ^ breakdown
         )
 
-
 def exprvalparser():
     """Parses expression primitives."""
     return (
@@ -168,7 +167,6 @@ def exprvalparser():
         | strparser
         )
 
-
 def exprgrpparser():
     """Parses expression groups."""
     return (
@@ -178,13 +176,23 @@ def exprgrpparser():
         ^ (lambda t: t[1])
         )
 
-
 def unaryexprparser():
     """Parses unary expressions."""
     term = exprvalparser() | exprgrpparser()
     ops = oprparser('+') | oprparser('-') | oprparser('~') | oprparser('!')
     return ops + term ^ UnaryExpr
 
+# Operators listed in precendence order. Each tuple is a level of precedence.
+op_order = (
+    ('^',),
+    ('*', '/', '/_', '%'),
+    ('+', '-'),
+    ('<<', '>>'),
+    ('b&',), ('b|',), ('b^',),
+    ('<', '<=', '>', '>=', '==', '~='),
+    ('l&',), ('l|',), ('l^',),
+    ('!=!', '!=?', '?=!', '~=!', '!=~', '~=~')
+    )
 
 def exprparser():
     """Parses an infix expression."""
@@ -193,22 +201,10 @@ def exprparser():
         ops = reduce(SelectParser, map(oprparser, op_level))
         # Double lambda juju that magically ensures the operator is preserved.
         return ops ^ (lambda op: lambda l, r: BnaryExpr((op, l, r)))
-    # Operators listed in precendence order. Each tuple is a level of precedence.
-    op_order = [
-        ('**',),
-        ('*', '/', '/_', '%'),
-        ('+', '-'),
-        ('<<', '>>'),
-        ('&',), ('|',), ('^',),
-        ('<', '<=', '>', '>=', '==', '~='),
-        ('&&',), ('||',), ('^^',),
-        ('!=!', '!=?', '?=!', '~=!', '!=~', '~=~')
-        ]
     # Expression terms are either primitives, other expressions, or either in groups.
     term = exprvalparser() | exprgrpparser()
     # What the fuck does this do and why does it work??????????
     return reduce(StrictParser, [term] + [parse_ops(lvl) for lvl in op_order])
-
 
 def callparser():
     """Parses a group of expressions."""
@@ -230,7 +226,6 @@ def replistmt():
         ^ breakdown
         )
 
-
 def procrstmt():
     """Parses value declarations."""
     def breakdown(tokens):
@@ -243,7 +238,6 @@ def procrstmt():
         + dlmparser(';')
         ^ breakdown
         )
-
 
 def bfctstmt():
     """Parses the bifurcate statement."""
@@ -262,7 +256,6 @@ def bfctstmt():
         ^ breakdown
         )
 
-
 def aggrstmt():
     """Parses the aggregate statement."""
     def breakdown(tokens):
@@ -280,7 +273,6 @@ def aggrstmt():
         ^ breakdown
         )
 
-
 def enumstmt():
     """Parses the enumerate statement."""
     def breakdown(tokens):
@@ -294,7 +286,6 @@ def enumstmt():
         ^ breakdown
         )
 
-
 def importstmt():
     """Parses the import statement."""
     def breakdown(tokens):
@@ -307,7 +298,6 @@ def importstmt():
         + dlmparser(';')
         ^ breakdown
         )
-
 
 def inputstmt():
     """Parses the input statement."""
@@ -325,7 +315,6 @@ def inputstmt():
         ^ breakdown
         )
 
-
 def printfunc():
     """Parses the print function."""
     def breakdown(tokens):
@@ -340,28 +329,24 @@ def printfunc():
         ^ breakdown
         )
 
-
 def killfunc():
     """Parses the kill function."""
     def cull_seps(graft):
         return graft[0] or graft[1]
-    def break_args(tokens):
-        if isinstance(tokens, tuple):
-            return tokens[1]
-        else:
-            return [tokens]
     def breakdown(tokens):
-        syms, _, kwd, _, _, _= tokens
-        return AthTokenStatement(kwd, syms)
+        if len(tokens) > 6:
+            return AthTokenStatement(tokens[-4], tokens[1])
+        else:
+            return AthTokenStatement(tokens[-4], [tokens[0]])
     return (
-        ((idnparser | (
+        (idnparser | (
             dlmparser('[')
             + RepeatParser(
                 idnparser + OptionParser(dlmparser(',')) ^ cull_seps
                 )
             + dlmparser(']')
             )
-        ) ^ break_args)
+        )
         + dlmparser('.')
         + kwdparser('DIE')
         + dlmparser('(')
@@ -369,7 +354,6 @@ def killfunc():
         + dlmparser(';')
         ^ breakdown
         )
-
 
 def execfunc():
     """Parses the execution statement as a statement."""
@@ -385,7 +369,6 @@ def execfunc():
         ^ breakdown
         )
 
-
 def divlgstmt():
     """Parses the return statement."""
     def breakdown(tokens):
@@ -397,7 +380,6 @@ def divlgstmt():
         + dlmparser(';')
         ^ breakdown
         )
-
 
 def fabristmt():
     """Parses function declarations."""
@@ -423,7 +405,6 @@ def fabristmt():
         ^ breakdown
         )
 
-
 def tildeath():
     """Parses ~ATH loops."""
     def breakdown(tokens):
@@ -442,7 +423,6 @@ def tildeath():
         + execfunc()
         ^ breakdown
         )
-
 
 def condistmt(fabri=False):
     """Parses conditional statements."""
@@ -463,8 +443,8 @@ def condistmt(fabri=False):
             for idx, unless in enumerate(unlesses):
                 # Check if this is a clauseless unless that isn't the last unless.
                 if not unless[0] and idx < len(unlesses) - 1:
-                    print('Invalid DEBATE/UNLESS format')
-                    raise SyntaxError
+                    sys.stderr.write('SyntaxError: invalid unless format')
+                    sys.exit(SyntaxError)
                 # Calculate jump length.
                 bodylen = sum(
                     map(lambda u: len(u[1]) + 2, unlesses[idx:]),
@@ -479,7 +459,7 @@ def condistmt(fabri=False):
                 # Add the body.
                 stmtlist.extend(unless[1])
         return stmtlist
-    stmts = funcstmts if fabri else stmtparser
+    stmts = (stmtparser, funcstmts)[fabri]
     return (
         kwdparser('DEBATE')
         + dlmparser('(')
@@ -505,7 +485,6 @@ def condistmt(fabri=False):
         ^ breakdown
         )
 
-
 def inspstmt():
     def breakdown(tokens):
         kwd, _, args, _, _ = tokens
@@ -518,7 +497,6 @@ def inspstmt():
         + dlmparser(';')
         ^ breakdown
         )
-
 
 def funcstmts():
     """Parses the set of statements used in functions."""
@@ -540,7 +518,6 @@ def funcstmts():
         | condistmt(True) # conditionals
         | inspstmt() # Debug, remove
         )
-
 
 def stmtparser():
     """Parses the set of statements used top-level."""

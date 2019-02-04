@@ -7,14 +7,14 @@ def math_builtin(func, dtypes):
     def math_proxy_func(*values):
         args = []
         for value in values:
-            if isinstance(value, dtypes):
-                args.append(value)
-            elif (isinstance(value, AthSymbol)
+            if (isinstance(value, AthSymbol)
                 and isinstance(value.left, dtypes)
                 ):
                 args.append(value.left)
+            elif isinstance(value, dtypes):
+                args.append(value)
             raise TypeError('invalid numerical type')
-        return func(*args)
+        return AthSymbol(left=func(*args))
     return BuiltinSymbol.from_builtin(
         math_proxy_func(func, dtypes), 0
         )

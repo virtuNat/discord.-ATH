@@ -1,4 +1,5 @@
 import re
+from itertools import filterfalse
 from athsymbol import (
     AthSymbol, AthFunction, SymbolDeath,
     BuiltinSymbol, NullSymbol, isAthValue,
@@ -42,7 +43,7 @@ def import_statement(env, module, symbol):
     except KeyError:
         subproc = env.__class__()
         try:
-            subproc.interpret(module + '.~ATH')
+            subproc.interpret(module + '.~ATH', True)
         except SystemExit as exit_state:
             if exit_state.args[0]:
                 raise exit_state
@@ -162,8 +163,7 @@ def print_statement(env, *args):
     # Echoes a formatted string to stdout.
     if not args:
         raise TypeError('print statement empty')
-    frmtstr = args[0]
-    fmtargs = args[1:]
+    frmtstr, fmtargs = args[0], args[1:]
     if isinstance(frmtstr, AthSymbol):
         frmtstr = frmtstr.left
     elif not isinstance(frmtstr, str):
@@ -179,7 +179,7 @@ def print_statement(env, *args):
         for arg in fmtargs:
             if isinstance(arg, AthSymbol):
                 arg = arg.left
-            if isinstance(arg, (int, float, complex, str)):
+            if isAthValue(arg):
                 fmtargv.append(arg)
             else:
                 raise ValueError('print symbol left values must be primitive')
@@ -271,8 +271,7 @@ def bifurcate_statement(env, src, lft, rht):
     lft = pull_name(lft)
     rht = pull_name(rht)
     syms = env.get_symbol(pull_name(src))
-    syml = None
-    symr = None
+    syml = symr = None
     if lft != 'NULL':
         if isinstance(syms.left, AthSymbol):
             if lft != src:
@@ -303,15 +302,13 @@ def aggregate_statement(env, dst, lft, rht):
     # Merge two symbols or values together.
     dst = pull_name(dst)
     if lft is NULL:
-        lft= NULL.copy()
+        lft = NULL.copy()
     if rht is NULL:
         rht = NULL.copy()
     try:
         syms = env.get_symbol(dst)
     except NameError:
-        syms = AthSymbol()
-        syms.assign_left(lft)
-        syms.assign_right(rht)
+        syms = AthSymbol(True, lft, rht)
         env.set_symbol(dst, syms)
     else:
         if isinstance(lft, AthSymbol):
@@ -339,17 +336,17 @@ def divulgate_statement(env, expr):
 
 def debate_function(env, *args):
     # Returns the first dead symbol.
-    for arg in args:
-        if not arg:
-            return arg
-    return args[-1]
+    try:
+        return next(filterfalse(None, args))
+    except StopIteration:
+        return NULL
 
 def unless_function(env, *args):
     # Returns the first living symbol.
-    for arg in args:
-        if arg:
-            return arg
-    return args[-1]
+    try:
+        return next(filter(None, args))
+    except StopIteration:
+        return NULL
 
 # Putting import token in python call expression is a syntax error
 ath_builtins.add_builtin('import', (import_statement, 3))

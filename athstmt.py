@@ -7,18 +7,15 @@ from athsymbol import (
     )
 from athbuiltins_default import ath_builtins
 
-
 def cmp_opr(lval, rval, op):
     if isAthValue(lval):
         lval = AthSymbol(bool(lval), left=lval)
     return op(lval, rval)
 
-
 def bool_not(val):
     if isAthValue(val):
         val = AthSymbol(bool(val), left=val)
     return AthSymbol(not val, val.left, val.right)
-
 
 def bool_opr(lval, rval, op):
     if isAthValue(lval):
@@ -35,8 +32,7 @@ def bool_opr(lval, rval, op):
             rval if rval and not lval else
             AthSymbol(False)
             )
-    raise SyntaxError('Invalid comparison operator: {}', op)
-
+    raise SyntaxError(f'Invalid comparison operator: {op}')
 
 def symbol_opr(lval, rval, op):
     if not (isinstance(lval, AthSymbol) and isinstance(rval, AthSymbol)):
@@ -60,7 +56,6 @@ def symbol_opr(lval, rval, op):
         raise SymbolError('The relevant side(s) must be symbols')
     return AthSymbol(value)
 
-
 unops = {
     '+': operator.pos,
     '-': operator.neg,
@@ -68,9 +63,8 @@ unops = {
     '!': bool_not,
 }
 
-
 biops = {
-    '**': operator.pow,
+    '^': operator.pow,
     '*': operator.mul,
     '/': operator.truediv,
     '/_': operator.floordiv,
@@ -79,18 +73,18 @@ biops = {
     '-': operator.sub,
     '<<': operator.lshift,
     '>>': operator.rshift,
-    '&': operator.and_,
-    '|': operator.or_,
-    '^': operator.xor,
+    'b&': operator.and_,
+    'b|': operator.or_,
+    'b^': operator.xor,
     '<': partial(cmp_opr, op=operator.lt),
     '<=': partial(cmp_opr, op=operator.le),
     '>': partial(cmp_opr, op=operator.gt),
     '>=': partial(cmp_opr, op=operator.ge),
     '==': partial(cmp_opr, op=operator.eq),
     '~=': partial(cmp_opr, op=operator.ne),
-    '&&': partial(bool_opr, op='&&'),
-    '||': partial(bool_opr, op='||'),
-    '^^': partial(bool_opr, op='^^'),
+    'l&': partial(bool_opr, op='&&'),
+    'l|': partial(bool_opr, op='||'),
+    'l^': partial(bool_opr, op='^^'),
     '!=!': partial(symbol_opr, op='!=!'),
     '?=!': partial(symbol_opr, op='?=!'),
     '!=?': partial(symbol_opr, op='!=?'),
@@ -99,20 +93,17 @@ biops = {
     '~=~': partial(symbol_opr, op='~=~'),
 }
 
-
 def unopr_expression(env, opr, val):
     ans = unops[opr](val)
     if isAthValue(ans):
         return AthSymbol(left=ans)
     return ans
 
-
 def biopr_expression(env, opr, lft, rht):
     ans = biops[opr](lft, rht)
     if isAthValue(ans):
         return AthSymbol(left=ans)
     return ans
-
 
 def on_dead_jump(env, expr, jlen):
     if not expr:
@@ -387,15 +378,12 @@ class AthStatementList(list):
             return False
         if self.pendant != other.pendant:
             return False
-        for stmt1, stmt2 in zip(self, other):
-            if stmt1 != stmt2:
-                return False
-        return True
+        return all(map(operator.eq, self, other))
 
     def format(self):
         ident = 1
         stack = [StmtPrintFrame(self)]
-        slist = ['{}([\n'.format(self.__class__.__name__)]
+        slist = [f'{self.__class__.__name__}([\n']
         while True:
             try:
                 item = next(stack[-1])
@@ -463,6 +451,7 @@ class AthStatementList(list):
                     item.__class__.__name__,
                     item.name,
                     ))
+                # print(repr(item))
                 stack.append(StmtPrintFrame(item, 'args', False))
             elif isinstance(item, TildeAthLoop):
                 slist.append('{}{}({}, {}([\n'.format(

@@ -4,7 +4,7 @@ from functools import partialmethod
 
 
 def isAthValue(obj):
-    """True if an object is a number or string."""
+    """True if an object is a primitive value."""
     return isinstance(obj, (int, float, complex, str))
 
 
@@ -32,8 +32,7 @@ class AthExpr(object):
 
     def __repr__(self):
         attr_list = [repr(getattr(self, slot)) for slot in self.__slots__]
-        attr_str = ', '.join(attr_list)
-        return '{}({})'.format(self.__class__.__name__, attr_str)
+        return f'{self.__class__.__name__}({", ".join(attr_list)})'
 
 
 class AthFunction(AthExpr):
@@ -49,8 +48,8 @@ class AthBuiltinFunction(AthFunction):
         self.func = func
         self.bitmask = bitmask
 
-    def __repr__(self):
-        return '<~ATH Builtin Function {}>'.format(self.name)
+    def __str__(self):
+        return f'<~ATH builtin {self.name}>'
 
     def __call__(self, env, *args):
         return self.func(env, *args)
@@ -65,7 +64,7 @@ class AthCustomFunction(AthFunction):
         self.body = body
 
     def __str__(self):
-        return '<~ATH Custom Function {}>'.format(self.name)
+        return f'<~ATH function {self.name}>'
 
 
 class AthSymbol(AthExpr):
@@ -85,7 +84,7 @@ class AthSymbol(AthExpr):
 
     def __repr__(self):
         if isinstance(self.right, AthFunction):
-            rstr = '<AthFunction {}>'.format(self.right.name)
+            rstr = f'<~ATHFunction {self.right.name}>'
         else:
             rstr = repr(self.right)
         return '{}({}, {!r}, {})'.format(
@@ -262,7 +261,6 @@ class AthSymbol(AthExpr):
                 )
         self.left = value
 
-
     def assign_right(self, value):
         if not (isinstance(value, (AthFunction, AthSymbol)) or value is None):
             raise TypeError(
@@ -319,9 +317,10 @@ class NullSymbol(BuiltinSymbol):
         super().__init__(False)
 
     def __repr__(self):
-        return '{}()'.format(
-            self.__class__.__name__
-            )
+        return f'{self.__class__.__name__}()'
+
+    def __str__(self):
+        return 'NULL'
 
     def copy(self):
         return AthSymbol(False)

@@ -50,7 +50,7 @@ FABRICATE MERGESORT(STRUCT, LEN){
 	REPLICATE FLAG;
 	REPLICATE LOOP;
 	~ATH(LOOP){
-		DEBATE(LENL > 0 && LENR > 0){
+		DEBATE(LENL > 0 l& LENR > 0){
 			// Take the next item, but don't replace reference yet.
 			BIFURCATE TEMPL[HEADL, NEXTL];
 			BIFURCATE TEMPR[HEADR, NEXTR];
