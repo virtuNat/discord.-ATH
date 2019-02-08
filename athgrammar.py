@@ -28,7 +28,7 @@ class StmtParser(RepeatParser):
     __slots__ = ()
 
     def __repr__(self):
-        return '{}({!r})'.format(self.__class__.__name__, self.graft)
+        return f'{self.__class__.__name__}({self.graft!r})'
 
     def __call__(self, tokens, index=0):
         stmtlist = []
@@ -439,10 +439,10 @@ def condistmt(fabri=False):
             # The last UNLESS or a lone DEBATE will not jump off the end,
             # and if the last UNLESS has no clause, there will be no
             # conditional jump at the head of its body.
-            jumpoffset = -2 - int(unlesses[-1][0] is not None)
+            jumpoffset = -2 + int(unlesses[-1][0] is not None)
             for idx, unless in enumerate(unlesses):
                 # Check if this is a clauseless unless that isn't the last unless.
-                if not unless[0] and idx < len(unlesses) - 1:
+                if unless[0] is None and idx < len(unlesses) - 1:
                     sys.stderr.write('SyntaxError: invalid unless format')
                     sys.exit(SyntaxError)
                 # Calculate jump length.

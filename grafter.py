@@ -20,11 +20,7 @@ class Graft(object):
         return object.__hash__((self.value, self.index))
 
     def __repr__(self):
-        return '{}({}, {})'.format(
-            self.__class__.__name__,
-            self.value,
-            self.index
-            )
+        return f'{self.__class__.__name__}({self.value}, {self.index})'
 
 
 class BaseParser(object):
@@ -32,9 +28,8 @@ class BaseParser(object):
     __slots__ = ()
 
     def __repr__(self):
-        attr_list = tuple([repr(getattr(self, slot)) for slot in self.__slots__])
-        attr_str = ', '.join(attr_list)
-        return '{}({})'.format(self.__class__.__name__, attr_str)
+        attr_list = [repr(getattr(self, slot)) for slot in self.__slots__]
+        return f'{self.__class__.__name__}({", ".join(attr_list)})'
 
     def __call__(self, *args):
         raise NotImplementedError(
@@ -232,8 +227,7 @@ class ItemParser(Token, BaseParser):
     __slots__ = ()
 
     def __repr__(self):
-        attr_str = ', '.join([repr(self.token), repr(self.tag)])
-        return '{}({})'.format(self.__class__.__name__, attr_str)
+        return f'{self.__class__.__name__}({self.token!r}, {self.tag!r})'
 
     def __eq__(self, other):
         try:
@@ -265,7 +259,7 @@ class TagsParser(BaseParser):
             return self.tag == other.tag
         except AttributeError:
             raise TypeError(
-                'Can\'t compare tag of {}'.format(other.__class__.__name__)
+                f'Can\'t compare tag of {other.__class__.__name__}'
                 )
 
     def __hash__(self):
@@ -328,7 +322,7 @@ class LazierParser(BaseParser):
         self.grafter = None
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.grafter_func)
+        return f'{self.__class__.__name__}({self.grafter_func})'
 
     def __call__(self, tokens, index):
         if not self.grafter:
@@ -352,9 +346,7 @@ class ScriptParser(BaseParser):
         if graft.index == len(tokens):
             # print('Final:\n', graft.value, '\n', sep='')
             return graft
+        token = tokens[graft.index]
         raise SyntaxError(
-            'Starting from {} on line {}\n'.format(
-                tokens[graft.index].token, 
-                tokens[graft.index].line,
-                )
+            f'Starting from {token.token} on line {token.line}\n'
             )

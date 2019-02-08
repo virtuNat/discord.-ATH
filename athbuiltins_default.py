@@ -53,9 +53,7 @@ def import_statement(env, module, symbol):
         backref = module_vars[symbol]
     except KeyError:
         raise NameError(
-            'symbol {} not found in module {}'.format(
-                symbol, module
-                )
+            f'symbol {symbol} not found in module {module}'
             )
     env.set_symbol(symbol, backref)
     return backref
@@ -80,9 +78,7 @@ def execute_statement(env, *args):
         # Check if the number of passed arguments matches the intended format.
         if argc != len(func.argfmt):
             raise TypeError(
-                'expected {} arguments, got {}'.format(
-                    func.argsmin + 1, argc + 1
-                    )
+                f'expected {func.argsmin + 1} arguments, got {argc + 1}'
                 )
         # Build the scope dictionary.
         arg_dict = {
@@ -212,7 +208,7 @@ def replicate_statement(env, dst, src=None):
             # If a value is replicated, set it to left.
             sym = AthSymbol(left=src)
         else:
-            raise ValueError('tried to copy {!r}'.format(src))
+            raise ValueError(f'tried to copy {src!r}')
     else:
         # If there is no expression, assign an empty living symbol.
         sym = AthSymbol()
@@ -230,7 +226,7 @@ def procreate_value(sym, src):
         # Otherwise, the value is a symbol, so point the left value to it.
         sym.assign_left(src.left)
     else:
-        raise ValueError('tried to assign {!r}'.format(src))
+        raise ValueError(f'tried to assign {src!r}')
 
 def procreate_statement(env, dst, src=None):
     dst = pull_name(dst)

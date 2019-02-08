@@ -11,7 +11,7 @@ from athstmt import(
 	)
 from athgrammar import ath_parser
 
-__version__ = '1.5.0 Test Build'
+__version__ = '1.5.2 Test Build'
 __author__ = 'virtuNat'
 
 
@@ -32,22 +32,15 @@ class AthStackFrame(object):
 
     def __str__(self):
         return (
-            '<~ATH StackFrame>\n'
-            'Variables in Scope: {},\n'
-            'Node Iteration: {},\n'
-            'Execution State: {},\n'
-            'Evaluation State: {},\n'
-            ).format(
-            self.scope_vars,
-            self.iter_nodes,
-            self.exec_state,
-            self.eval_state,
+            f'<~ATH StackFrame>\n'
+            f'Variables in Scope: {self.scope_vars},\n'
+            f'Node Iteration: {self.iter_nodes},\n'
+            f'Execution State: {self.exec_state},\n'
+            f'Evaluation State: {self.eval_state},\n'
             )
 
     def __repr__(self):
-        return '\nAthStackFrame({}, {}, {}, {})'.format(
-            self.scope_vars, self.iter_nodes, self.exec_state, self.eval_state
-            )
+        return f'\nAthStackFrame{tuple(getattr(self, slot) for slot in self.__slots__)}'
 
     def get_current(self):
         idx = self.iter_nodes.index
@@ -83,7 +76,7 @@ class TildeAthInterp(object):
         try:
             return ath_builtins[token]
         except KeyError as exc:
-            raise NameError('Could not find symbol {}'.format(token)) from exc
+            raise NameError(f'Could not find symbol {token}') from exc
 
     def set_symbol(self, token, value):
         """Attempt to add symbol to the top of the stack."""
@@ -143,6 +136,7 @@ class TildeAthInterp(object):
                     eval_state.clear()
                     return ret_value
             else:
+                # print(node)
                 # If there is an argument left to evaluate, deal with it first.
                 if arg is None:
                     # None is passed when an argument is missing in an optional position.
@@ -244,7 +238,7 @@ class TildeAthInterp(object):
                 f'#!/usr/bin/env python\n'
                 f'from athstmt import *\n'
                 f'from athinterpreter import TildeAthInterp\n\n'
-                f'stmts = {stmts.format()}\n'
+                f'stmts = {stmts.format()}\n\n'
                 f"if __name__ == '__main__':\n"
                 f'    TildeAthInterp().exec_stmts({fname!r}, stmts)\n'
                 )

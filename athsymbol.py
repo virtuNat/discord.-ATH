@@ -31,7 +31,7 @@ class AthExpr(object):
         return object.__hash__(self)
 
     def __repr__(self):
-        attr_list = [repr(getattr(self, slot)) for slot in self.__slots__]
+        attr_list = (repr(getattr(self, slot)) for slot in self.__slots__)
         return f'{self.__class__.__name__}({", ".join(attr_list)})'
 
 
@@ -206,16 +206,16 @@ class AthSymbol(AthExpr):
             # If either side is the symbol, return True.
             return True
         elif isinstance(self.left, AthSymbol):
-            if isinstance(self.right, AthSymbol):
-                t = self.right.__contains__(symbol)
-            else:
-                t = False
             # If both values are symbols, return True
             # if at least one value contains the symbol
-            return t or self.left.__contains__(symbol)
+            return (
+                isinstance(self.right, AthSymbol)
+                and symbol in self.right
+                or symbol in self.left
+                )
         elif isinstance(self.right, AthSymbol):
             # If only right is a symbol, check that one
-            return self.right.__contains__(symbol)
+            return symbol in self.right
         else:
             # If neither are symbols, return False.
             return False
@@ -223,16 +223,9 @@ class AthSymbol(AthExpr):
 
     def copy(self):
         """Deep copies this symbol and returns the result."""
-        newsymbol = AthSymbol(self.alive)
-        if isinstance(self.left, AthSymbol):
-            newsymbol.left = self.left.copy()
-        else:
-            newsymbol.left = self.left
-        if isinstance(self.right, AthSymbol):
-            newsymbol.right = self.right.copy()
-        else:
-            newsymbol.right = self.right
-        return newsymbol
+        nleft = self.left.copy() if isinstance(self.left, AthSymbol) else self.left
+        nright = self.right.copy() if isinstance(self.right, AthSymbol) else self.right
+        return AthSymbol(self.alive, nleft, nright)
 
     def refcopy(self, ref):
         """Replaces all instances of a reference symbol in

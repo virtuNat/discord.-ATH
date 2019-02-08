@@ -13,12 +13,8 @@ class Token(object):
         self.line = line
 
     def __repr__(self):
-        return '{}({!r}, {!r}, {})'.format(
-            self.__class__.__name__,
-            self.token,
-            self.tag,
-            self.line
-            )
+        attr_list = tuple(repr(slot) for slot in self.__slots__)
+        return f'{self.__class__.__name__}{attr_list}'
 
     def __str__(self):
         return f'"{self.token}" {self.tag} token on line {self.line}'

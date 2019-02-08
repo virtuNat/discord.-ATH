@@ -165,9 +165,7 @@ class AthExecutor(object):
         self.argv = []
 
     def __repr__(self):
-        return '<Executor for {!s} with values {}>'.format(
-            self.stmt, self.argv
-            )
+        return f'<Executor for {self.stmt} with values {self.argv}>'
 
     def is_ready(self):
         return len(self.argv) == len(self.stmt.args)
@@ -203,13 +201,10 @@ class AthStatement(AthExpr):
         self.func = func
 
     def __str__(self):
-        return '<{} statement>'.format(self.name)
+        return f'<{self.name} statement>'
 
     def __repr__(self):
-        return '{}({})'.format(
-            self.__class__.__name__,
-            self.args,
-            )
+        return f'{self.__class__.__name__}({self.args})'
 
     def prepare(self):
         return AthExecutor(self)
@@ -225,11 +220,7 @@ class AthTokenStatement(AthStatement):
         self.func = ath_builtins[name].right
 
     def __repr__(self):
-        return '{}({!r}, {!r})'.format(
-            self.__class__.__name__,
-            self.name,
-            self.args,
-            )
+        return f'{self.__class__.__name__}({self.name!r}, {self.args!r})'
 
 
 class TildeAthLoop(AthStatement):
@@ -364,7 +355,7 @@ class AthStatementList(list):
         self.pendant = pendant
 
     def __repr__(self):
-        return '{}({}, {!r})'.format(
+        return '{}({}, pendant={!r})'.format(
             self.__class__.__name__,
             super().__repr__(),
             self.pendant,

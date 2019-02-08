@@ -1,0 +1,124 @@
+// WoC's card parser, in ~ATH form
+~ATH(THIS){
+  input CARDSTR "Enter the shorthand string for your card, ex. 5H, 10S, QD: ";
+	ENUMERATE CARDSTR CARD;
+	REPLICATE TEMP CARD;
+	PROCREATE CARDLEN 0;
+	PROCREATE SUIT;
+	~ATH(TEMP){
+		BIFURCATE TEMP[LVAL, TEMP];
+		PROCREATE CARDLEN CARDLEN + 1;
+		PROCREATE SUIT LVAL;
+	}EXECUTE(NULL);
+	BIFURCATE CARD[FACE, NULL];
+	DEBATE (CARDLEN == 3){
+		DEBATE (SUIT == "S"){
+			print("Your card is the Ten of Spades.\n");
+		}
+		DEBATE (SUIT == "D"){
+			print("Your card is the Ten of Diamonds.\n");
+		}
+		DEBATE (SUIT == "H"){
+			print("Your card is the Ten of Hearts.\n");
+		}
+		DEBATE (SUIT == "C"){
+			print("Your card is the Ten of Clubs.\n");
+		}
+	}
+	UNLESS (CARDLEN < 3){
+		DEBATE (FACE == "2"){
+			PROCREATE FACENAME "Two";
+		}
+		UNLESS{
+			DEBATE (FACE == "3"){
+				PROCREATE FACENAME "Three";
+			}
+			UNLESS{
+				DEBATE (FACE == "4"){
+					PROCREATE FACENAME "Four";
+				}
+				UNLESS{
+					DEBATE (FACE == "5"){
+						PROCREATE FACENAME "Five";
+					}
+					UNLESS{
+						DEBATE (FACE == "6"){
+							PROCREATE FACENAME "Six";
+						}
+						UNLESS{
+							DEBATE (FACE == "7"){
+								PROCREATE FACENAME "Seven";
+							}
+							UNLESS{
+								DEBATE (FACE == "8"){
+									PROCREATE FACENAME "Eight";
+								}
+								UNLESS{
+									DEBATE (FACE == "9"){
+										PROCREATE FACENAME "Nine";
+									}
+									UNLESS{
+										DEBATE (FACE == "J"){
+											PROCREATE FACENAME "Jack";
+										}
+										UNLESS{
+											DEBATE (FACE == "Q"){
+												PROCREATE FACENAME "Queen";
+											}
+											UNLESS{
+												DEBATE (FACE == "K"){
+													PROCREATE FACENAME "King";
+												}
+												UNLESS{
+													DEBATE (FACE == "A"){
+														PROCREATE FACENAME "Ace";
+													}
+													UNLESS{
+														PROCREATE FACENAME "WRONG";
+														print("This isn't a real card FACE!\n");
+													} // Oh boy.
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		DEBATE (SUIT == "S"){
+			PROCREATE SUITNAME "Spades";
+		}
+		UNLESS{
+			DEBATE (SUIT == "H"){
+				PROCREATE SUITNAME "Hearts";
+			}
+			UNLESS{
+				DEBATE (SUIT == "D"){
+					PROCREATE SUITNAME "Diamonds";
+				}
+				UNLESS{
+					DEBATE (SUIT == "C"){
+						PROCREATE SUITNAME "Clubs";
+					}
+					UNLESS{
+						PROCREATE SUITNAME "WRONG";
+						print("This isn't a real card suit!\n");
+					}
+				}
+			}
+		}
+		DEBATE (SUITNAME == "WRONG" l| FACENAME == "WRONG"){
+			print("Go back and try again with a REAL deck of cards!\n");
+		}
+		UNLESS{
+			print("Your card is the ~s of ~s.\n", FACENAME, SUITNAME);
+		}
+	}
+	UNLESS{
+		print("Go back and try again with a REAL deck of cards!\n");
+	}
+	THIS.DIE();
+}EXECUTE(NULL);
