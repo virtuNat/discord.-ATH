@@ -1,24 +1,22 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('LOOP', IntExpr(1)),
-    TildeAthLoop(False, AthAstList([
-        ProcreateStmt('X', IntExpr(1)),
-        ProcreateStmt('Y', IntExpr(2)),
-        AggregateStmt('Z', VarExpr('X'), VarExpr('Y')),
-        ProcreateStmt('A', IntExpr(3)),
-        ReplicateStmt('Y', VarExpr('A')),
-        BifurcateStmt('Z', 'B', 'C'),
-        PrintStmt([StringExpr('~s, ~s'), VarExpr('B'), VarExpr('C')]),
-        KillStmt(['LOOP'])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('Aggregate-BifurcateTest.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), LiteralToken(1, int)]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('PROCREATE', [IdentifierToken('X'), LiteralToken(1, int)]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('Y'), LiteralToken(2, int)]),
+        AthTokenStatement('AGGREGATE', [IdentifierToken('Z'), IdentifierToken('X'), IdentifierToken('Y')]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('A'), LiteralToken(3, int)]),
+        AthTokenStatement('REPLICATE', [IdentifierToken('Y'), IdentifierToken('A')]),
+        AthTokenStatement('BIFURCATE', [IdentifierToken('Z'), IdentifierToken('B'), IdentifierToken('C')]),
+        AthTokenStatement('print', [LiteralToken('~s, ~s', str), IdentifierToken('B'), IdentifierToken('C')]),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('Aggregate-BifurcateTest.~ATH', stmts)

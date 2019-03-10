@@ -1,80 +1,72 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('LOOP', IntExpr(0)),
-    TildeAthLoop(False, AthAstList([
-        InputStmt('RATE', StringExpr('On a scale of A to AAAAA, how do you rate your suffering? ')),
-        EnumerateStmt(VarExpr('RATE'), VarExpr('RATE')),
-        ProcreateStmt('A', IntExpr(0)),
-        ProcreateStmt('B', IntExpr(0)),
-        ProcreateStmt('C', IntExpr(0)),
-        ProcreateStmt('D', IntExpr(0)),
-        ProcreateStmt('E', IntExpr(0)),
-        ProcreateStmt('F', IntExpr(0)),
-        BifurcateStmt('RATE', 'RATE', 'END'),
-        TildeAthLoop(False, AthAstList([
-            KillStmt(['A']),
-            BifurcateStmt('END', 'RATE', 'END'),
-            TildeAthLoop(False, AthAstList([
-                KillStmt(['B']),
-                BifurcateStmt('END', 'RATE', 'END'),
-                TildeAthLoop(False, AthAstList([
-                    KillStmt(['C']),
-                    BifurcateStmt('END', 'RATE', 'END'),
-                    TildeAthLoop(False, AthAstList([
-                        KillStmt(['D']),
-                        BifurcateStmt('END', 'RATE', 'END'),
-                        TildeAthLoop(False, AthAstList([
-                            KillStmt(['E']),
-                            BifurcateStmt('END', 'RATE', 'END'),
-                            TildeAthLoop(False, AthAstList([
-                                KillStmt(['F']),
-                                BifurcateStmt('END', 'RATE', 'END')
-                                ], 'END'),
-                            ExecuteStmt([VarExpr('NULL')])
-                            )
-                            ], 'END'),
-                        ExecuteStmt([VarExpr('NULL')])
-                        )
-                        ], 'END'),
-                    ExecuteStmt([VarExpr('NULL')])
-                    )
-                    ], 'END'),
-                ExecuteStmt([VarExpr('NULL')])
-                )
-                ], 'END'),
-            ExecuteStmt([VarExpr('NULL')])
-            )
-            ], 'END'),
-        ExecuteStmt([VarExpr('NULL')])
-        ),
-        CondJumpStmt(VarExpr('A'), 2),
-        PrintStmt([StringExpr('Aw, you wee bab. Do you want me to kiss your booboos away?')]),
-        CondJumpStmt(None, 13),
-        CondJumpStmt(VarExpr('B'), 2),
-        PrintStmt([StringExpr('Fortify!')]),
-        CondJumpStmt(None, 10),
-        CondJumpStmt(VarExpr('C'), 2),
-        PrintStmt([StringExpr(':wackyZany:')]),
-        CondJumpStmt(None, 7),
-        CondJumpStmt(VarExpr('D'), 2),
-        PrintStmt([StringExpr('Have you tried mixing coffee and energy drinks yet.')]),
-        CondJumpStmt(None, 4),
-        CondJumpStmt(VarExpr('E'), 2),
-        PrintStmt([StringExpr('Same.')]),
-        CondJumpStmt(None, 1),
-        PrintStmt([StringExpr("You're overreacting. Calm your shit.")]),
-        PrintStmt([StringExpr('\\n')]),
-        InspectStack([UnaryExpr('-', IntExpr(1))]),
-        KillStmt(['LOOP'])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('NotConditionals.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), LiteralToken(0, int)]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('input', [IdentifierToken('RATE'), LiteralToken('On a scale of A to AAAAA, how do you rate your suffering? ', str)]),
+        AthTokenStatement('ENUMERATE', [IdentifierToken('RATE'), IdentifierToken('RATE')]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('A'), LiteralToken(0, int)]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('B'), LiteralToken(0, int)]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('C'), LiteralToken(0, int)]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('D'), LiteralToken(0, int)]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('E'), LiteralToken(0, int)]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('F'), LiteralToken(0, int)]),
+        AthTokenStatement('BIFURCATE', [IdentifierToken('RATE'), IdentifierToken('RATE'), IdentifierToken('END')]),
+        TildeAthLoop(False, AthStatementList([
+            AthTokenStatement('DIE', [IdentifierToken('A')]),
+            AthTokenStatement('BIFURCATE', [IdentifierToken('END'), IdentifierToken('RATE'), IdentifierToken('END')]),
+            TildeAthLoop(False, AthStatementList([
+                AthTokenStatement('DIE', [IdentifierToken('B')]),
+                AthTokenStatement('BIFURCATE', [IdentifierToken('END'), IdentifierToken('RATE'), IdentifierToken('END')]),
+                TildeAthLoop(False, AthStatementList([
+                    AthTokenStatement('DIE', [IdentifierToken('C')]),
+                    AthTokenStatement('BIFURCATE', [IdentifierToken('END'), IdentifierToken('RATE'), IdentifierToken('END')]),
+                    TildeAthLoop(False, AthStatementList([
+                        AthTokenStatement('DIE', [IdentifierToken('D')]),
+                        AthTokenStatement('BIFURCATE', [IdentifierToken('END'), IdentifierToken('RATE'), IdentifierToken('END')]),
+                        TildeAthLoop(False, AthStatementList([
+                            AthTokenStatement('DIE', [IdentifierToken('E')]),
+                            AthTokenStatement('BIFURCATE', [IdentifierToken('END'), IdentifierToken('RATE'), IdentifierToken('END')]),
+                            TildeAthLoop(False, AthStatementList([
+                                AthTokenStatement('DIE', [IdentifierToken('F')]),
+                                AthTokenStatement('BIFURCATE', [IdentifierToken('END'), IdentifierToken('RATE'), IdentifierToken('END')]),
+                                ], pendant='END'),
+                                AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+                            ], pendant='END'),
+                            AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+                        ], pendant='END'),
+                        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+                    ], pendant='END'),
+                    AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+                ], pendant='END'),
+                AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+            ], pendant='END'),
+            AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+        CondiJump([IdentifierToken('A'), 2]),
+        AthTokenStatement('print', [LiteralToken('Aw, you wee bab. Do you want me to kiss your booboos away?', str)]),
+        CondiJump([None, 13]),
+        CondiJump([IdentifierToken('B'), 2]),
+        AthTokenStatement('print', [LiteralToken('Fortify!', str)]),
+        CondiJump([None, 10]),
+        CondiJump([IdentifierToken('C'), 2]),
+        AthTokenStatement('print', [LiteralToken(':wackyZany:', str)]),
+        CondiJump([None, 7]),
+        CondiJump([IdentifierToken('D'), 2]),
+        AthTokenStatement('print', [LiteralToken('Have you tried mixing coffee and energy drinks yet.', str)]),
+        CondiJump([None, 4]),
+        CondiJump([IdentifierToken('E'), 2]),
+        AthTokenStatement('print', [LiteralToken('Same.', str)]),
+        CondiJump([None, 1]),
+        AthTokenStatement('print', [LiteralToken("You're overreacting. Calm your shit.", str)]),
+        AthTokenStatement('print', [LiteralToken('\\n', str)]),
+        AthTokenStatement('INSPECT', [UnaryExpr(['-', LiteralToken(1, int)])]),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('NotConditionals.~ATH', stmts)

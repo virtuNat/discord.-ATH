@@ -2,7 +2,6 @@ FABRICATE REVERSE(STRUCT){
 	// Take a treelist of symbols and return a reversed list.
 	REPLICATE QUEUE;
 	REPLICATE STACK STRUCT;
-
 	BIFURCATE STACK[HEAD, STACK];
 	AGGREGATE [HEAD, NULL]QUEUE;
 	~ATH(STACK){
@@ -46,61 +45,61 @@ FABRICATE MERGESORT(STRUCT, LEN){
 		REPLICATE TEMPR EXECUTE(MERGESORT, TEMPR, LENR);
 	}
 	// Initialize the new list.
-	REPLICATE MERGED;
-	REPLICATE FLAG;
+	BIFURCATE TEMPL[HEADL, NEXTL];
+	BIFURCATE TEMPR[HEADR, NEXTR];
+	// Assign the first item.
+	DEBATE(HEADL > HEADR){
+		AGGREGATE [HEADR, NULL]MERGED;
+		BIFURCATE TEMPR[HEADR, NEXTR];
+		PROCREATE LENR (LENR - 1);
+	}
+	UNLESS{
+		AGGREGATE [HEADL, NULL]MERGED;
+		BIFURCATE TEMPL[HEADL, NEXTL];
+		PROCREATE LENL (LENL - 1);
+	}
 	REPLICATE LOOP;
 	~ATH(LOOP){
-		DEBATE(LENL > 0 && LENR > 0){
+		DEBATE(LENL > 0 l& LENR > 0){
 			// Take the next item, but don't replace reference yet.
-			BIFURCATE TEMPL[HEADL, NEXTL];
-			BIFURCATE TEMPR[HEADR, NEXTR];
 			DEBATE(HEADL > HEADR){
 				// If the right element is less, assign that.
-				DEBATE(FLAG){
-					AGGREGATE [HEADR, NULL]MERGED;
-					FLAG.DIE();
-				}
-				UNLESS{
-					AGGREGATE [HEADR, MERGED]MERGED;
-				}
+				AGGREGATE [HEADR, MERGED]MERGED;
 				PROCREATE LENR (LENR - 1);
 				// Replace the reference.
 				BIFURCATE NEXTR[L, R];
 				AGGREGATE [L, R]TEMPR;
+				BIFURCATE TEMPR[HEADR, NEXTR];
 			}
 			UNLESS{
 				// Otherwise assign left for sort stability.
-				DEBATE(FLAG){
-					AGGREGATE [HEADL, NULL]MERGED;
-					FLAG.DIE();
-				}
-				UNLESS{
-					AGGREGATE [HEADL, MERGED]MERGED;
-				}
+				AGGREGATE [HEADL, MERGED]MERGED;
 				PROCREATE LENL (LENL - 1);
 				// Replace the reference.
 				BIFURCATE NEXTL[L, R];
 				AGGREGATE [L, R]TEMPL;
+				BIFURCATE TEMPL[HEADL, NEXTL];
 			}
 		}
-		UNLESS(LENL > 0){
-			// Exhaust left if it remains.
-			BIFURCATE TEMPL[HEADL, TEMPL];
-			AGGREGATE [HEADL, MERGED]MERGED;
-			PROCREATE LENL (LENL - 1);
-		}
-		UNLESS(LENR > 0){
-			// Exhaust right if it remains.
-			BIFURCATE TEMPR[HEADR, TEMPR];
-			AGGREGATE [HEADR, MERGED]MERGED;
-			PROCREATE LENR (LENR - 1);
-		}
 		UNLESS{
-			// Only exit the loop if both sublists are exhausted.
+			DEBATE(LENL > 0){
+				// Exhaust left if it remains.
+				~ATH(TEMPL){
+					AGGREGATE [HEADL, MERGED]MERGED;
+					BIFURCATE TEMPL[HEADL, TEMPL];
+				}EXECUTE(NULL);
+			}
+			UNLESS(LENR > 0){
+				// Exhaust right if it remains.
+				~ATH(TEMPR){
+					AGGREGATE [HEADR, MERGED]MERGED;
+					BIFURCATE TEMPR[HEADR, TEMPR];
+				}EXECUTE(NULL);
+			}
 			LOOP.DIE();
 		}
 	}EXECUTE(NULL);
-	// The result is reversed, so reverse it.
+	// The result is reversed, so un-reverse it.
 	DIVULGATE EXECUTE(REVERSE, MERGED);
 }
 

@@ -1,27 +1,24 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('LOOP', IntExpr(0)),
-    ProcreateStmt('A', IntExpr(0)),
-    FabricateStmt(AthFunction('ADDONE', [], AthAstList([
-        AggregateStmt('A', BinaryExpr('+', VarExpr('A'), IntExpr(1)), VarExpr('NULL')),
-        BifurcateStmt('A', 'A', 'NULL')
-        ], 'ADDONE')
-    )),
-    TildeAthLoop(False, AthAstList([
-        ExecuteStmt([VarExpr('ADDONE')]),
-        PrintStmt([StringExpr('~s '), VarExpr('A')]),
-        CondJumpStmt(BinaryExpr('==', VarExpr('A'), IntExpr(256)), 2),
-        PrintStmt([StringExpr('\\n')]),
-        KillStmt(['LOOP'])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('AddOneFunc.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), LiteralToken(0, int)]),
+    AthTokenStatement('PROCREATE', [IdentifierToken('A'), LiteralToken(0, int)]),
+    AthTokenStatement('FABRICATE', [AthCustomFunction('ADDONE', [], AthStatementList([
+        AthTokenStatement('AGGREGATE', [IdentifierToken('A'), BnaryExpr(['+', IdentifierToken('A'), LiteralToken(1, int)]), IdentifierToken('NULL')]),
+        AthTokenStatement('BIFURCATE', [IdentifierToken('A'), IdentifierToken('A'), IdentifierToken('NULL')])
+        ], pendant='ADDONE'))]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('EXECUTE', [IdentifierToken('ADDONE')]),
+        AthTokenStatement('print', [LiteralToken('~s ', str), IdentifierToken('A')]),
+        CondiJump([BnaryExpr(['==', IdentifierToken('A'), LiteralToken(256, int)]), 2]),
+        AthTokenStatement('print', [LiteralToken('\\n', str)]),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('AddOneFunc.~ATH', stmts)

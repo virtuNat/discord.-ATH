@@ -7,23 +7,17 @@ class Token(object):
     """Token wrapper. Might have more functionality than just debugging."""
     __slots__ = ('token', 'tag', 'line')
 
-    def __init__(self, token, tag, line=0):
+    def __init__(self, token, tag, line=1):
         self.token = token
         self.tag = tag
         self.line = line
 
     def __repr__(self):
-        return '{}({!r}, {!r}, {})'.format(
-            self.__class__.__name__,
-            self.token,
-            self.tag,
-            self.line
-            )
+        attr_list = tuple(repr(slot) for slot in self.__slots__)
+        return f'{self.__class__.__name__}{attr_list}'
 
     def __str__(self):
-        return '{} token on line {} containing: {}'.format(
-            self.tag, self.line + 1, self.token
-            )
+        return f'"{self.token}" {self.tag} token on line {self.line}'
 
 
 class Lexer(object):
@@ -39,7 +33,7 @@ class Lexer(object):
     def __call__(self, script):
         tokens = []
         seek = 0
-        line = 0
+        line = 1
         while seek < len(script):
             oldseek = seek
             for pattern, tag in self.expr_list:
@@ -51,8 +45,10 @@ class Lexer(object):
                     line += script.count('\n', oldseek, seek)
                     break
             else:
-                sys.stderr.write('SyntaxError: Line {}\n'.format(line + 1))
-                sys.stderr.write('{}\n'.format(script.split('\n')[line]))
-                sys.stderr.write('Invalid character {}\n'.format(script[seek]))
-                sys.exit(1)
+                sys.stderr.write(
+                    f'SyntaxError on Line {line}:\n'
+                    f'{script.splitlines()[line - 1]}\n'
+                    f'Invalid token detected: {script[seek]}\n'
+                    )
+                sys.exit(SyntaxError)
         return tokens

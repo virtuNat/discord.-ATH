@@ -1,31 +1,25 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('X', IntExpr(1)),
-    FabricateStmt(AthFunction('F', ['I'], AthAstList([
-        ReplicateStmt('X', VarExpr('I')),
-        AggregateStmt('I', BinaryExpr('+', VarExpr('I'), IntExpr(1)), VarExpr('NULL')),
-        BifurcateStmt('I', 'I', 'NULL'),
-        ExecuteStmt([VarExpr('G'), VarExpr('I')]),
-        ProcreateStmt('VAR', None)
-        ], 'F')
-    )),
-    FabricateStmt(AthFunction('G', ['J'], AthAstList([
-        AggregateStmt('J', BinaryExpr('+', VarExpr('J'), VarExpr('X')), VarExpr('NULL')),
-        BifurcateStmt('J', 'J', 'NULL')
-        ], 'G')
-    )),
-    TildeAthLoop(False, AthAstList([
-        ExecuteStmt([VarExpr('F'), VarExpr('X')]),
-        PrintStmt([StringExpr('~d\\n'), VarExpr('X')]),
-        KillStmt(['THIS'])
-        ], 'THIS'),
-    ExecuteStmt([VarExpr('NULL')])
-    )
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('ScopeTest2.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('X'), LiteralToken(1, int)]),
+    AthTokenStatement('FABRICATE', [AthCustomFunction('F', ['I'], AthStatementList([
+        AthTokenStatement('REPLICATE', [IdentifierToken('X'), IdentifierToken('I')]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('I'), BnaryExpr(['+', IdentifierToken('I'), LiteralToken(1, int)])]),
+        AthTokenStatement('EXECUTE', [IdentifierToken('G'), IdentifierToken('I')]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('VAR'), None])
+        ], pendant='F'))]),
+    AthTokenStatement('FABRICATE', [AthCustomFunction('G', ['J'], AthStatementList([
+        AthTokenStatement('PROCREATE', [IdentifierToken('J'), BnaryExpr(['+', IdentifierToken('J'), LiteralToken(1, int)])])
+        ], pendant='G'))]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('EXECUTE', [IdentifierToken('F'), IdentifierToken('X')]),
+        AthTokenStatement('print', [LiteralToken('~d\\n', str), IdentifierToken('X')]),
+        AthTokenStatement('DIE', [IdentifierToken('THIS')]),
+        ], pendant='THIS'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')]))
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('ScopeTest2.~ATH', stmts)

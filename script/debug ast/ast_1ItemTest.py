@@ -1,41 +1,39 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('LOOP', IntExpr(0)),
-    TildeAthLoop(False, AthAstList([
-        PrintStmt([StringExpr('Which of the following is not a French word?\\n')]),
-        PrintStmt([StringExpr('[A] sale\\n')]),
-        PrintStmt([StringExpr('[B] mode\\n')]),
-        PrintStmt([StringExpr('[C] grand\\n')]),
-        PrintStmt([StringExpr('[D] chat\\n')]),
-        PrintStmt([StringExpr('[E] A, B, C, and D are all French words\\n')]),
-        PrintStmt([StringExpr('[F] A, B, C, and D are all not French words\\n')]),
-        InputStmt('CHOICE', StringExpr('')),
-        EnumerateStmt(VarExpr('CHOICE'), VarExpr('CHARS')),
-        BifurcateStmt('CHARS', 'HEAD', 'TAIL'),
-        CondJumpStmt(UnaryExpr('!', VarExpr('TAIL')), 5),
-        CondJumpStmt(BinaryExpr('||', BinaryExpr('&&', BinaryExpr('>=', VarExpr('CHOICE'), StringExpr('A')), BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('F'))), BinaryExpr('&&', BinaryExpr('<=', VarExpr('CHOICE'), StringExpr('f')), BinaryExpr('>=', VarExpr('CHOICE'), StringExpr('a')))), 2),
-        PrintStmt([StringExpr('Wrong! Try again, idiot.\\n')]),
-        CondJumpStmt(None, 10),
-        PrintStmt([StringExpr("Are you blind? That's not even a choice.\\n")]),
-        CondJumpStmt(None, 8),
-        CondJumpStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('THE CHEAT CODE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('the cheat code'))), 2),
-        PrintStmt([StringExpr("Damn, you caught me. It's a trick question.\\n")]),
-        CondJumpStmt(None, 5),
-        CondJumpStmt(BinaryExpr('||', BinaryExpr('==', VarExpr('CHOICE'), StringExpr('DIE')), BinaryExpr('==', VarExpr('CHOICE'), StringExpr('die'))), 3),
-        PrintStmt([StringExpr('Hmph. Ninny.\\n')]),
-        KillStmt(['LOOP']),
-        CondJumpStmt(None, 1),
-        PrintStmt([StringExpr("HA! Loser can't even guess the cheat code.\\n")]),
-        PrintStmt([StringExpr('\\n')])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('1ItemTest.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), LiteralToken(0, int)]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('print', [LiteralToken('Which of the following is not a French word?\\n', str)]),
+        AthTokenStatement('print', [LiteralToken('[A] sale\\n', str)]),
+        AthTokenStatement('print', [LiteralToken('[B] mode\\n', str)]),
+        AthTokenStatement('print', [LiteralToken('[C] grand\\n', str)]),
+        AthTokenStatement('print', [LiteralToken('[D] chat\\n', str)]),
+        AthTokenStatement('print', [LiteralToken('[E] A, B, C, and D are all French words\\n', str)]),
+        AthTokenStatement('print', [LiteralToken('[F] A, B, C, and D are all not French words\\n', str)]),
+        AthTokenStatement('input', [IdentifierToken('CHOICE'), LiteralToken('', str)]),
+        AthTokenStatement('ENUMERATE', [IdentifierToken('CHOICE'), IdentifierToken('CHARS')]),
+        AthTokenStatement('BIFURCATE', [IdentifierToken('CHARS'), IdentifierToken('HEAD'), IdentifierToken('TAIL')]),
+        CondiJump([UnaryExpr(['!', IdentifierToken('TAIL')]), 5]),
+        CondiJump([BnaryExpr(['l|', BnaryExpr(['l&', BnaryExpr(['>=', IdentifierToken('CHOICE'), LiteralToken('A', str)]), BnaryExpr(['<=', IdentifierToken('CHOICE'), LiteralToken('F', str)])]), BnaryExpr(['l&', BnaryExpr(['<=', IdentifierToken('CHOICE'), LiteralToken('f', str)]), BnaryExpr(['>=', IdentifierToken('CHOICE'), LiteralToken('a', str)])])]), 2]),
+        AthTokenStatement('print', [LiteralToken('Wrong! Try again, idiot.\\n', str)]),
+        CondiJump([None, 10]),
+        AthTokenStatement('print', [LiteralToken("Are you blind? That's not even a choice.\\n", str)]),
+        CondiJump([None, 8]),
+        CondiJump([BnaryExpr(['l|', BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('THE CHEAT CODE', str)]), BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('the cheat code', str)])]), 2]),
+        AthTokenStatement('print', [LiteralToken("Damn, you caught me. It's a trick question.\\n", str)]),
+        CondiJump([None, 5]),
+        CondiJump([BnaryExpr(['l|', BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('DIE', str)]), BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('die', str)])]), 3]),
+        AthTokenStatement('print', [LiteralToken('Hmph. Ninny.\\n', str)]),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        CondiJump([None, 1]),
+        AthTokenStatement('print', [LiteralToken("HA! Loser can't even guess the cheat code.\\n", str)]),
+        AthTokenStatement('print', [LiteralToken('\\n', str)]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('1ItemTest.~ATH', stmts)

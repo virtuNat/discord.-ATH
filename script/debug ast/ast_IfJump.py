@@ -1,24 +1,22 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('TEST', None),
-    TildeAthLoop(False, AthAstList([
-        CondJumpStmt(VarExpr('TEST'), 3),
-        PrintStmt([StringExpr('Test!\\n')]),
-        ReplicateStmt('TEST', UnaryExpr('!', VarExpr('TEST'))),
-        CondJumpStmt(None, 5),
-        CondJumpStmt(UnaryExpr('!', VarExpr('TEST')), 3),
-        PrintStmt([StringExpr('Test died\\n')]),
-        KillStmt(['THIS']),
-        CondJumpStmt(None, 1),
-        PrintStmt([StringExpr('should not print\\n')])
-        ], 'THIS'),
-    ExecuteStmt([VarExpr('NULL')])
-    )
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('IfJump.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('TEST'), None]),
+    TildeAthLoop(False, AthStatementList([
+        CondiJump([IdentifierToken('TEST'), 3]),
+        AthTokenStatement('print', [LiteralToken('Test!\\n', str)]),
+        AthTokenStatement('REPLICATE', [IdentifierToken('TEST'), UnaryExpr(['!', IdentifierToken('TEST')])]),
+        CondiJump([None, 5]),
+        CondiJump([UnaryExpr(['!', IdentifierToken('TEST')]), 3]),
+        AthTokenStatement('print', [LiteralToken('Test died\\n', str)]),
+        AthTokenStatement('DIE', [IdentifierToken('THIS')]),
+        CondiJump([None, 1]),
+        AthTokenStatement('print', [LiteralToken('should not print\\n', str)]),
+        ], pendant='THIS'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')]))
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('IfJump.~ATH', stmts)

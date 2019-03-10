@@ -1,23 +1,20 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    FabricateStmt(AthFunction('FACT', ['PROD', 'NUM'], AthAstList([
-        CondJumpStmt(BinaryExpr('>', VarExpr('NUM'), IntExpr(1)), 1),
-        DivulgateStmt(ExecuteStmt([VarExpr('FACT'), BinaryExpr('*', VarExpr('PROD'), VarExpr('NUM')), BinaryExpr('-', VarExpr('NUM'), IntExpr(1))])),
-        DivulgateStmt(VarExpr('PROD'))
-        ], 'FACT')
-    )),
-    TildeAthLoop(False, AthAstList([
-        InputStmt('NUM', StringExpr('Get the factorial of: ')),
-        PrintStmt([StringExpr('The factorial is ~d.\\n'), ExecuteStmt([VarExpr('FACT'), IntExpr(1), VarExpr('NUM')])]),
-        KillStmt(['THIS'])
-        ], 'THIS'),
-    ExecuteStmt([VarExpr('NULL')])
-    )
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('Factorial.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('FABRICATE', [AthCustomFunction('FACT', ['PROD', 'NUM'], AthStatementList([
+        CondiJump([BnaryExpr(['>', IdentifierToken('NUM'), LiteralToken(1, int)]), 1]),
+        AthTokenStatement('DIVULGATE', [AthTokenStatement('EXECUTE', [IdentifierToken('FACT'), BnaryExpr(['*', IdentifierToken('PROD'), IdentifierToken('NUM')]), BnaryExpr(['-', IdentifierToken('NUM'), LiteralToken(1, int)])])]),
+        AthTokenStatement('DIVULGATE', [IdentifierToken('PROD')])
+        ], pendant='FACT'))]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('input', [IdentifierToken('NUM'), LiteralToken('Get the factorial of: ', str)]),
+        AthTokenStatement('print', [LiteralToken('The factorial is ~d.\\n', str), AthTokenStatement('EXECUTE', [IdentifierToken('FACT'), LiteralToken(1, int), IdentifierToken('NUM')])]),
+        AthTokenStatement('DIE', [IdentifierToken('THIS')]),
+        ], pendant='THIS'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')]))
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('Factorial.~ATH', stmts)

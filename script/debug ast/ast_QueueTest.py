@@ -1,58 +1,54 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('LOOP', None),
-    ProcreateStmt('QUEUE', None),
-    ProcreateStmt('FLAG', None),
-    TildeAthLoop(False, AthAstList([
-        PrintStmt([StringExpr('Select action:\\n')]),
-        PrintStmt([StringExpr('[1] Add an item to queue\\n')]),
-        PrintStmt([StringExpr('[2] View queue\\n')]),
-        PrintStmt([StringExpr('[3] Exit\\n')]),
-        InputStmt('CHOICE', StringExpr('')),
-        CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(3)), 2),
-        KillStmt(['LOOP']),
-        CondJumpStmt(None, 22),
-        CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(2)), 11),
-        CondJumpStmt(UnaryExpr('!', VarExpr('FLAG')), 8),
-        ProcreateStmt('STACK', None),
-        ReplicateStmt('TEMP', VarExpr('QUEUE')),
-        BifurcateStmt('TEMP', 'HEAD', 'TEMP'),
-        AggregateStmt('STACK', VarExpr('HEAD'), VarExpr('NULL')),
-        TildeAthLoop(False, AthAstList([
-            BifurcateStmt('TEMP', 'HEAD', 'TEMP'),
-            AggregateStmt('STACK', VarExpr('HEAD'), VarExpr('STACK'))
-            ], 'TEMP'),
-        ExecuteStmt([VarExpr('NULL')])
-        ),
-        TildeAthLoop(False, AthAstList([
-            BifurcateStmt('STACK', 'HEAD', 'STACK'),
-            PrintStmt([StringExpr('~s\\n'), VarExpr('HEAD')])
-            ], 'STACK'),
-        ExecuteStmt([VarExpr('NULL')])
-        ),
-        PrintStmt([StringExpr('Queue print done.\\n')]),
-        CondJumpStmt(None, 12),
-        PrintStmt([StringExpr('Queue is empty.\\n')]),
-        CondJumpStmt(None, 10),
-        CondJumpStmt(BinaryExpr('==', VarExpr('CHOICE'), IntExpr(1)), 8),
-        ReplicateStmt('ITEM', StringExpr('')),
-        InputStmt('ITEM', StringExpr('Input string to add: ')),
-        CondJumpStmt(VarExpr('FLAG'), 3),
-        AggregateStmt('QUEUE', VarExpr('ITEM'), VarExpr('NULL')),
-        KillStmt(['FLAG']),
-        CondJumpStmt(None, 3),
-        AggregateStmt('QUEUE', VarExpr('ITEM'), VarExpr('QUEUE')),
-        CondJumpStmt(None, 1),
-        PrintStmt([StringExpr('Invalid input.')])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('QueueTest.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), None]),
+    AthTokenStatement('PROCREATE', [IdentifierToken('QUEUE'), None]),
+    AthTokenStatement('PROCREATE', [IdentifierToken('FLAG'), None]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('print', [LiteralToken('Select action:\\n', str)]),
+        AthTokenStatement('print', [LiteralToken('[1] Add an item to queue\\n', str)]),
+        AthTokenStatement('print', [LiteralToken('[2] View queue\\n', str)]),
+        AthTokenStatement('print', [LiteralToken('[3] Exit\\n', str)]),
+        AthTokenStatement('input', [IdentifierToken('CHOICE'), LiteralToken('', str)]),
+        CondiJump([BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken(3, int)]), 2]),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        CondiJump([None, 22]),
+        CondiJump([BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken(2, int)]), 11]),
+        CondiJump([UnaryExpr(['!', IdentifierToken('FLAG')]), 8]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('STACK'), None]),
+        AthTokenStatement('REPLICATE', [IdentifierToken('TEMP'), IdentifierToken('QUEUE')]),
+        AthTokenStatement('BIFURCATE', [IdentifierToken('TEMP'), IdentifierToken('HEAD'), IdentifierToken('TEMP')]),
+        AthTokenStatement('AGGREGATE', [IdentifierToken('STACK'), IdentifierToken('HEAD'), IdentifierToken('NULL')]),
+        TildeAthLoop(False, AthStatementList([
+            AthTokenStatement('BIFURCATE', [IdentifierToken('TEMP'), IdentifierToken('HEAD'), IdentifierToken('TEMP')]),
+            AthTokenStatement('AGGREGATE', [IdentifierToken('STACK'), IdentifierToken('HEAD'), IdentifierToken('STACK')]),
+            ], pendant='TEMP'),
+            AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+        TildeAthLoop(False, AthStatementList([
+            AthTokenStatement('BIFURCATE', [IdentifierToken('STACK'), IdentifierToken('HEAD'), IdentifierToken('STACK')]),
+            AthTokenStatement('print', [LiteralToken('~s\\n', str), IdentifierToken('HEAD')]),
+            ], pendant='STACK'),
+            AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+        AthTokenStatement('print', [LiteralToken('Queue print done.\\n', str)]),
+        CondiJump([None, 12]),
+        AthTokenStatement('print', [LiteralToken('Queue is empty.\\n', str)]),
+        CondiJump([None, 10]),
+        CondiJump([BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken(1, int)]), 8]),
+        AthTokenStatement('REPLICATE', [IdentifierToken('ITEM'), LiteralToken('', str)]),
+        AthTokenStatement('input', [IdentifierToken('ITEM'), LiteralToken('Input string to add: ', str)]),
+        CondiJump([IdentifierToken('FLAG'), 3]),
+        AthTokenStatement('AGGREGATE', [IdentifierToken('QUEUE'), IdentifierToken('ITEM'), IdentifierToken('NULL')]),
+        AthTokenStatement('DIE', [IdentifierToken('FLAG')]),
+        CondiJump([None, 3]),
+        AthTokenStatement('AGGREGATE', [IdentifierToken('QUEUE'), IdentifierToken('ITEM'), IdentifierToken('QUEUE')]),
+        CondiJump([None, 1]),
+        AthTokenStatement('print', [LiteralToken('Invalid input.', str)]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('QueueTest.~ATH', stmts)

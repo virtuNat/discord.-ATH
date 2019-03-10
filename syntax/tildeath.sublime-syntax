@@ -10,7 +10,7 @@ scope: source.ath
 
 variables:
   name: '\b[a-zA-Z]\w*\b'
-  number: '\b(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?\b'
+  number: '[-+]?(\.\d+|\d+(\.\d*)?)([eE][-+]?\d+)?[jJ]?\b'
 
 contexts:
   prototype:
@@ -19,10 +19,11 @@ contexts:
   main:
     - include: keywords
     - include: operators
-    - include: functions
     - include: parens
+    - include: functions
     - include: brackets
     - include: braces
+    - include: vars
     - include: numbers
     - include: strings
 
@@ -44,12 +45,12 @@ contexts:
 
   keywords:
     # Basic keywords
-    - match: '\b(input|print|import|DEBATE|UNLESS|REPLICATE|DIVULGATE|REPLICATE)\b'
+    - match: '\b(input|print|import|DEBATE|UNLESS|DIVULGATE)\b'
       scope: keyword.control.ath
     # Declaration keywords
     - match: '\b(PROCREATE|ENUMERATE)\b'
       scope: storage.type.ath
-    - match: '\b(BIFURCATE|AGGREGATE)\b'
+    - match: '\b(BIFURCATE|AGGREGATE|PROPAGATE|REPLICATE)\b'
       scope: support.function.ath
     # THIS keyword
     - match: '\b(THIS)\b'
@@ -72,15 +73,15 @@ contexts:
           pop: true
 
   operators:
-    - match: '(\+|-|\*\*|\*|/_|/|%)=?'
+    - match: '(\+|-|\^|\*|/_|/|%)'
       scope: keyword.operator.arithmetic.ath
     - match: '(!=!|!=\?|\?=!|~=!|!=~|~=~)'
       scope: keyword.operator.assignment.ath
-    - match: '(&&|\|\||\^\^|!)'
+    - match: '(l&|l\||l\^|!)'
       scope: keyword.operator.logical.ath
     - match: '(==|~=)'
       scope: keyword.operator.arithmetic.ath
-    - match: '(&|\||\^|~|<<|>>)=?'
+    - match: '(b&|b\||b\^|~|<<|>>)'
       scope: keyword.operator.bitwise.ath
     - match: '(<=|<|>=|>)'
       scope: keyword.operator.arithmetic.ath
@@ -107,13 +108,9 @@ contexts:
       push:
         - match: \(
           push:
-            - match: '\bNULL\b'
-              scope: constant.language.ath
-              pop: true
             - match: '({{name}})?'
               scope: entity.name.function.ath
               pop: true
-        - match: '([^\)])*'
         - match: \)
           pop: true
     # DIE "function". Takes no arguments.
@@ -154,6 +151,10 @@ contexts:
         - include: main
     - match: \}
       scope: invalid.illegal.stray-brace-end.ath
+
+  vars:
+    - match: '[a-zA-Z]\w*'
+      scope: variable.ath
 
   numbers:
     - match: '{{number}}'

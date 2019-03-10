@@ -1,30 +1,27 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('LOOP', None),
-    ProcreateStmt('CTR', IntExpr(1)),
-    FabricateStmt(AthFunction('CTR', ['COUNT'], AthAstList([
-        DivulgateStmt(BinaryExpr('+', VarExpr('COUNT'), IntExpr(1)))
-        ], 'CTR')
-    )),
-    BifurcateStmt('CTR', 'ctr', 'cnt'),
-    InputStmt('MAX', StringExpr('Count to how many? :')),
-    TildeAthLoop(False, AthAstList([
-        PrintStmt([StringExpr('Count: ~d\\n'), VarExpr('CTR')]),
-        ReplicateStmt('CTR', ExecuteStmt([VarExpr('CTR'), VarExpr('CTR')])),
-        CondJumpStmt(BinaryExpr('>', VarExpr('CTR'), VarExpr('MAX')), 3),
-        InspectStack([]),
-        KillStmt(['LOOP']),
-        CondJumpStmt(None, 1),
-        PrintStmt([StringExpr('Next...\\n')])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('Test2.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), None]),
+    AthTokenStatement('PROCREATE', [IdentifierToken('CTR'), LiteralToken(1, int)]),
+    AthTokenStatement('FABRICATE', [AthCustomFunction('CTR', ['COUNT'], AthStatementList([
+        AthTokenStatement('DIVULGATE', [BnaryExpr(['+', IdentifierToken('COUNT'), LiteralToken(1, int)])])
+        ], pendant='CTR'))]),
+    AthTokenStatement('BIFURCATE', [IdentifierToken('CTR'), IdentifierToken('ctr'), IdentifierToken('cnt')]),
+    AthTokenStatement('input', [IdentifierToken('MAX'), LiteralToken('Count to how many? :', str)]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('print', [LiteralToken('Count: ~d\\n', str), IdentifierToken('CTR')]),
+        AthTokenStatement('REPLICATE', [IdentifierToken('CTR'), AthTokenStatement('EXECUTE', [IdentifierToken('CTR'), IdentifierToken('CTR')])]),
+        CondiJump([BnaryExpr(['>', IdentifierToken('CTR'), IdentifierToken('MAX')]), 3]),
+        AthTokenStatement('INSPECT', []),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        CondiJump([None, 1]),
+        AthTokenStatement('print', [LiteralToken('Next...\\n', str)]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('Test2.~ATH', stmts)

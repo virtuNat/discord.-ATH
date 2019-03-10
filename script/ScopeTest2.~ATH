@@ -1,15 +1,13 @@
 PROCREATE X 1;
 FABRICATE F(I){
   REPLICATE X I;
-  AGGREGATE [I + 1, NULL]I;
-  BIFURCATE I[I, NULL];
+  PROCREATE I I + 1;
   EXECUTE(G, I);
-  PROCREATE VAR;
+  PROCREATE VAR; // Prevent tail call opt from deleting stack frame
 }
 
 FABRICATE G(J){
-  AGGREGATE [J + X, NULL]J;
-  BIFURCATE J[J, NULL];
+  PROCREATE J J + 1;
 }
 
 ~ATH(THIS){

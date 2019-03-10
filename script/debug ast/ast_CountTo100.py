@@ -1,26 +1,23 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ProcreateStmt('A', IntExpr(0)),
-    FabricateStmt(AthFunction('COUNT', [], AthAstList([
-        CondJumpStmt(BinaryExpr('<', VarExpr('A'), IntExpr(100)), 3),
-        ProcreateStmt('A', BinaryExpr('+', VarExpr('A'), IntExpr(1))),
-        PrintStmt([StringExpr('~s '), VarExpr('A')]),
-        ExecuteStmt([VarExpr('COUNT')])
-        ], 'COUNT')
-    )),
-    ProcreateStmt('LOOP', IntExpr(0)),
-    TildeAthLoop(False, AthAstList([
-        ExecuteStmt([VarExpr('COUNT')]),
-        KillStmt(['LOOP'])
-        ], 'LOOP'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('CountTo100.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('PROCREATE', [IdentifierToken('A'), LiteralToken(0, int)]),
+    AthTokenStatement('FABRICATE', [AthCustomFunction('COUNT', [], AthStatementList([
+        CondiJump([BnaryExpr(['<', IdentifierToken('A'), LiteralToken(100, int)]), 3]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('A'), BnaryExpr(['+', IdentifierToken('A'), LiteralToken(1, int)])]),
+        AthTokenStatement('print', [LiteralToken('~s ', str), IdentifierToken('A')]),
+        AthTokenStatement('EXECUTE', [IdentifierToken('COUNT')])
+        ], pendant='COUNT'))]),
+    AthTokenStatement('PROCREATE', [IdentifierToken('LOOP'), LiteralToken(0, int)]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('EXECUTE', [IdentifierToken('COUNT')]),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
+        ], pendant='LOOP'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('CountTo100.~ATH', stmts)

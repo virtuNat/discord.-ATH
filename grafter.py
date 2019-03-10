@@ -20,11 +20,7 @@ class Graft(object):
         return object.__hash__((self.value, self.index))
 
     def __repr__(self):
-        return '{}({}, {})'.format(
-            self.__class__.__name__,
-            self.value,
-            self.index
-            )
+        return f'{self.__class__.__name__}({self.value}, {self.index})'
 
 
 class BaseParser(object):
@@ -32,9 +28,8 @@ class BaseParser(object):
     __slots__ = ()
 
     def __repr__(self):
-        attr_list = tuple([repr(getattr(self, slot)) for slot in self.__slots__])
-        attr_str = ', '.join(attr_list)
-        return '{}({})'.format(self.__class__.__name__, attr_str)
+        attr_list = tuple(repr(getattr(self, slot)) for slot in self.__slots__)
+        return f'{self.__class__.__name__}{attr_list}'
 
     def __call__(self, *args):
         raise NotImplementedError(
@@ -64,15 +59,15 @@ class BaseParser(object):
     def format(self, other):
         if (
             not isinstance(other, self.__class__)
-            and (
-                isinstance(other, ConcatParser)
-                or isinstance(other, SelectParser)
-                or isinstance(other, ExprsnParser)
-                or isinstance(other, StrictParser)
-                or isinstance(other, WrapprParser)
-                )
+            and isinstance(other, (
+                ConcatParser,
+                SelectParser,
+                ExprsnParser,
+                StrictParser,
+                WrapprParser,
+                ))
             ):
-            return '({!r})'.format(other)
+            return f'({other!r})'
         return repr(other)
 
 
@@ -90,20 +85,18 @@ class ConcatParser(BaseParser):
         self.reval = right
 
     def __repr__(self):
-        lstr = self.format(self.leval)
-        rstr = self.format(self.reval)
-        return lstr + ' + ' + rstr
+        return f'{self.format(self.leval)} + {self.format(self.reval)}'
 
     def __call__(self, tokens, index):
         lvalue = self.leval(tokens, index)
-        if lvalue:
-            rvalue = self.reval(tokens, lvalue.index)
-            if rvalue:
-                if isinstance(lvalue.value, tuple):
-                    # Avoid recursive tuples.
-                    return Graft(lvalue.value + (rvalue.value,), rvalue.index)
-                return Graft((lvalue.value, rvalue.value), rvalue.index)
-        return None
+        if not lvalue:
+            return None
+        rvalue = self.reval(tokens, lvalue.index)
+        if not rvalue:
+            return None
+        if isinstance(lvalue.value, list): # Avoid recursive lists.
+            return Graft(lvalue.value + [rvalue.value], rvalue.index)
+        return Graft([lvalue.value, rvalue.value], rvalue.index)
 
 
 class SelectParser(BaseParser):
@@ -120,9 +113,7 @@ class SelectParser(BaseParser):
         self.reval = right
 
     def __repr__(self):
-        lstr = self.format(self.leval)
-        rstr = self.format(self.reval)
-        return lstr + ' | ' + rstr
+        return f'{self.format(self.leval)} | {self.format(self.reval)}'
 
     def __call__(self, tokens, index):
         return self.leval(tokens, index) or self.reval(tokens, index)
@@ -141,9 +132,7 @@ class WrapprParser(BaseParser):
         self.apply = func
 
     def __repr__(self):
-        lstr = self.format(self.graft)
-        rstr = self.format(self.apply)
-        return lstr + ' ^ ' + rstr
+        return f'{self.format(self.grafy)} ^ {self.format(self.apply)}'
 
     def __call__(self, tokens, index):
         graft = self.graft(tokens, index)
@@ -169,9 +158,7 @@ class ExprsnParser(BaseParser):
         self.group = grouper
 
     def __repr__(self):
-        lstr = self.format(self.graft)
-        rstr = self.format(self.group)
-        return lstr + ' * ' + rstr
+        return f'{self.format(self.graft)} * {self.format(self.group)}'
 
     def graft_next(self):
         """Concatenate the separator function and the next item
@@ -210,9 +197,7 @@ class StrictParser(BaseParser):
         self.graft_next = self.group + self.graft ^ self.eval_next
 
     def __repr__(self):
-        lstr = self.format(self.graft)
-        rstr = self.format(self.group)
-        return lstr + ' ** ' + rstr
+        return f'{self.format(self.graft)} ** {self.format(self.group)}'
 
     def eval_next(self, graft):
         """Using the function bound to the separator, and the
@@ -242,15 +227,14 @@ class ItemParser(Token, BaseParser):
     __slots__ = ()
 
     def __repr__(self):
-        attr_str = ', '.join([repr(self.token), repr(self.tag)])
-        return '{}({})'.format(self.__class__.__name__, attr_str)
+        return f'{self.__class__.__name__}({self.token!r}, {self.tag!r})'
 
     def __eq__(self, other):
         try:
             return (self.token, self.tag) == (other.token, other.tag)
         except AttributeError:
             raise TypeError(
-                'Can\'t compare Token to {}'.format(other.__class__.__name__)
+                f'can\'t compare Token to {other.__class__.__name__}'
                 )
 
     def __hash__(self):
@@ -258,12 +242,8 @@ class ItemParser(Token, BaseParser):
         return object.__hash__(self)
 
     def __call__(self, tokens, index):
-        try:
-            if self == tokens[index]:
-                # print(tokens[index])
-                return Graft(self.token, index + 1)
-        except IndexError:
-            pass
+        if index < len(tokens) and self == tokens[index]:
+            return Graft(self.token, index + 1)
         return None
 
 
@@ -279,7 +259,7 @@ class TagsParser(BaseParser):
             return self.tag == other.tag
         except AttributeError:
             raise TypeError(
-                'Can\'t compare tag of {}'.format(other.__class__.__name__)
+                f'Can\'t compare tag of {other.__class__.__name__}'
                 )
 
     def __hash__(self):
@@ -287,12 +267,8 @@ class TagsParser(BaseParser):
         return object.__hash__(self)
 
     def __call__(self, tokens, index):
-        try:
-            if self == tokens[index]:
-                # print(tokens[index])
-                return Graft(tokens[index].token, index + 1)
-        except IndexError:
-            pass
+        if index < len(tokens) and self.tag == tokens[index].tag:
+            return Graft(tokens[index].token, index + 1)
         return None
 
 
@@ -326,7 +302,6 @@ class RepeatParser(BaseParser):
         grafts = []
         graft = self.graft(tokens, index)
         while graft:
-            # print('Parsed:', graft.value)
             grafts.append(graft.value)
             index = graft.index
             graft = self.graft(tokens, index)
@@ -347,7 +322,7 @@ class LazierParser(BaseParser):
         self.grafter = None
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__, self.grafter_func)
+        return f'{self.__class__.__name__}({self.grafter_func})'
 
     def __call__(self, tokens, index):
         if not self.grafter:
@@ -371,9 +346,7 @@ class ScriptParser(BaseParser):
         if graft.index == len(tokens):
             # print('Final:\n', graft.value, '\n', sep='')
             return graft
+        token = tokens[graft.index]
         raise SyntaxError(
-            'Starting from {} on line {}\n'.format(
-                tokens[graft.index].token, 
-                tokens[graft.index].line + 1,
-                )
+            f'Starting from {token.token} on line {token.line}\n'
             )

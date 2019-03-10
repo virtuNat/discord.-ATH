@@ -1,27 +1,24 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    FabricateStmt(AthFunction('ACK', ['M', 'N'], AthAstList([
-        CondJumpStmt(BinaryExpr('==', VarExpr('M'), IntExpr(0)), 2),
-        DivulgateStmt(BinaryExpr('+', VarExpr('N'), IntExpr(1))),
-        CondJumpStmt(None, 4),
-        CondJumpStmt(BinaryExpr('==', VarExpr('N'), IntExpr(0)), 2),
-        DivulgateStmt(ExecuteStmt([VarExpr('ACK'), BinaryExpr('-', VarExpr('M'), IntExpr(1)), IntExpr(1)])),
-        CondJumpStmt(None, 1),
-        DivulgateStmt(ExecuteStmt([VarExpr('ACK'), BinaryExpr('-', VarExpr('M'), IntExpr(1)), ExecuteStmt([VarExpr('ACK'), VarExpr('M'), BinaryExpr('-', VarExpr('N'), IntExpr(1))])]))
-        ], 'ACK')
-    )),
-    TildeAthLoop(False, AthAstList([
-        InputStmt('NUM', StringExpr('Get the ackermann function of: ')),
-        PrintStmt([StringExpr('The value of A(n, n) is ~d.\\n'), ExecuteStmt([VarExpr('ACK'), VarExpr('NUM'), VarExpr('NUM')])]),
-        KillStmt(['THIS'])
-        ], 'THIS'),
-    ExecuteStmt([VarExpr('NULL')])
-    )
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('Ackermann.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('FABRICATE', [AthCustomFunction('ACK', ['M', 'N'], AthStatementList([
+        CondiJump([BnaryExpr(['==', IdentifierToken('M'), LiteralToken(0, int)]), 2]),
+        AthTokenStatement('DIVULGATE', [BnaryExpr(['+', IdentifierToken('N'), LiteralToken(1, int)])]),
+        CondiJump([None, 4]),
+        CondiJump([BnaryExpr(['==', IdentifierToken('N'), LiteralToken(0, int)]), 2]),
+        AthTokenStatement('DIVULGATE', [AthTokenStatement('EXECUTE', [IdentifierToken('ACK'), BnaryExpr(['-', IdentifierToken('M'), LiteralToken(1, int)]), LiteralToken(1, int)])]),
+        CondiJump([None, 1]),
+        AthTokenStatement('DIVULGATE', [AthTokenStatement('EXECUTE', [IdentifierToken('ACK'), BnaryExpr(['-', IdentifierToken('M'), LiteralToken(1, int)]), AthTokenStatement('EXECUTE', [IdentifierToken('ACK'), IdentifierToken('M'), BnaryExpr(['-', IdentifierToken('N'), LiteralToken(1, int)])])])])
+        ], pendant='ACK'))]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('input', [IdentifierToken('NUM'), LiteralToken('Get the ackermann function of: ', str)]),
+        AthTokenStatement('print', [LiteralToken('The value of A(n, n) is ~d.\\n', str), AthTokenStatement('EXECUTE', [IdentifierToken('ACK'), IdentifierToken('NUM'), IdentifierToken('NUM')])]),
+        AthTokenStatement('DIE', [IdentifierToken('THIS')]),
+        ], pendant='THIS'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')]))
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('Ackermann.~ATH', stmts)

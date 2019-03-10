@@ -1,0 +1,15 @@
+FABRICATE COUNTER(NUM, DIGITS){
+  DEBATE(NUM < 0){
+    DIVULGATE EXECUTE(COUNTER, -NUM, 0);
+  }
+  UNLESS(NUM < 10){
+    DIVULGATE DIGITS + 1;
+  }
+  DIVULGATE EXECUTE(COUNTER, NUM /_ 10, DIGITS + 1);
+}
+
+~ATH(THIS){
+  input NUM "Give an integer to count the digits of: ";
+  print("There are ~d digits in that integer.\n", EXECUTE(COUNTER, NUM, 0));
+  THIS.DIE();
+}EXECUTE(NULL);

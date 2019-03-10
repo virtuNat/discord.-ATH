@@ -1,22 +1,20 @@
 #!/usr/bin/env python
-from athast import *
-from symbol import ThisSymbol
-from tildeath import TildeAthInterp
+from athstmt import *
+from athinterpreter import TildeAthInterp
 
-ast = AthAstList([
-    ImportStmt('ModuleTest', 'FIB'),
-    ProcreateStmt('MAIN', None),
-    ProcreateStmt('COUNT', IntExpr(1)),
-    TildeAthLoop(False, AthAstList([
-        PrintStmt([StringExpr('F~d = ~d\\n'), VarExpr('COUNT'), ExecuteStmt([VarExpr('FIB'), VarExpr('COUNT')])]),
-        CondJumpStmt(BinaryExpr('>=', VarExpr('COUNT'), IntExpr(10)), 1),
-        KillStmt(['MAIN']),
-        ProcreateStmt('COUNT', BinaryExpr('+', VarExpr('COUNT'), IntExpr(1)))
-        ], 'MAIN'),
-    ExecuteStmt([VarExpr('NULL')])
-    ),
-    KillStmt(['THIS'])
-    ], 'THIS')
-interp = TildeAthInterp()
-interp.bltin_vars['THIS'] = ThisSymbol('ImportTest.~ATH', ast)
-interp.execute(ast)
+stmts = AthStatementList([
+    AthTokenStatement('import', ['ModuleTest', 'FIB']),
+    AthTokenStatement('PROCREATE', [IdentifierToken('MAIN'), None]),
+    AthTokenStatement('PROCREATE', [IdentifierToken('COUNT'), LiteralToken(1, int)]),
+    TildeAthLoop(False, AthStatementList([
+        AthTokenStatement('print', [LiteralToken('F~d = ~d\\n', str), IdentifierToken('COUNT'), AthTokenStatement('EXECUTE', [IdentifierToken('FIB'), IdentifierToken('COUNT')])]),
+        CondiJump([BnaryExpr(['>=', IdentifierToken('COUNT'), LiteralToken(10, int)]), 1]),
+        AthTokenStatement('DIE', [IdentifierToken('MAIN')]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('COUNT'), BnaryExpr(['+', IdentifierToken('COUNT'), LiteralToken(1, int)])]),
+        ], pendant='MAIN'),
+        AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
+    ], pendant='THIS')
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('ImportTest.~ATH', stmts)
