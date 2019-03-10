@@ -9,15 +9,9 @@ NULL = NullSymbol()
 
 class AthBuiltinsDict(dict):
     __slots__ = ()
-    instance = None
 
-    def __new__(cls, *args, **kwargs):
-        if cls.instance is None:
-            cls.instance = super().__new__(cls, *args, **kwargs)
-        return cls.instance
-
-    def add_builtin(self, name, item):
-        self.__setitem__(name, BuiltinSymbol.from_builtin(name, *item))
+    def add_builtin(self, name, args):
+        self.__setitem__(name, BuiltinSymbol.from_builtin(name, *args))
 
     def add_builtins(self, **kwargs):
         self.update(
@@ -26,7 +20,7 @@ class AthBuiltinsDict(dict):
             )
 
 ath_builtins = AthBuiltinsDict(NULL=NULL)
-
+ath_modules = {'MATH'}
 
 def pull_name(arg):
     if isinstance(arg, AthSymbol):
@@ -41,13 +35,16 @@ def import_statement(env, module, symbol):
     try:
         module_vars = env.modules[module]
     except KeyError:
-        subproc = env.__class__()
-        try:
-            subproc.interpret(module + '.~ATH', True)
-        except SystemExit as exit_state:
-            if exit_state.args[0]:
-                raise exit_state
-        module_vars = subproc.stack[0].scope_vars
+        if module in ath_modules:
+            module_vars = __import__(f'athbuiltins_{module.lower()}').builtins_dict
+        else:
+            subproc = env.__class__()
+            try:
+                subproc.interpret(module + '.~ATH', True)
+            except SystemExit as exit_state:
+                if exit_state.args[0]:
+                    raise exit_state
+            module_vars = subproc.stack[0].scope_vars
         env.modules[module] = module_vars
     try:
         backref = module_vars[symbol]

@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 from argparse import ArgumentParser
-from athsymbol import AthSymbol, SymbolDeath, AthCustomFunction
+from athsymbol import AthSymbol, SymbolDeath, AthBuiltinFunction, AthCustomFunction
 from athstmt import(
 	ath_builtins, ThisSymbol,
     LiteralToken, IdentifierToken, 
@@ -11,7 +11,7 @@ from athstmt import(
 	)
 from athgrammar import ath_parser
 
-__version__ = '1.6.0'
+__version__ = '1.6.1'
 __author__ = 'virtuNat'
 
 
@@ -143,10 +143,14 @@ class TildeAthInterp(object):
                     # When other errors occur, pass the exception upward.
                     raise exc
                 else:
-                    # When the function has finished, move down the evaluation stack.
+                    # When the function has finished, move down the evaluation stack.    
                     if node.stmt.name == 'EXECUTE': # Function call
                         eval_state.pop()
                         func, scope_vars = ret_value
+                        if isinstance(func, AthBuiltinFunction):
+                            node = eval_state[-1]
+                            node.set_argv(func(self, *scope_vars))
+                            continue
                         if self.is_tail_call(len(eval_state) + 1):
                             frame = self.stack[-1]
                             frame.scope_vars = scope_vars
