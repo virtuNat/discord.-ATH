@@ -28,8 +28,8 @@ class BaseParser(object):
     __slots__ = ()
 
     def __repr__(self):
-        attr_list = [repr(getattr(self, slot)) for slot in self.__slots__]
-        return f'{self.__class__.__name__}({", ".join(attr_list)})'
+        attr_list = tuple(repr(getattr(self, slot)) for slot in self.__slots__)
+        return f'{self.__class__.__name__}{attr_list}'
 
     def __call__(self, *args):
         raise NotImplementedError(

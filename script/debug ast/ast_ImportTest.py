@@ -9,10 +9,12 @@ stmts = AthStatementList([
     TildeAthLoop(False, AthStatementList([
         AthTokenStatement('print', [LiteralToken('F~d = ~d\\n', str), IdentifierToken('COUNT'), AthTokenStatement('EXECUTE', [IdentifierToken('FIB'), IdentifierToken('COUNT')])]),
         CondiJump([BnaryExpr(['>=', IdentifierToken('COUNT'), LiteralToken(10, int)]), 1]),
-        AthTokenStatement('DIE', ['MAIN']),
+        AthTokenStatement('DIE', [IdentifierToken('MAIN')]),
         AthTokenStatement('PROCREATE', [IdentifierToken('COUNT'), BnaryExpr(['+', IdentifierToken('COUNT'), LiteralToken(1, int)])]),
         ], pendant='MAIN'),
         AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
-    AthTokenStatement('DIE', ['THIS'])
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('ImportTest.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('ImportTest.~ATH', stmts)

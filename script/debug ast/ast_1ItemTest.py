@@ -16,15 +16,15 @@ stmts = AthStatementList([
         AthTokenStatement('ENUMERATE', [IdentifierToken('CHOICE'), IdentifierToken('CHARS')]),
         AthTokenStatement('BIFURCATE', [IdentifierToken('CHARS'), IdentifierToken('HEAD'), IdentifierToken('TAIL')]),
         CondiJump([UnaryExpr(['!', IdentifierToken('TAIL')]), 5]),
-        CondiJump([BnaryExpr(['||', BnaryExpr(['&&', BnaryExpr(['>=', IdentifierToken('CHOICE'), LiteralToken('A', str)]), BnaryExpr(['<=', IdentifierToken('CHOICE'), LiteralToken('F', str)])]), BnaryExpr(['&&', BnaryExpr(['<=', IdentifierToken('CHOICE'), LiteralToken('f', str)]), BnaryExpr(['>=', IdentifierToken('CHOICE'), LiteralToken('a', str)])])]), 2]),
+        CondiJump([BnaryExpr(['l|', BnaryExpr(['l&', BnaryExpr(['>=', IdentifierToken('CHOICE'), LiteralToken('A', str)]), BnaryExpr(['<=', IdentifierToken('CHOICE'), LiteralToken('F', str)])]), BnaryExpr(['l&', BnaryExpr(['<=', IdentifierToken('CHOICE'), LiteralToken('f', str)]), BnaryExpr(['>=', IdentifierToken('CHOICE'), LiteralToken('a', str)])])]), 2]),
         AthTokenStatement('print', [LiteralToken('Wrong! Try again, idiot.\\n', str)]),
         CondiJump([None, 10]),
         AthTokenStatement('print', [LiteralToken("Are you blind? That's not even a choice.\\n", str)]),
         CondiJump([None, 8]),
-        CondiJump([BnaryExpr(['||', BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('THE CHEAT CODE', str)]), BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('the cheat code', str)])]), 2]),
+        CondiJump([BnaryExpr(['l|', BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('THE CHEAT CODE', str)]), BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('the cheat code', str)])]), 2]),
         AthTokenStatement('print', [LiteralToken("Damn, you caught me. It's a trick question.\\n", str)]),
         CondiJump([None, 5]),
-        CondiJump([BnaryExpr(['||', BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('DIE', str)]), BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('die', str)])]), 3]),
+        CondiJump([BnaryExpr(['l|', BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('DIE', str)]), BnaryExpr(['==', IdentifierToken('CHOICE'), LiteralToken('die', str)])]), 3]),
         AthTokenStatement('print', [LiteralToken('Hmph. Ninny.\\n', str)]),
         AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
         CondiJump([None, 1]),
@@ -34,4 +34,6 @@ stmts = AthStatementList([
         AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
     AthTokenStatement('DIE', [IdentifierToken('THIS')])
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('1ItemTest.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('1ItemTest.~ATH', stmts)

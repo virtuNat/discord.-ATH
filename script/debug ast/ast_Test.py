@@ -19,4 +19,6 @@ stmts = AthStatementList([
     AthTokenStatement('print', [LiteralToken('I wish you a peaceful death, ~s.\\n', str), IdentifierToken('TEST')]),
     AthTokenStatement('DIE', [IdentifierToken('THIS')])
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('Test.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('Test.~ATH', stmts)

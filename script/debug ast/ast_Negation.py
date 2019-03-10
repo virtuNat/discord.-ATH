@@ -11,4 +11,6 @@ stmts = AthStatementList([
     AthTokenStatement('print', [LiteralToken('Yay.\\n', str)]),
     AthTokenStatement('DIE', [IdentifierToken('THIS')])
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('Negation.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('Negation.~ATH', stmts)

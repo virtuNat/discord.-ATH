@@ -16,9 +16,11 @@ stmts = AthStatementList([
     TildeAthLoop(False, AthStatementList([
         AthTokenStatement('print', [LiteralToken('Foo: ~d\\n', str), AthTokenStatement('EXECUTE', [IdentifierToken('FOO')])]),
         AthTokenStatement('print', [LiteralToken('Bar: ~d\\n', str), AthTokenStatement('EXECUTE', [IdentifierToken('BAR')])]),
-        AthTokenStatement('DIE', ['LOOP']),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
         ], pendant='LOOP'),
         AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
-    AthTokenStatement('DIE', ['THIS'])
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('ScopeTest.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('ScopeTest.~ATH', stmts)

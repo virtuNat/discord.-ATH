@@ -7,11 +7,9 @@ def math_builtin(func, dtypes):
     def math_proxy_func(*values):
         args = []
         for value in values:
-            if (isinstance(value, AthSymbol)
-                and isinstance(value.left, dtypes)
-                ):
-                args.append(value.left)
-            elif isinstance(value, dtypes):
+            if isinstance(value, AthSymbol):
+                value = value.left
+            if isinstance(value, dtypes):
                 args.append(value)
             raise TypeError('invalid numerical type')
         return AthSymbol(left=func(*args))

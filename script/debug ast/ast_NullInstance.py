@@ -11,4 +11,6 @@ stmts = AthStatementList([
         AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
     AthTokenStatement('DIE', [IdentifierToken('THIS')])
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('NullInstance.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('NullInstance.~ATH', stmts)

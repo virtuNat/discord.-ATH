@@ -22,15 +22,15 @@ stmts = AthStatementList([
         AthTokenStatement('PROCREATE', [IdentifierToken('X2'), BnaryExpr(['/', BnaryExpr(['-', BnaryExpr(['*', BnaryExpr(['*', LiteralToken(9, int), IdentifierToken('A')]), IdentifierToken('D')]), BnaryExpr(['*', IdentifierToken('B'), IdentifierToken('C')])]), BnaryExpr(['*', LiteralToken(2, int), IdentifierToken('K')])])]),
         AthTokenStatement('PROCREATE', [IdentifierToken('X3'), IdentifierToken('X2')]),
         CondiJump([None, 12]),
-        AthTokenStatement('PROCREATE', [IdentifierToken('R'), BnaryExpr(['+', UnaryExpr(['-', LiteralToken(0.5, float)]), BnaryExpr(['*', BnaryExpr(['**', LiteralToken(0.75, float), LiteralToken(0.5, float)]), LiteralToken(1j, complex)])])]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('R'), BnaryExpr(['+', UnaryExpr(['-', LiteralToken(0.5, float)]), BnaryExpr(['*', BnaryExpr(['^', LiteralToken(0.75, float), LiteralToken(0.5, float)]), LiteralToken(1j, complex)])])]),
         AthTokenStatement('PROCREATE', [IdentifierToken('L'), BnaryExpr(['+', BnaryExpr(['*', BnaryExpr(['*', BnaryExpr(['*', LiteralToken(2, int), IdentifierToken('B')]), IdentifierToken('B')]), IdentifierToken('B')]), BnaryExpr(['*', BnaryExpr(['*', LiteralToken(9, int), IdentifierToken('A')]), BnaryExpr(['-', BnaryExpr(['*', BnaryExpr(['*', LiteralToken(3, int), IdentifierToken('A')]), IdentifierToken('D')]), BnaryExpr(['*', IdentifierToken('B'), IdentifierToken('C')])])])])]),
-        AthTokenStatement('PROCREATE', [IdentifierToken('M'), BnaryExpr(['**', BnaryExpr(['*', BnaryExpr(['*', BnaryExpr(['*', UnaryExpr(['-', LiteralToken(27, int)]), IdentifierToken('A')]), IdentifierToken('A')]), IdentifierToken('J')]), LiteralToken(0.5, float)])]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('M'), BnaryExpr(['^', BnaryExpr(['*', BnaryExpr(['*', BnaryExpr(['*', UnaryExpr(['-', LiteralToken(27, int)]), IdentifierToken('A')]), IdentifierToken('A')]), IdentifierToken('J')]), LiteralToken(0.5, float)])]),
         CondiJump([BnaryExpr(['==', IdentifierToken('L'), IdentifierToken('M')]), 2]),
-        AthTokenStatement('PROCREATE', [IdentifierToken('C1'), BnaryExpr(['**', BnaryExpr(['/', BnaryExpr(['+', IdentifierToken('L'), IdentifierToken('M')]), LiteralToken(2, int)]), BnaryExpr(['/', LiteralToken(1, int), LiteralToken(3, int)])])]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('C1'), BnaryExpr(['^', BnaryExpr(['/', BnaryExpr(['+', IdentifierToken('L'), IdentifierToken('M')]), LiteralToken(2, int)]), BnaryExpr(['/', LiteralToken(1, int), LiteralToken(3, int)])])]),
         CondiJump([None, 1]),
-        AthTokenStatement('PROCREATE', [IdentifierToken('C1'), BnaryExpr(['**', BnaryExpr(['/', BnaryExpr(['-', IdentifierToken('L'), IdentifierToken('M')]), LiteralToken(2, int)]), BnaryExpr(['/', LiteralToken(1, int), LiteralToken(3, int)])])]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('C1'), BnaryExpr(['^', BnaryExpr(['/', BnaryExpr(['-', IdentifierToken('L'), IdentifierToken('M')]), LiteralToken(2, int)]), BnaryExpr(['/', LiteralToken(1, int), LiteralToken(3, int)])])]),
         AthTokenStatement('PROCREATE', [IdentifierToken('C2'), BnaryExpr(['*', IdentifierToken('C1'), IdentifierToken('R')])]),
-        AthTokenStatement('PROCREATE', [IdentifierToken('C3'), BnaryExpr(['*', IdentifierToken('C2'), IdentifierToken('R')])]),
+        AthTokenStatement('PROCREATE', [IdentifierToken('C3'), BnaryExpr(['/', IdentifierToken('C1'), IdentifierToken('R')])]),
         AthTokenStatement('PROCREATE', [IdentifierToken('X1'), BnaryExpr(['/', UnaryExpr(['-', BnaryExpr(['+', BnaryExpr(['+', IdentifierToken('B'), IdentifierToken('C1')]), BnaryExpr(['/', IdentifierToken('K'), IdentifierToken('C1')])])]), BnaryExpr(['*', LiteralToken(3, int), IdentifierToken('A')])])]),
         AthTokenStatement('PROCREATE', [IdentifierToken('X2'), BnaryExpr(['/', UnaryExpr(['-', BnaryExpr(['+', BnaryExpr(['+', IdentifierToken('B'), IdentifierToken('C2')]), BnaryExpr(['/', IdentifierToken('K'), IdentifierToken('C2')])])]), BnaryExpr(['*', LiteralToken(3, int), IdentifierToken('A')])])]),
         AthTokenStatement('PROCREATE', [IdentifierToken('X3'), BnaryExpr(['/', UnaryExpr(['-', BnaryExpr(['+', BnaryExpr(['+', IdentifierToken('B'), IdentifierToken('C3')]), BnaryExpr(['/', IdentifierToken('K'), IdentifierToken('C3')])])]), BnaryExpr(['*', LiteralToken(3, int), IdentifierToken('A')])])]),
@@ -40,4 +40,6 @@ stmts = AthStatementList([
         AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
     AthTokenStatement('DIE', [IdentifierToken('THIS')])
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('CubicRoots.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('CubicRoots.~ATH', stmts)

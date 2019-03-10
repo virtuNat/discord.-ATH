@@ -338,7 +338,7 @@ class StmtPrintFrame(object):
         return self.nodegen
 
     def __next__(self):
-        return self.nodegen.__next__()
+        return next(self.nodegen)
 
     def __len__(self):
         return self.iterlen
@@ -442,7 +442,6 @@ class AthStatementList(list):
                     item.__class__.__name__,
                     item.name,
                     ))
-                # print(repr(item))
                 stack.append(StmtPrintFrame(item, 'args', False))
             elif isinstance(item, TildeAthLoop):
                 slist.append('{}{}({}, {}([\n'.format(

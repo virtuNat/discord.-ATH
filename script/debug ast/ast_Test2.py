@@ -15,11 +15,13 @@ stmts = AthStatementList([
         AthTokenStatement('REPLICATE', [IdentifierToken('CTR'), AthTokenStatement('EXECUTE', [IdentifierToken('CTR'), IdentifierToken('CTR')])]),
         CondiJump([BnaryExpr(['>', IdentifierToken('CTR'), IdentifierToken('MAX')]), 3]),
         AthTokenStatement('INSPECT', []),
-        AthTokenStatement('DIE', ['LOOP']),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
         CondiJump([None, 1]),
         AthTokenStatement('print', [LiteralToken('Next...\\n', str)]),
         ], pendant='LOOP'),
         AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
-    AthTokenStatement('DIE', ['THIS'])
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('Test2.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('Test2.~ATH', stmts)

@@ -14,9 +14,11 @@ stmts = AthStatementList([
         AthTokenStatement('print', [LiteralToken('~s ', str), IdentifierToken('A')]),
         CondiJump([BnaryExpr(['==', IdentifierToken('A'), LiteralToken(256, int)]), 2]),
         AthTokenStatement('print', [LiteralToken('\\n', str)]),
-        AthTokenStatement('DIE', ['LOOP']),
+        AthTokenStatement('DIE', [IdentifierToken('LOOP')]),
         ], pendant='LOOP'),
         AthTokenStatement('EXECUTE', [IdentifierToken('NULL')])),
-    AthTokenStatement('DIE', ['THIS'])
+    AthTokenStatement('DIE', [IdentifierToken('THIS')])
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('AddOneFunc.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('AddOneFunc.~ATH', stmts)

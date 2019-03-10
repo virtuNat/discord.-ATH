@@ -1,0 +1,85 @@
+// WoC's card parser, in ~ATH form
+~ATH(THIS){
+	input CARDSTR "Enter the shorthand string for your card, ex. 5H, 10S, QD: ";
+	ENUMERATE CARDSTR CARD;
+	REPLICATE TEMP CARD;
+	PROCREATE CARDLEN 0;
+	PROCREATE SUIT;
+	~ATH(TEMP){
+		BIFURCATE TEMP[LVAL, TEMP];
+		PROCREATE CARDLEN CARDLEN + 1;
+		PROCREATE SUIT LVAL;
+	}EXECUTE(NULL);
+	BIFURCATE CARD[FACE, NULL];
+	DEBATE (CARDLEN < 2 l| CARDLEN > 3){
+		print("That doesn't even LOOK like a card string!\n");
+	}
+	UNLESS{
+		DEBATE (CARDLEN == 3){
+			PROCREATE FACENAME "Ten";
+		}
+		UNLESS (FACE == "2"){
+			PROCREATE FACENAME "Two";
+		}
+		UNLESS (FACE == "3"){
+			PROCREATE FACENAME "Three";
+		}
+		UNLESS (FACE == "4"){
+			PROCREATE FACENAME "Four";
+		}
+		UNLESS (FACE == "5"){
+			PROCREATE FACENAME "Five";
+		}
+		UNLESS (FACE == "6"){
+			PROCREATE FACENAME "Six";
+		}
+		UNLESS (FACE == "7"){
+			PROCREATE FACENAME "Seven";
+		}
+		UNLESS (FACE == "8"){
+			PROCREATE FACENAME "Eight";
+		}
+		UNLESS (FACE == "9"){
+			PROCREATE FACENAME "Nine";
+		}
+		UNLESS (FACE == "J"){
+			PROCREATE FACENAME "Jack";
+		}
+		UNLESS (FACE == "Q"){
+			PROCREATE FACENAME "Queen";
+		}
+		UNLESS (FACE == "K"){
+			PROCREATE FACENAME "King";
+		}
+		UNLESS (FACE == "A"){
+			PROCREATE FACENAME "Ace";
+		}
+		UNLESS{
+			PROCREATE FACENAME "WRONG";
+			print("This isn't a real card face!\n");
+		}
+		DEBATE (SUIT == "S"){
+			PROCREATE SUITNAME "Spade";
+		}
+		UNLESS (SUIT == "H"){
+			PROCREATE SUITNAME "Heart";
+		}
+		UNLESS (SUIT == "D"){
+			PROCREATE SUITNAME "Diamond";
+		}
+		UNLESS (SUIT == "C"){
+			PROCREATE SUITNAME "Club";
+		}
+		UNLESS{
+			PROCREATE SUITNAME "WRONG";
+			print("This isn't a real card suit!\n");
+		}
+		DEBATE (SUITNAME == "WRONG" l| FACENAME == "WRONG"){
+			print("Go back and try again with a REAL deck of cards!\n");
+		}
+		UNLESS{
+			print("Your card is the ~s of ~ss.\n", FACENAME, SUITNAME);
+		}
+	}
+	THIS.DIE();
+}EXECUTE(NULL);

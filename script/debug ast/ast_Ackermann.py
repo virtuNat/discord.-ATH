@@ -15,8 +15,10 @@ stmts = AthStatementList([
     TildeAthLoop(False, AthStatementList([
         AthTokenStatement('input', [IdentifierToken('NUM'), LiteralToken('Get the ackermann function of: ', str)]),
         AthTokenStatement('print', [LiteralToken('The value of A(n, n) is ~d.\\n', str), AthTokenStatement('EXECUTE', [IdentifierToken('ACK'), IdentifierToken('NUM'), IdentifierToken('NUM')])]),
-        AthTokenStatement('DIE', ['THIS']),
+        AthTokenStatement('DIE', [IdentifierToken('THIS')]),
         ], pendant='THIS'),
         AthTokenStatement('EXECUTE', [IdentifierToken('NULL')]))
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('Ackermann.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('Ackermann.~ATH', stmts)

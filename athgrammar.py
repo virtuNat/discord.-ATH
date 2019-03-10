@@ -120,11 +120,11 @@ ath_lexer = Lexer([
     (r'!', 'OPERATOR'), # Boolean NOT
     (r'~', 'OPERATOR'), # Bitwise not
     # Literals and Identifiers
-    (r'([\'"])[^\1]*?\1', 'LITERAL_STR'),
+    (r'([\'"])(?:[^\1]|\\\1)*?\1', 'LITERAL_STR'),
     (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?[jJ]', 'LITERAL_IMG'),
     (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?', 'LITERAL_FLT'),
     (r'\d+[jJ]', 'LITERAL_IMG'),
-    (r'\d+', 'LITERAL_INT'),
+    (r'\d{1,3}(?:_\d{1,3})*', 'LITERAL_INT'),
     (r'[a-zA-Z]\w*', 'IDENTIFIER'),
     # Literally only used in DIE calls
     (r'\.', 'DELIMITER'),

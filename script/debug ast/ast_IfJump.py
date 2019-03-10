@@ -17,4 +17,6 @@ stmts = AthStatementList([
         ], pendant='THIS'),
         AthTokenStatement('EXECUTE', [IdentifierToken('NULL')]))
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('IfJump.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('IfJump.~ATH', stmts)

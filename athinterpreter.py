@@ -11,7 +11,7 @@ from athstmt import(
 	)
 from athgrammar import ath_parser
 
-__version__ = '1.5.2 Test Build'
+__version__ = '1.6.0'
 __author__ = 'virtuNat'
 
 
@@ -24,11 +24,11 @@ class AthStackFrame(object):
     """
     __slots__ = ('scope_vars', 'iter_nodes', 'exec_state', 'eval_state')
 
-    def __init__(self, scope_vars=None, iter_nodes=None, exec_state=0, eval_state=[]):
+    def __init__(self, scope_vars=None, iter_nodes=None, exec_state=0, eval_state=None):
         self.scope_vars = scope_vars or {}
         self.iter_nodes = iter_nodes
         self.exec_state = exec_state
-        self.eval_state = eval_state
+        self.eval_state = eval_state or []
 
     def __str__(self):
         return (
@@ -85,6 +85,24 @@ class TildeAthInterp(object):
         except IndexError:
             raise RuntimeError('All stack frames destroyed!!!!!')
 
+    def is_tail_call(self, eval_len):
+        """Returns True if the currently evaluated AST node is a tail call."""
+        if eval_len == 2 and self.ast.get_current().name == 'DIVULGATE':
+            # Top expression in a return statement is a function call
+            return True
+        if eval_len == 1 and self.stack[-1].exec_state == self.FUNCEXEC_STATE:
+            # The statement being evaluated in a function is another call
+            if self.ast.index >= len(self.ast.stmts):
+                # Execution points outside function body
+                return True
+            node = self.ast.get_current()
+            if node.name == 'CondiJump' and node.args[0] is None:
+                # Execution points to an unconditional jump
+                if self.ast.index + node.args[1] + 1 >= len(self.ast):
+                    # Jump points outside function body
+                    return True
+        return False
+
     def eval_stmt(self, ret_value=None):
         # Statement evaluation trampoline.
         eval_state = self.stack[-1].eval_state
@@ -92,7 +110,6 @@ class TildeAthInterp(object):
         if ret_value is not None:
             node.set_argv(ret_value)
         while True:
-            # print(eval_state)
             try:
                 # Try to get the next argument AST node from the expression.
                 arg = node.get_arg()
@@ -127,6 +144,23 @@ class TildeAthInterp(object):
                     raise exc
                 else:
                     # When the function has finished, move down the evaluation stack.
+                    if node.stmt.name == 'EXECUTE': # Function call
+                        eval_state.pop()
+                        func, scope_vars = ret_value
+                        if self.is_tail_call(len(eval_state) + 1):
+                            frame = self.stack[-1]
+                            frame.scope_vars = scope_vars
+                            frame.iter_nodes = func.body.iter_nodes()
+                            frame.exec_state = self.FUNCEXEC_STATE
+                            eval_state.clear()
+                        else:
+                            self.stack.append(AthStackFrame(
+                                scope_vars=scope_vars,
+                                iter_nodes=func.body.iter_nodes(),
+                                exec_state=self.FUNCEXEC_STATE,
+                                ))
+                        self.ast = self.stack[-1].iter_nodes
+                        return None
                     if len(eval_state) > 1:
                         eval_state.pop()
                         node = eval_state[-1]
@@ -136,13 +170,9 @@ class TildeAthInterp(object):
                     eval_state.clear()
                     return ret_value
             else:
-                # print(node)
                 # If there is an argument left to evaluate, deal with it first.
-                if arg is None:
-                    # None is passed when an argument is missing in an optional position.
-                    node.set_argv(None)
-                elif isinstance(arg, (int, str, AthCustomFunction)):
-                    # Name, Number, and Function items are passed as is.
+                if arg is None or isinstance(arg, (int, str, AthCustomFunction)):
+                    # Name, Number, Function, and Empty items are passed as is.
                     node.set_argv(arg)
                 elif isinstance(arg, LiteralToken):
                     # Tokens pass their values.
@@ -153,20 +183,18 @@ class TildeAthInterp(object):
                         node.set_argv(arg.name)
                     else:
                         node.set_argv(self.get_symbol(arg.name))
-                elif isinstance(arg, AthTokenStatement):
-                    if arg.name == 'EXECUTE': # Function call
-                        pass
                 elif isinstance(arg, AthStatement):
                     # Evaluate expressions for their values before passing the result.
-                    eval_state.append(arg.prepare())
-                    node = eval_state[-1]
+                    node = arg.prepare()
+                    eval_state.append(node)
 
     def eval_return(self, ret_value):
         while True:
             frame = self.stack[-1]
+            self.ast = frame.iter_nodes
             if not frame.eval_state:
                 return
-            ret_value = self.eval_stmt(frame.eval_state, ret_value)
+            ret_value = self.eval_stmt(ret_value)
             if not (ret_value is not None
                 and frame.get_current().name == 'DIVULGATE'
                 ):
@@ -256,7 +284,7 @@ class TildeAthInterp(object):
     def interpret(self, fname, force):
         if not fname.endswith('.~ATH'):
             sys.stderr.write('IOError: script must be a ~ATH file')
-            sys.exit(1)
+            sys.exit(IOError)
         if not force and os.path.isfile(f'ast_{fname[:-4]}py'):
             ast = __import__(f'ast_{fname[:-5]}').stmts
         else:

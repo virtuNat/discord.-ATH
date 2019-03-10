@@ -1,7 +1,7 @@
 import re
 from itertools import filterfalse
 from athsymbol import (
-    AthSymbol, AthFunction, SymbolDeath,
+    AthSymbol, AthFunction, AthCustomFunction, SymbolDeath,
     BuiltinSymbol, NullSymbol, isAthValue,
     )
 
@@ -29,10 +29,10 @@ ath_builtins = AthBuiltinsDict(NULL=NULL)
 
 
 def pull_name(arg):
+    if isinstance(arg, AthSymbol):
+        arg = arg.left
     if isinstance(arg, str):
         return arg
-    elif isinstance(arg, AthSymbol) and isinstance(arg.left, str):
-        return arg.left
     raise TypeError('cannot pull grave from non-string')
 
 def import_statement(env, module, symbol):
@@ -65,8 +65,7 @@ def execute_statement(env, *args):
         raise TypeError('execute statement missing function argument')
     argc = len(args) - 1
     # Split the name and the function arguments.
-    name = args[0]
-    argv = args[1:]
+    name, *argv = args
     # EXECUTE(NULL) will return NULL if called and returned from.
     if name is NULL:
         return NULL

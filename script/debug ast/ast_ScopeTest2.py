@@ -16,8 +16,10 @@ stmts = AthStatementList([
     TildeAthLoop(False, AthStatementList([
         AthTokenStatement('EXECUTE', [IdentifierToken('F'), IdentifierToken('X')]),
         AthTokenStatement('print', [LiteralToken('~d\\n', str), IdentifierToken('X')]),
-        AthTokenStatement('DIE', ['THIS']),
+        AthTokenStatement('DIE', [IdentifierToken('THIS')]),
         ], pendant='THIS'),
         AthTokenStatement('EXECUTE', [IdentifierToken('NULL')]))
     ], pendant='THIS')
-TildeAthInterp().exec_stmts('ScopeTest2.~ATH', stmts)
+
+if __name__ == '__main__':
+    TildeAthInterp().exec_stmts('ScopeTest2.~ATH', stmts)
