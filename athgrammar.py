@@ -135,7 +135,7 @@ imgparser = TagsParser('LITERAL_IMG') ^ partial(LiteralToken, vtype=complex)
 fltparser = TagsParser('LITERAL_FLT') ^ partial(LiteralToken, vtype=float)
 intparser = TagsParser('LITERAL_INT') ^ partial(LiteralToken, vtype=int)
 strparser = TagsParser('LITERAL_STR') ^ (lambda s: LiteralToken(s[1:-1]))
-idnparser = TagsParser('KEYWORD') | TagsParser('IDENTIFIER') ^ IdentifierToken
+idnparser = (TagsParser('KEYWORD') | TagsParser('IDENTIFIER')) ^ IdentifierToken
 varparser = TagsParser('IDENTIFIER') ^ IdentifierToken
 kwdparser = lambda t: ItemParser(t, 'KEYWORD')
 dlmparser = lambda t: ItemParser(t, 'DELIMITER')
@@ -204,7 +204,7 @@ def exprparser():
     # Expression terms are either primitives, other expressions, or either in groups.
     term = exprvalparser() | exprgrpparser()
     # What the fuck does this do and why does it work??????????
-    return reduce(StrictParser, [term] + [parse_ops(lvl) for lvl in op_order])
+    return reduce(StrictParser, [term, *map(parse_ops, op_order)])
 
 def callparser():
     """Parses a group of expressions."""

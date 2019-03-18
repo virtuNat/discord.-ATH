@@ -1,0 +1,5 @@
+~ATH(THIS){
+  input NUM "Enter number: ";
+  print("Log base 2 of ~0.3f is ~0.3f.\n", NUM, EXECUTE(EXECUTE(import, 'MATH', 'LOGBN'), NUM));
+  THIS.DIE();
+}EXECUTE(NULL);
