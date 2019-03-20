@@ -1,0 +1,4 @@
+~ATH(THIS){
+  print("~d is twelve.", 5+++++++++++++++++++++++7);
+  THIS.DIE();
+}EXECUTE(NULL);

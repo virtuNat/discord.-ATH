@@ -7,11 +7,6 @@ from athsymbol import (
     )
 from athbuiltins_default import ath_builtins
 
-def cmp_opr(lval, rval, op):
-    if isAthValue(lval):
-        lval = AthSymbol(bool(lval), left=lval)
-    return op(lval, rval)
-
 def bool_not(val):
     if isAthValue(val):
         val = AthSymbol(bool(val), left=val)
@@ -22,11 +17,11 @@ def bool_opr(lval, rval, op):
         lval = AthSymbol(bool(lval), left=lval)
     if isAthValue(rval):
         rval = AthSymbol(bool(rval), left=rval)
-    if op == '&&':
+    if op == 'l&':
         return lval and rval
-    elif op == '||':
+    elif op == 'l|':
         return lval or rval
-    elif op == '^^':
+    elif op == 'l^':
         return (
             lval if lval and not rval else
             rval if rval and not lval else
@@ -76,15 +71,15 @@ biops = {
     'b&': operator.and_,
     'b|': operator.or_,
     'b^': operator.xor,
-    '<': partial(cmp_opr, op=operator.lt),
-    '<=': partial(cmp_opr, op=operator.le),
-    '>': partial(cmp_opr, op=operator.gt),
-    '>=': partial(cmp_opr, op=operator.ge),
-    '==': partial(cmp_opr, op=operator.eq),
-    '~=': partial(cmp_opr, op=operator.ne),
-    'l&': partial(bool_opr, op='&&'),
-    'l|': partial(bool_opr, op='||'),
-    'l^': partial(bool_opr, op='^^'),
+    '<': operator.lt,
+    '<=': operator.le,
+    '>': operator.gt,
+    '>=': operator.ge,
+    '==': operator.eq,
+    '~=': operator.ne,
+    'l&': partial(bool_opr, op='l&'),
+    'l|': partial(bool_opr, op='l|'),
+    'l^': partial(bool_opr, op='l^'),
     '!=!': partial(symbol_opr, op='!=!'),
     '?=!': partial(symbol_opr, op='?=!'),
     '!=?': partial(symbol_opr, op='!=?'),

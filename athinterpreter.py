@@ -11,7 +11,7 @@ from athstmt import(
 	)
 from athgrammar import ath_parser
 
-__version__ = '1.6.1'
+__version__ = '1.6.2'
 __author__ = 'virtuNat'
 
 

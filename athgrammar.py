@@ -6,11 +6,12 @@ abstract syntax tree.
 """
 import sys
 from functools import partial, reduce
+from itertools import chain
 
 from lexer import Lexer
 from grafter import (
     ItemParser, TagsParser, Graft,
-    SelectParser, StrictParser,
+    SelectParser, # StrictParser,
     OptionParser, RepeatParser,
     LazierParser, ScriptParser,
     )
@@ -121,9 +122,8 @@ ath_lexer = Lexer([
     (r'~', 'OPERATOR'), # Bitwise not
     # Literals and Identifiers
     (r'([\'"])(?:[^\1]|\\\1)*?\1', 'LITERAL_STR'),
-    (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?[jJ]', 'LITERAL_IMG'),
+    (r'(\d+\.(\d*)?|\d+|\.\d+)([eE][-+]?\d+)?[jJ]', 'LITERAL_IMG'),
     (r'(\d+\.(\d*)?|\.\d+)([eE][-+]?\d+)?', 'LITERAL_FLT'),
-    (r'\d+[jJ]', 'LITERAL_IMG'),
     (r'\d{1,3}(?:_\d{1,3})*', 'LITERAL_INT'),
     (r'[a-zA-Z]\w*', 'IDENTIFIER'),
     # Literally only used in DIE calls
@@ -178,9 +178,16 @@ def exprgrpparser():
 
 def unaryexprparser():
     """Parses unary expressions."""
+    def unrecurse(tokens):
+        opr, expr = tokens
+        if isinstance(expr, UnaryExpr) and expr.args[0] == opr:
+            if opr == '+':
+                return expr
+            return expr.args[1]
+        return UnaryExpr((opr, expr))
     term = exprvalparser() | exprgrpparser()
     ops = oprparser('+') | oprparser('-') | oprparser('~') | oprparser('!')
-    return ops + term ^ UnaryExpr
+    return ops + term ^ unrecurse
 
 # Operators listed in precendence order. Each tuple is a level of precedence.
 op_order = (
@@ -193,18 +200,34 @@ op_order = (
     ('l&',), ('l|',), ('l^',),
     ('!=!', '!=?', '?=!', '~=!', '!=~', '~=~')
     )
+op_prec = {opr: prec for prec, lvl in enumerate(op_order) for opr in lvl}
 
 def exprparser():
     """Parses an infix expression."""
-    def parse_ops(op_level):
-        # Parser that picks among a set of operators with the same precedence level.
-        ops = reduce(SelectParser, map(oprparser, op_level))
-        # Double lambda juju that magically ensures the operator is preserved.
-        return ops ^ (lambda op: lambda l, r: BnaryExpr((op, l, r)))
-    # Expression terms are either primitives, other expressions, or either in groups.
+    def shunting_yard(tokens):
+        val_stack = [tokens[0]]
+        opr_stack = []
+        queue = list(chain(*tokens[1]))[::-1]
+        while queue: # Consume token queue and group accordingly.
+            item = queue.pop()
+            if isinstance(item, str):
+                while opr_stack:
+                    opr = opr_stack[-1]
+                    if (op_prec[item] < op_prec[opr] 
+                        or op_prec[item] == op_prec[opr] == 0
+                        ):
+                        break
+                    args = (val_stack.pop(), val_stack.pop(), opr_stack.pop())
+                    val_stack.append(BnaryExpr(args[::-1]))
+                opr_stack.append(item)
+            else:
+                val_stack.append(item)
+        while opr_stack: # Group the rest after the tokens run out.
+            args = (val_stack.pop(), val_stack.pop(), opr_stack.pop())
+            val_stack.append(BnaryExpr(args[::-1]))
+        return val_stack[0]
     term = exprvalparser() | exprgrpparser()
-    # What the fuck does this do and why does it work??????????
-    return reduce(StrictParser, [term, *map(parse_ops, op_order)])
+    return term + RepeatParser(TagsParser('OPERATOR') + term) ^ shunting_yard
 
 def callparser():
     """Parses a group of expressions."""
@@ -334,10 +357,9 @@ def killfunc():
     def cull_seps(graft):
         return graft[0] or graft[1]
     def breakdown(tokens):
-        if len(tokens) > 6:
-            return AthTokenStatement(tokens[-4], tokens[1])
-        else:
-            return AthTokenStatement(tokens[-4], [tokens[0]])
+        if isinstance(tokens[0], list):
+            return AthTokenStatement(tokens[-4], tokens[0][1])
+        return AthTokenStatement(tokens[-4], [tokens[0]])
     return (
         (idnparser | (
             dlmparser('[')
